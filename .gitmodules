@@ -1,0 +1,3 @@
+[submodule "libs/infrastructure"]
+	path = libs/infrastructure
+	url = https://github.com/ndmsystems/android-infrastructure
