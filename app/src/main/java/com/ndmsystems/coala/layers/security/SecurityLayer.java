@@ -260,6 +260,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
             responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionURIPort, senderAddress.getPort()));
         }
         responseMessage.addOption(new CoAPMessageOption(code, 1));
+        responseMessage.setToken(message.getToken());
 
         client.send(responseMessage, null);
     }
