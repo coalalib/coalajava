@@ -50,8 +50,6 @@ public class SlidingWindow<T> {
         values[values.length - 1] = null;
         offset++;
 
-        LogHelper.v("ARQ: window advanced to offset = " + offset);
-
         return firstBlock;
     }
 

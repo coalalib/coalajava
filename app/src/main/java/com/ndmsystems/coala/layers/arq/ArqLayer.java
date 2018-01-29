@@ -184,7 +184,6 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
     }
 
     private void sendMoreData(String token) {
-        LogHelper.v("ARQ: send more data for token = " + token);
         SendState state = sendStates.get(token);
         Block block;
         while ((block = state.popBlock()) != null) {

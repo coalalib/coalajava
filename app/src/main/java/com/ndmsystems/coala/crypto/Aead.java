@@ -30,7 +30,6 @@ public class Aead {
 
     public byte[] decrypt(byte[] cipherText, int counter, byte[] associatedData){
         try {
-            LogHelper.v("Open, nonce: " + Hex.encodeHexString(makeNonce(peerIV, counter)));
             return decryptor.open(cipherText, makeNonce(peerIV, counter), associatedData);
         } catch (Exception e) {
             e.printStackTrace();

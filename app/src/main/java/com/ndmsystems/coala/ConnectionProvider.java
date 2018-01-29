@@ -68,7 +68,8 @@ public class ConnectionProvider {
     private synchronized MulticastSocket createConnection() throws IOException {
         MulticastSocket connection = new MulticastSocket(port);
         connection.joinGroup(Inet4Address.getByName("224.0.0.187"));
-        connection.setReceiveBufferSize(163840);
+        connection.setReceiveBufferSize(409600);
+        LogHelper.w("MulticastSocket receiveBufferSize: " + connection.getReceiveBufferSize());
         saveConnection(connection);
         return connection;
     }

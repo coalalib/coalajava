@@ -6,10 +6,16 @@ import com.ndmsystems.infrastructure.logging.LogHelper;
 import org.spongycastle.jcajce.spec.AEADParameterSpec;
 import org.spongycastle.jce.provider.BouncyCastleProvider;
 
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
@@ -24,15 +30,20 @@ public class AesGcm {
 
     private Key key;
     private static final int TAG_LENGTH = 12;
+    Cipher cipher;
 
     public AesGcm(byte[] key) {
         this.key = new SecretKeySpec(key, "AES");
-        LogHelper.d("Key: " + Hex.encodeHexString(this.key.getEncoded()));
+        try {
+            cipher = Cipher.getInstance("AES/GCM/NoPadding", bouncyCastleProvider);
+        } catch (Exception e) {
+            e.printStackTrace();
+            LogHelper.e("Fatal error, can't get cipher");
+        }
     }
 
     //TODO: сделать поддержку additionalAuthenticatedData
-    public byte[] seal(byte[] plainText, byte[] nonce, byte[] additionalAuthenticatedData) throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", bouncyCastleProvider);
+    public byte[] seal(byte[] plainText, byte[] nonce, byte[] additionalAuthenticatedData) throws InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         cipher.init(Cipher.ENCRYPT_MODE, key, new AEADParameterSpec(nonce, TAG_LENGTH * 8));
 
         return cipher.doFinal(plainText);
@@ -41,7 +52,6 @@ public class AesGcm {
     // the input comes from users
     //TODO: сделать поддержку additionalAuthenticatedData
     public byte[] open(byte[] cipherText, byte[] nonce, byte[] additionalAuthenticatedData) throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", bouncyCastleProvider);
 
         AEADParameterSpec params = new AEADParameterSpec(nonce, TAG_LENGTH * 8);
         cipher.init(Cipher.DECRYPT_MODE, key, params);

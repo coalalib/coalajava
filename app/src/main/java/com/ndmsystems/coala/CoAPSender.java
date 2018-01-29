@@ -169,7 +169,6 @@ public class CoAPSender {
 
     private void sendMessageToAddress(InetSocketAddress address, CoAPMessage message) throws IOException {
         byte[] messageData = CoAPSerializer.toBytes(message);
-        LogHelper.v("Send to address: " + address + " " + Hex.encodeHexString(messageData));
         DatagramPacket udpPacket = new DatagramPacket(messageData, messageData.length, address);
 
         // Send data!

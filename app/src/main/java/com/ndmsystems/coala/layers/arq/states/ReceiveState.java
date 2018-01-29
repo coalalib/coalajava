@@ -33,15 +33,12 @@ public class ReceiveState extends LoggableState {
     }
 
     public boolean isTransferCompleted() {
-        LogHelper.v("ARQ: window offset = " + window.getOffset() + ", lastBlockNumber = " + lastBlockNumber + ", is transfer completed ? " + (window.getOffset() - 1 == lastBlockNumber));
         return window.getOffset() - 1 == lastBlockNumber;
     }
 
     public void didReceiveBlock(Block block, int windowSize, CoAPMessageCode code) {
         if (code != CoAPMessageCode.CoapCodeContinue)
             initiatingMessage.setCode(code);
-
-        LogHelper.v("ARQ: receive block number = " + block.getNumber() + ", isMoreComing = " + block.isMoreComing());
 
         if (window.getSize() != windowSize) {
             LogHelper.e("ARQ: sending side trying to change window size");
@@ -52,7 +49,6 @@ public class ReceiveState extends LoggableState {
 
         if (!block.isMoreComing()) {
             lastBlockNumber = block.getNumber();
-            LogHelper.v("ARQ: last block number = " + block.getNumber());
         }
 
         Block firstBlock;

@@ -143,7 +143,6 @@ public class CoAPReceiver {
     private CoAPMessage getMessageFromPacket(DatagramPacket udpPacket) {
         byte[] data = new byte[udpPacket.getLength()];
         System.arraycopy(udpPacket.getData(), udpPacket.getOffset(), data, 0, udpPacket.getLength());
-        LogHelper.v("Received: " + Hex.encodeHexString(data));
 
         CoAPMessage message;
         try {
