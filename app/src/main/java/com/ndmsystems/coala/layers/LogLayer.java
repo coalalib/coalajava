@@ -5,10 +5,13 @@ import com.ndmsystems.coala.helpers.MessageHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageOption;
 import com.ndmsystems.coala.message.CoAPMessageOptionCode;
+import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.utils.Reference;
 import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.net.InetSocketAddress;
+
+import static com.ndmsystems.coala.message.CoAPMessageCode.CoapCodeContinue;
 
 public class LogLayer implements ReceiveLayer, SendLayer {
 
@@ -28,7 +31,7 @@ public class LogLayer implements ReceiveLayer, SendLayer {
     public boolean onSend(CoAPMessage message, Reference<InetSocketAddress> receiverAddress) {
         String stringForPrint = "Send data to Peer, id " + message.getId() + ", payload: '" + message.toString() + "', destination host: " + message.getURI() + (receiverAddress.get() == null || receiverAddress.get().equals(message.getAddress()) ? "" : " real destination: " + receiverAddress.get()) + " type " + message.getType() + " code " + message.getCode().name() + " token " + Hex.encodeHexString(message.getToken())
                 + "\n" + "Options: " + MessageHelper.getMessageOptionsString(message);
-        if (isResourceDiscoveryMessage(message)) {
+        if (isResourceDiscoveryMessage(message) || isArqAckMessage(message)) {
             LogHelper.v(stringForPrint);
         } else {
             LogHelper.d(stringForPrint);
@@ -36,11 +39,16 @@ public class LogLayer implements ReceiveLayer, SendLayer {
         return true;
     }
 
+    private boolean isArqAckMessage(CoAPMessage message) {
+        CoAPMessageOption option = message.getOption(CoAPMessageOptionCode.OptionBlock2);
+        return option != null
+                && message.getCode() == CoapCodeContinue
+                && message.getType() == CoAPMessageType.ACK;
+    }
+
     private boolean isResourceDiscoveryMessage(CoAPMessage message) {
         CoAPMessageOption option = message.getOption(CoAPMessageOptionCode.OptionContentFormat);
-        if (option != null)
-            LogHelper.v("OptionContentFormat value = " + ((int) option.value));
-        if (option != null && ((int) option.value) == 40) return true;
-        else return false;
+        return option != null &&
+                (((int) option.value) == 40) || message.getURIHost().equals("224.0.0.187");
     }
 }
