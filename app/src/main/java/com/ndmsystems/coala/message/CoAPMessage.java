@@ -1,5 +1,6 @@
 package com.ndmsystems.coala.message;
 
+import com.ndmsystems.coala.helpers.Hex;
 import com.ndmsystems.coala.helpers.MessageHelper;
 import com.ndmsystems.coala.helpers.StringHelper;
 import com.ndmsystems.coala.layers.response.ResponseHandler;
@@ -112,6 +113,11 @@ public class CoAPMessage {
     public byte[] getToken() {
         return token;
     }
+
+    public String getHexToken() {
+        return Hex.encodeHexString(token);
+    }
+
 
     public CoAPMessage setId(int id) {
         this.id = id;

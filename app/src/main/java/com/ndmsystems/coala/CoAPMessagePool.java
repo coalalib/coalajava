@@ -9,6 +9,7 @@ import com.ndmsystems.coala.message.CoAPMessage;
 
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CoAPMessagePool {
 
@@ -18,6 +19,7 @@ public class CoAPMessagePool {
     public static final Integer GARBAGE_PERIOD = 25000;    // period to waitForConnection before deleting sent command (before Ack or Error received)
 
     private ConcurrentLinkedHashMap<Integer, QueueElement> pool;
+    private ConcurrentHashMap<String, Integer> messageIdForToken = new ConcurrentHashMap<>();
     private AckHandlersPool ackHandlersPool;
 
     public CoAPMessagePool(AckHandlersPool ackHandlersPool) {
@@ -54,35 +56,37 @@ public class CoAPMessagePool {
 
             // check if this message is too old to send
             if (next.createTime != null && (now - next.createTime) >= EXPIRATION_PERIOD) {
-                remove(next.message.getId());
+                remove(next.message);
                 raiseAckError(next.message, "message expired");
                 continue;
             }
 
             // check if this message should be already removed from the pool, before ACK
-            if (next.sendTime != null && (now - next.sendTime) >= GARBAGE_PERIOD) {
-                remove(next.message.getId());
+            if (next.isNeededSend && next.sendTime != null && (now - next.sendTime) >= GARBAGE_PERIOD) {
+                remove(next.message);
                 raiseAckError(next.message, "message expired");
                 continue;
             }
 
-            if (!next.sent) {
-                if (next.sendAttempts >= MAX_PICK_ATTEMPTS) {
-                    remove(next.message.getId());
-                    raiseAckError(next.message, "Request Canceled, too many attempts ");
-                    continue;
-                }
+            if (next.isNeededSend) {
+                if (!next.sent) {
+                    if (next.sendAttempts >= MAX_PICK_ATTEMPTS) {
+                        remove(next.message);
+                        raiseAckError(next.message, "Request Canceled, too many attempts ");
+                        continue;
+                    }
 
-                next.sent = true;
-                next.sendTime = TimeHelper.getTimeForMeasurementInMilliseconds();
-                next.sendAttempts++;
+                    next.sent = true;
+                    next.sendTime = TimeHelper.getTimeForMeasurementInMilliseconds();
+                    next.sendAttempts++;
 
-                return next.message;
-            } else {
-                // check if need to resend this message
-                if (next.sendTime != null && (now - next.sendTime) >= RESEND_PERIOD) {
-                    next.message.getResendHandler().onResend();
-                    markAsUnsent(next.message.getId()); // Do we need a separate function for this?! O_o
+                    return next.message;
+                } else {
+                    // check if need to resend this message
+                    if (next.sendTime != null && (now - next.sendTime) >= RESEND_PERIOD) {
+                        next.message.getResendHandler().onResend();
+                        markAsUnsent(next.message.getId()); // Do we need a separate function for this?! O_o
+                    }
                 }
             }
         }
@@ -93,6 +97,7 @@ public class CoAPMessagePool {
     public void add(CoAPMessage message) {
         LogHelper.v("Add message with id " + message.getId() + " and token " + Hex.encodeHexString(message.getToken()) + " to pool");
         pool.put(message.getId(), new QueueElement(message));
+        messageIdForToken.put(message.getHexToken(), message.getId());
     }
 
     public CoAPMessage get(Integer id) {
@@ -105,13 +110,25 @@ public class CoAPMessagePool {
         return elem.message;
     }
 
-    public void remove(Integer id) {
-        LogHelper.v("Remove message with id " + id + " from pool");
-        pool.remove(id);
+    public CoAPMessage getSourceMessageByToken(String token) {
+        Integer id = messageIdForToken.get(token);
+        LogHelper.v("getSourceMessageByToken: " + token + ", id: " + id);
+        if (id == null) {
+            return null;
+        } else {
+            return get(id);
+        }
+    }
+
+    public void remove(CoAPMessage message) {
+        LogHelper.v("Remove message with id " + message.getId() + " from pool");
+        pool.remove(message.getId());
+        messageIdForToken.remove(message.getHexToken());
     }
 
     public void clear() {
         pool.clear();
+        messageIdForToken.clear();
     }
 
     private void markAsUnsent(Integer id) {
@@ -141,12 +158,24 @@ public class CoAPMessagePool {
         }
     }
 
+    public void setNoNeededSending(CoAPMessage message) {
+        Integer id = messageIdForToken.get(message.getHexToken());
+        if (id != null) {
+            QueueElement element = pool.get(id);
+            if (element != null) {
+                element.isNeededSend = false;
+                pool.put(message.getId(), element);
+            } else LogHelper.e("Try to setNoNeededSending, message not contains in pool, id: " + message.getId());
+        } else LogHelper.e("Try to setNoNeededSending, id not contains in pool, id: " + message.getId());
+    }
+
     private class QueueElement {
         public CoAPMessage message;
         public Integer sendAttempts = 0;
         public Long sendTime = null;
         public Long createTime = null;
         public boolean sent = false;
+        public boolean isNeededSend = true;
 
         public QueueElement(CoAPMessage message) {
             this.message = message;

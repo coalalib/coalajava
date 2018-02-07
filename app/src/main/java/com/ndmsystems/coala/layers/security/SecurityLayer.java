@@ -50,8 +50,10 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
     public boolean onReceive(CoAPMessage message, Reference<InetSocketAddress> senderAddressReference) {
         InetSocketAddress senderAddress = senderAddressReference.get();
 
-        CoAPMessage mainMessage = messagePool.get(message.getId());
-        InetSocketAddress sessionAddress = mainMessage != null ? (mainMessage.getProxy() == null ? mainMessage.getAddress() : mainMessage.getProxy()) : senderAddress;
+        CoAPMessage mainMessage = messagePool.getSourceMessageByToken(message.getHexToken());
+        InetSocketAddress sessionAddress = mainMessage != null ?
+                (mainMessage.getProxy() == null ? mainMessage.getAddress() : senderAddress)//because senderAddress already fixed at proxy layer
+                : senderAddress;
 
         CoAPMessageOption option = message.getOption(CoAPMessageOptionCode.OptionHandshakeType);
         if (option != null) {
@@ -175,7 +177,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
 
     private void addMessageToPending(CoAPMessage message) {
         LogHelper.d("Add message " + message.getId() + " to pending pool");
-        messagePool.remove(message.getId());
+        messagePool.remove(message);
         pendingMessages.add(message);
     }
 
@@ -229,7 +231,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
                 handler.onMessage(message, null);
                 ackHandlersPool.remove(message.getId());
             }
-            messagePool.remove(message.getId());
+            messagePool.remove(message);
         } else { //TODO: Realize!
             LogHelper.e("Received Peer signature");
         }

@@ -219,7 +219,7 @@ public class ObserveLayerTest {
         boolean shouldContinue = observeLayer.onReceive(message, addressReference);
         assertFalse(shouldContinue);
 
-        verify(client).cancel(message.getId());
+        verify(client).cancel(message);
         verify(registryOfObservingResources).processNotification(message, ObserveLayer.DEFAULT_MAX_AGE, SEQUENCE_NUMBER);
     }
 
@@ -327,7 +327,7 @@ public class ObserveLayerTest {
 
         verify(registryOfObservingResources, times(0)).addObservingResource((byte[]) any(), (ObservingResource) any());
         verify(registryOfObservingResources, times(0)).removeObservingResource((byte[]) any());
-        verify(client, times(0)).cancel(anyInt());
+        verify(client, times(0)).cancel(any());
         verify(client, times(0)).send((CoAPMessage) any(), (CoAPHandler) any());
     }
 
@@ -343,7 +343,7 @@ public class ObserveLayerTest {
 
         verify(registryOfObservingResources, times(0)).addObservingResource((byte[]) any(), (ObservingResource) any());
         verify(registryOfObservingResources, times(0)).removeObservingResource((byte[]) any());
-        verify(client, times(0)).cancel(anyInt());
+        verify(client, times(0)).cancel(any());
         verify(client, times(0)).send((CoAPMessage) any(), (CoAPHandler) any());
     }
 }

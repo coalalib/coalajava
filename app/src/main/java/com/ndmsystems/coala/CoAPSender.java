@@ -101,6 +101,9 @@ public class CoAPSender {
                             e.printStackTrace();
                             continue;
                         }
+                        if (destinationAddressReference.get().toString().contains("local")) {
+                            LogHelper.e("Try to send to localhost!!!");
+                        }
 
                         // send it now!
                         if (isNeedToSend) {
@@ -125,7 +128,7 @@ public class CoAPSender {
                     // post-process
                     if (message.getType() != CoAPMessageType.CON) {
                         // we can remove this message from Pool right away if it's not CON
-                        messagePool.remove(message.getId());
+                        messagePool.remove(message);
                     }
 
                 } else {

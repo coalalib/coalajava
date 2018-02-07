@@ -71,7 +71,7 @@ public class ObserveLayer implements ReceiveLayer, SendLayer {
         } else if (isExpectedNotification(message)) {
             LogHelper.v("Expected notification");
 
-            client.cancel(message.getId());
+            client.cancel(message);
 
             CoAPMessageOption maxAgeOption = message.getOption(CoAPMessageOptionCode.OptionMaxAge);
             Integer maxAge = (maxAgeOption != null && maxAgeOption.value != null ? (int) maxAgeOption.value : DEFAULT_MAX_AGE);

@@ -11,7 +11,7 @@ public interface CoAPClient {
     Observable<CoAPMessage> send(CoAPMessage message);
     Observable<ResponseData> sendRequest(CoAPMessage message);
 
-    void cancel(int messageId);
+    void cancel(CoAPMessage message);
 
     interface ResponseListener {
         void onSuccess(String response);

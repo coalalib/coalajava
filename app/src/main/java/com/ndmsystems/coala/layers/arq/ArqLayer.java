@@ -77,7 +77,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
 
         if (message.getCode() == CoAPMessageCode.CoapCodeEmpty &&
                 message.getType() == CoAPMessageType.ACK) {
-            messagePool.remove(message.getId());
+            messagePool.setNoNeededSending(message);
             return false;
         }
 
@@ -123,7 +123,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
             case RST:
                 // Transmit ACK
                 didTransmit(block.getNumber(), token);
-                messagePool.remove(incomingMessage.getId());
+                messagePool.remove(incomingMessage);
                 SendState sendState = sendStates.get(token);
                 if (sendState != null && sendState.isCompleted()) {
                     LogHelper.v("ARQ: Sending completed, pushing to message pool original message" + sendState.getOriginalMessage().getId());
@@ -158,6 +158,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
                     LogHelper.v("ARQ: Receive completed, passing message " + incomingMessage.getId() + " along");
                     logArqTransmission(receiveState);
                     receiveStates.remove(token);
+                    //incomingMessage = messagePool.getSourceMessageByToken(incomingMessage.getHexToken());
                     incomingMessage.setPayload(new CoAPMessagePayload(receiveState.getData().get()));
                     incomingMessage.setCode(receiveState.getInitiatingMessage().getCode());
                     //client.send(ackMessage, null);
@@ -249,7 +250,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
         CoAPMessagePayload payload = message.getPayload();
 
         LogHelper.v("ARQ: removing original message " + message.getId() + " from pool");
-        messagePool.remove(message.getId());
+        messagePool.remove(message);
         CoAPMessage originalMessage = null;
         CoAPMessage ackMessage = null;
         switch (message.getType()) {

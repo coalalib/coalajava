@@ -125,7 +125,7 @@ public class BlockwiseLayer implements ReceiveLayer, SendLayer {
         if (message.getPayload() != null)
             blockwiseInput.addPart(token, message.getPayload().content);
 
-        messagePool.remove(message.getId());
+        messagePool.remove(message);
 
         if (message.getType() == CoAPMessageType.CON)
             sendAckMessage(senderAddress, message.getToken(), message);
@@ -211,7 +211,7 @@ public class BlockwiseLayer implements ReceiveLayer, SendLayer {
     private boolean processBlockwiseOutput(CoAPMessage message, InetSocketAddress senderAddress, String token, Block block, boolean isBlock1) {
         LogHelper.d("Not ACK");
 
-        messagePool.remove(message.getId());
+        messagePool.remove(message);
 
         if (blockwiseOutput.isDataAvailable(token)) {
             // validate message address

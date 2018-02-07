@@ -171,9 +171,9 @@ public class Coala extends CoAPTransport {
         return Observable.create(emitter -> localPeerDiscoverer.runResourceDiscovery(emitter::onNext));
     }
 
-    public void cancel(int messageId) {
-        messagePool.remove(messageId);
-        ackHandlersPool.remove(messageId);
+    public void cancel(CoAPMessage message) {
+        messagePool.remove(message);
+        ackHandlersPool.remove(message.getId());
     }
 
     /**

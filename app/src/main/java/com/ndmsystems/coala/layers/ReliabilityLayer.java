@@ -54,7 +54,7 @@ public class ReliabilityLayer implements ReceiveLayer {
                 message.getType() != CoAPMessageType.RST)
             return true;
 
-        messagePool.remove(message.getId());
+        messagePool.remove(message);
 
         CoAPHandler handler = ackHandlersPool.get(message.getId());
         if (handler != null) {
