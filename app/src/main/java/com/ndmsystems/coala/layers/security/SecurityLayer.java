@@ -201,11 +201,16 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
     private void sendPendingMessage(InetSocketAddress address) {
         LogHelper.d("sendPendingMessages to address: " + address.toString());
         for (Iterator<CoAPMessage> it = pendingMessages.iterator(); it.hasNext(); ) {
-            CoAPMessage message = it.next();
-            if (message.getURIHost() != null && message.getURIHost().equals(address.getAddress().getHostAddress())
-                    && message.getURIPort() != null && message.getURIPort().equals(address.getPort())) {
-                messagePool.add(message);
-                it.remove();
+            try {
+                CoAPMessage message = it.next();
+                if (message.getURIHost() != null && message.getURIHost().equals(address.getAddress().getHostAddress())
+                        && message.getURIPort() != null && message.getURIPort().equals(address.getPort())) {
+                    messagePool.add(message);
+                    it.remove();
+                }
+            } catch (Exception e) {
+                LogHelper.e("Exception: " + e);
+                e.printStackTrace();
             }
         }
     }
