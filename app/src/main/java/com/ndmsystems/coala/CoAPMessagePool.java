@@ -33,6 +33,7 @@ public class CoAPMessagePool {
 
         element.sendAttempts = 0;
         element.sent = false;
+        element.isNeededSend = true;
         pool.put(id, element);
     }
 
@@ -64,7 +65,7 @@ public class CoAPMessagePool {
             // check if this message should be already removed from the pool, before ACK
             if (next.isNeededSend && next.sendTime != null && (now - next.sendTime) >= GARBAGE_PERIOD) {
                 remove(next.message);
-                raiseAckError(next.message, "message expired");
+                raiseAckError(next.message, "message deleted by garbage");
                 continue;
             }
 
@@ -95,9 +96,10 @@ public class CoAPMessagePool {
     }
 
     public void add(CoAPMessage message) {
-        LogHelper.v("Add message with id " + message.getId() + " and token " + Hex.encodeHexString(message.getToken()) + " to pool");
+        String token = message.getHexToken();
+        LogHelper.v("Add message with id " + message.getId() + " and token " + token + " to pool");
         pool.put(message.getId(), new QueueElement(message));
-        messageIdForToken.put(message.getHexToken(), message.getId());
+        messageIdForToken.putIfAbsent(token, message.getId());
     }
 
     public CoAPMessage get(Integer id) {
@@ -123,7 +125,11 @@ public class CoAPMessagePool {
     public void remove(CoAPMessage message) {
         LogHelper.v("Remove message with id " + message.getId() + " from pool");
         pool.remove(message.getId());
-        messageIdForToken.remove(message.getHexToken());
+
+        Integer idForToken = messageIdForToken.get(message.getHexToken());
+        if (idForToken != null && idForToken.equals(message.getId())) {
+            messageIdForToken.remove(message.getHexToken());
+        }
     }
 
     public void clear() {
@@ -159,12 +165,13 @@ public class CoAPMessagePool {
     }
 
     public void setNoNeededSending(CoAPMessage message) {
-        Integer id = messageIdForToken.get(message.getHexToken());
+        String token = message.getHexToken();
+        Integer id = messageIdForToken.get(token);
         if (id != null) {
             QueueElement element = pool.get(id);
             if (element != null) {
                 element.isNeededSend = false;
-                pool.put(message.getId(), element);
+                pool.put(id, element);
             } else LogHelper.e("Try to setNoNeededSending, message not contains in pool, id: " + message.getId());
         } else LogHelper.e("Try to setNoNeededSending, id not contains in pool, id: " + message.getId());
     }

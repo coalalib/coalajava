@@ -77,7 +77,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
             SecuredSession session = getSessionForAddress(sessionAddress);
 
             if (session == null || !session.isReady()) {
-                LogHelper.e("Encrypt message error: " + message.getId());
+                LogHelper.e("Encrypt message error: " + message.getId() + " sessionAddress: " + sessionAddress);
                 if (mainMessage != null) addMessageToPending(mainMessage);
                 sendSessionError(message, senderAddress, CoAPMessageOptionCode.OptionSessionNotFound);
                 return false;

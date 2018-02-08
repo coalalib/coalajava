@@ -24,11 +24,18 @@ public class ProxyLayer implements ReceiveLayer, SendLayer {
 
     @Override
     public boolean onReceive(CoAPMessage message, Reference<InetSocketAddress> senderAddressReference) {
-        CoAPMessage sourceMessage = messagePool.get(message.getId());
-        LogHelper.i("ProxyLayer onReceive, message: " + message.getId() + " sourceMessage null = " + (sourceMessage == null)
-        + " destination: " + (sourceMessage == null ? null : sourceMessage.getDestination()) + ", address before: " + message.getAddress().toString());
+        CoAPMessage sourceMessage = messagePool.getSourceMessageByToken(message.getHexToken());
+        LogHelper.i("ProxyLayer onReceive, message: " + message.getId() + " sourceMessage id = " + (sourceMessage == null ? "null" : sourceMessage.getId())
+        + " destination: " + (sourceMessage == null ? null : sourceMessage.getDestination()) + ", proxy: " + (sourceMessage == null || sourceMessage.getProxy() == null ? "null" : sourceMessage.getProxy()));
         if (sourceMessage != null && sourceMessage.getProxy() != null) {
+            LogHelper.i("Set destination: " + sourceMessage.getDestination() + ", proxy: " + sourceMessage.getProxy());
             senderAddressReference.set(sourceMessage.getDestination());
+        } else {
+            if (sourceMessage == null) {
+                LogHelper.i("Source message is null");
+            } else {
+                LogHelper.i("Source message proxy: " + sourceMessage.getProxy());
+            }
         }
 
         if (!isAboutProxying(message))

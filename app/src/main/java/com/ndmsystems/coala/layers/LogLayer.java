@@ -19,6 +19,9 @@ public class LogLayer implements ReceiveLayer, SendLayer {
     public boolean onReceive(CoAPMessage message, Reference<InetSocketAddress> senderAddress) {
         String stringForPrint = "Received data from Peer, id " + message.getId() + ", payload:'" + message.toString() + "', address: " + senderAddress.get().getAddress().getHostAddress() + ":" + senderAddress.get().getPort() + " type: " + message.getType().name() + " code: " + message.getCode().name() + " path: " + message.getURIPathString() + " schema: " + (message.getURIScheme() == null ? "coap:" : message.getURIScheme()) + " token " + Hex.encodeHexString(message.getToken())
                 + "\n" + "Options: " + MessageHelper.getMessageOptionsString(message);
+        if (message.getProxy() != null) {
+            stringForPrint += ", proxy: " + message.getProxy().getAddress().getHostAddress() + ":" + message.getProxy().getPort();
+        }
         if (isResourceDiscoveryMessage(message)) {
             LogHelper.v(stringForPrint);
         } else {
@@ -31,6 +34,9 @@ public class LogLayer implements ReceiveLayer, SendLayer {
     public boolean onSend(CoAPMessage message, Reference<InetSocketAddress> receiverAddress) {
         String stringForPrint = "Send data to Peer, id " + message.getId() + ", payload: '" + message.toString() + "', destination host: " + message.getURI() + (receiverAddress.get() == null || receiverAddress.get().equals(message.getAddress()) ? "" : " real destination: " + receiverAddress.get()) + " type " + message.getType() + " code " + message.getCode().name() + " token " + Hex.encodeHexString(message.getToken())
                 + "\n" + "Options: " + MessageHelper.getMessageOptionsString(message);
+        if (message.getProxy() != null) {
+            stringForPrint += ", proxy: " + message.getProxy().getAddress().getHostAddress() + ":" + message.getProxy().getPort();
+        }
         if (isResourceDiscoveryMessage(message) || isArqAckMessage(message)) {
             LogHelper.v(stringForPrint);
         } else {
