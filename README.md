@@ -4,6 +4,7 @@ Coala is an Android library for communication over CoAP protocol(https://tools.i
 
 Now supports Android devices with version 4.4+
 
+
 To add Coala to your application:
 
  1. Add the Coala repository as a submodule
