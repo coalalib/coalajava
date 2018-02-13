@@ -10,4 +10,3 @@ To add Coala to your application:
  2. Add library in you module build.gradle like ```compile project('$YOU_PATH_TO_SUBMODULE$:coala:app')```
  3. Include library in setings.gradle ```include ':submodules:coala:app'```
 
-TODO: Update here later
