@@ -30,7 +30,7 @@ import java.util.Set;
 
 public class SecurityLayer implements ReceiveLayer, SendLayer {
 
-    private Set<CoAPMessage> pendingMessages = Collections.synchronizedSet(new HashSet<>());
+    private final Set<CoAPMessage> pendingMessages = Collections.synchronizedSet(new HashSet<>());
     private CoAPMessagePool messagePool;
     private AckHandlersPool ackHandlersPool;
     private CoAPClient client;
@@ -77,7 +77,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
             SecuredSession session = getSessionForAddress(sessionAddress);
 
             if (session == null || !session.isReady()) {
-                LogHelper.e("Encrypt message error: " + message.getId() + " sessionAddress: " + sessionAddress);
+                LogHelper.e("Encrypt message error: " + message.getId() + ", token: " + message.getHexToken() + ", sessionAddress: " + sessionAddress);
                 if (mainMessage != null) addMessageToPending(mainMessage);
                 sendSessionError(message, senderAddress, CoAPMessageOptionCode.OptionSessionNotFound);
                 return false;
@@ -87,6 +87,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
             if (decryptResult) {
                 message.setPeerPublicKey(session.getPeerPublicKey());
             } else {
+                removeSessionForAddressIfNotInProgress(sessionAddress);
                 LogHelper.w("Can't decrypt, send SessionExpired");
                 if (mainMessage != null) addMessageToPending(mainMessage);
                 sendSessionError(message, senderAddress, CoAPMessageOptionCode.OptionSessionExpired);
@@ -200,17 +201,19 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
 
     private void sendPendingMessage(InetSocketAddress address) {
         LogHelper.d("sendPendingMessages to address: " + address.toString());
-        for (Iterator<CoAPMessage> it = pendingMessages.iterator(); it.hasNext(); ) {
-            try {
-                CoAPMessage message = it.next();
-                if (message.getURIHost() != null && message.getURIHost().equals(address.getAddress().getHostAddress())
-                        && message.getURIPort() != null && message.getURIPort().equals(address.getPort())) {
-                    messagePool.add(message);
-                    it.remove();
+        synchronized (pendingMessages) {
+            for (Iterator<CoAPMessage> it = pendingMessages.iterator(); it.hasNext(); ) {
+                try {
+                    CoAPMessage message = it.next();
+                    if (message.getURIHost() != null && message.getURIHost().equals(address.getAddress().getHostAddress())
+                            && message.getURIPort() != null && message.getURIPort().equals(address.getPort())) {
+                        messagePool.add(message);
+                        it.remove();
+                    }
+                } catch (Exception e) {
+                    LogHelper.e("Exception: " + e);
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                LogHelper.e("Exception: " + e);
-                e.printStackTrace();
             }
         }
     }
