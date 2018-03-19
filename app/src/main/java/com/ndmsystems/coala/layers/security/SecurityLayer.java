@@ -179,22 +179,26 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
     private void addMessageToPending(CoAPMessage message) {
         LogHelper.d("Add message " + message.getId() + " to pending pool");
         messagePool.remove(message);
-        pendingMessages.add(message);
+        synchronized (pendingMessages) {
+            pendingMessages.add(message);
+        }
     }
 
     private void removePendingMessagesByAddress(InetSocketAddress address) {
-        for (Iterator<CoAPMessage> it = pendingMessages.iterator(); it.hasNext(); ) {
-            CoAPMessage message = it.next();
-            if (message.getURIHost() != null && message.getURIHost().equals(address.getAddress().getHostAddress())
-                    && message.getURIPort() != null && message.getURIPort().equals(address.getPort())) {
-                ackHandlersPool.raiseAckError(message, "Can't create session with: " + address.toString());
-                ResponseHandler responseHandler = message.getResponseHandler();
-                if (responseHandler != null) {
-                    String errorText = "Can't create session with: " + address.toString();
-                    LogHelper.w(errorText);
-                    responseHandler.onError(new CoAPHandler.AckError(errorText));
+        synchronized (pendingMessages) {
+            for (Iterator<CoAPMessage> it = pendingMessages.iterator(); it.hasNext(); ) {
+                CoAPMessage message = it.next();
+                if (message.getURIHost() != null && message.getURIHost().equals(address.getAddress().getHostAddress())
+                        && message.getURIPort() != null && message.getURIPort().equals(address.getPort())) {
+                    ackHandlersPool.raiseAckError(message, "Can't create session with: " + address.toString());
+                    ResponseHandler responseHandler = message.getResponseHandler();
+                    if (responseHandler != null) {
+                        String errorText = "Can't create session with: " + address.toString();
+                        LogHelper.w(errorText);
+                        responseHandler.onError(new CoAPHandler.AckError(errorText));
+                    }
+                    it.remove();
                 }
-                it.remove();
             }
         }
     }
