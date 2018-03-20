@@ -22,16 +22,16 @@ public class MessageHelper {
     }
 
     public static String getMessageOptionsString(CoAPMessage message) {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         for (CoAPMessageOption option : message.getOptions()) {
             switch (option.code) {
                 case OptionBlock1:
                 case OptionBlock2:
-                    buf.append(option.code.toString()).append(" : '").append(Block.fromInt((Integer) option.value)).append("'(" + option.value + ") ");
+                    buf.append(option.code.toString()).append(" : '").append(option.value == null ? "null" : (Block.fromInt((Integer) option.value) + "'(" + option.value + ") "));
                     break;
                 default:
-                    buf.append(option.code.toString()).append(" : '").append(option.value.toString()).append("' ");
+                    buf.append(option.code.toString()).append(" : '").append(option.value == null ? "null" : option.value.toString()).append("' ");
             }
         }
 
