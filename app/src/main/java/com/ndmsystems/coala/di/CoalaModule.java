@@ -193,10 +193,11 @@ public class CoalaModule {
                         responseLayer,
                         arqLayer,
 //                        blockwiseLayer
-                        logLayer,
+
                         securityLayer,
                         observeLayer,
-                        proxyLayer
+                        proxyLayer,
+                        logLayer
                 }, null);
     }
 

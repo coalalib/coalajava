@@ -87,7 +87,5 @@ public class ProxyLayer implements ReceiveLayer, SendLayer {
     private void removeRestrictedOptionsFromProxiedMessage(CoAPMessage message) {
         message.removeOption(CoAPMessageOptionCode.OptionURIHost);
         message.removeOption(CoAPMessageOptionCode.OptionURIPort);
-        message.removeOption(CoAPMessageOptionCode.OptionURIPath);
-        message.removeOption(CoAPMessageOptionCode.OptionURIQuery);
     }
 }

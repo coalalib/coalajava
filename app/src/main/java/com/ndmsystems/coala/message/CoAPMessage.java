@@ -227,14 +227,14 @@ public class CoAPMessage {
     }
 
     public String getURI() {
-        if (hasOption(CoAPMessageOptionCode.OptionProxyURI))
-            return (String) getOption(CoAPMessageOptionCode.OptionProxyURI).value;
-
         StringBuilder builder = new StringBuilder();
 
-        builder.append(getURIScheme().toString() + "://")
-                .append(getURIHost())
-                .append(":" + getURIPort());
+        if (hasOption(CoAPMessageOptionCode.OptionProxyURI)) {
+            builder.append((String) getOption(CoAPMessageOptionCode.OptionProxyURI).value);
+        } else {
+            builder.append(getURIScheme().toString()).append("://")
+                    .append(getURIHost()).append(":").append(getURIPort());
+        }
 
         String uriPath = getURIPathString();
         if (uriPath != null) {
@@ -448,7 +448,7 @@ public class CoAPMessage {
     public void setProxy(InetSocketAddress address) {
         if (address == null) return;
         proxy = address;
-        CoAPMessageOption option = new CoAPMessageOption(CoAPMessageOptionCode.OptionProxyURI, getURI());
+        CoAPMessageOption option = new CoAPMessageOption(CoAPMessageOptionCode.OptionProxyURI, getURIScheme().toString() +"://" + getURIHost() + ":" + getURIPort().toString());
         addOption(option);
     }
 
