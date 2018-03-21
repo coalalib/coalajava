@@ -20,7 +20,7 @@ public class CoAPMessageTest {
     public void onSetProxy_shouldAddProxyUriOption() {
         final String PROXY_IP = "121.121.121.121";
         final int PROXY_PORT = 1234;
-        final String destinationUri = "coap://123.123.123.123:5555/path?asd=asd";
+        final String destinationUri = "coap://123.123.123.123:5555";
         CoAPMessage message = new CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET);
         message.setURI(destinationUri);
         InetSocketAddress proxyAddress = new InetSocketAddress(PROXY_IP, PROXY_PORT);
