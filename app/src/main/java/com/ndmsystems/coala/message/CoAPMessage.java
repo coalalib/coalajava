@@ -266,6 +266,9 @@ public class CoAPMessage {
         CoAPMessageOption option = this.getOption(CoAPMessageOptionCode.OptionURIHost);
 
         if (option == null) {
+            if (destination != null) {
+                return destination.getAddress().getHostAddress();
+            }
             return "localhost";
         }
 
@@ -287,6 +290,9 @@ public class CoAPMessage {
         CoAPMessageOption option = this.getOption(CoAPMessageOptionCode.OptionURIPort);
 
         if (option == null) {
+            if (destination != null) {
+                return destination.getPort();
+            }
             return 5683;
         }
 
