@@ -101,6 +101,10 @@ public class CoAPSender {
                             e.printStackTrace();
                             continue;
                         }
+                        if (destinationAddressReference.get() == null) {
+                            LogHelper.e("Destination is null!! Proxy = " + message.getProxy());
+                        }
+
                         if (destinationAddressReference.get().toString().contains("local")) {
                             LogHelper.e("Try to send to localhost!!!");
                         }

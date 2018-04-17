@@ -74,6 +74,12 @@ public class CoAPMessage {
             token = new byte[message.getToken().length];
             System.arraycopy(message.getToken(), 0, token, 0, token.length);
         }
+
+        if (message.getProxy() != null) this.proxy = message.getProxy();
+        if (message.destination != null) this.destination = message.destination;
+        if (message.responseHandler != null) this.responseHandler = message.responseHandler;
+        if (message.resendHandler != null) this.resendHandler = message.resendHandler;
+        if (message.peerPublicKey != null) this.peerPublicKey = message.peerPublicKey;
     }
 
     public CoAPMessage(CoAPMessageType messageType, CoAPMessageCode messageCode) {
