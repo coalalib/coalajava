@@ -192,12 +192,12 @@ public class CoalaModule {
                 new SendLayer[]{
                         responseLayer,
                         arqLayer,
+                        logLayer,
 //                        blockwiseLayer
 
                         securityLayer,
                         observeLayer,
                         proxyLayer,
-                        logLayer
                 }, null);
     }
 
