@@ -129,7 +129,7 @@ public class CoAPReceiver {
                 receivingThread = null;
                 isRunning = false;
                 try {
-                    Thread.sleep(3000);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
