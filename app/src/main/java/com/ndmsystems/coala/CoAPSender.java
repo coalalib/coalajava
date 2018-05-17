@@ -113,12 +113,7 @@ public class CoAPSender {
                         if (isNeedToSend) {
                             sendMessageToAddress(destinationAddressReference.get(), message);
                         }
-                        /*} catch (MAGSocketException e) {
-                            // @TODO: reQueue?!
-                            MAGCommandPool.reQueue(commandObject.id);
-                            LogHelper.i("SendingAsyncTask stopped by exception");
-                            break;
-                        }*/
+                        
                     } catch (IOException e) {
                         LogHelper.e("IOException: " + e.getMessage());
                         if (isInterrupted()) {
@@ -136,7 +131,7 @@ public class CoAPSender {
                     }
 
                 } else {
-                    // Empty queue? Wait for 100 milliseconds...
+                    // Empty queue? Wait for some milliseconds...
                     if (!waitSomeSeconds()) break;
                 }
 
@@ -153,7 +148,7 @@ public class CoAPSender {
                 isRunning = false;
 
                 try {
-                    Thread.sleep(3000);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -165,7 +160,7 @@ public class CoAPSender {
 
         private boolean waitSomeSeconds() {
             try {
-                Thread.sleep(100);
+                Thread.sleep(50);
             } catch (InterruptedException e) {
                 LogHelper.i("SendingAsyncTask stopped by Thread Interrupted: " + e.getMessage());
                 return false;
