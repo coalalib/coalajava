@@ -7,7 +7,6 @@ import com.ndmsystems.coala.layers.ReceiveLayer;
 import com.ndmsystems.coala.layers.SendLayer;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
-import com.ndmsystems.coala.message.CoAPMessagePayload;
 import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.utils.Reference;
 import com.ndmsystems.infrastructure.logging.LogHelper;
@@ -24,6 +23,7 @@ public class ResponseLayer implements ReceiveLayer, SendLayer {
 
     private Map<String, CoAPMessage> requests;
     private CoAPClient client;
+    private ResponseErrorFactory errorFactory;
 
     public ResponseLayer(CoAPClient client) {
         this.client = client;
@@ -33,48 +33,36 @@ public class ResponseLayer implements ReceiveLayer, SendLayer {
                         .expiration(1, TimeUnit.MINUTES)
                         .build()
         );
+        errorFactory = new ResponseErrorFactory();
     }
 
     @Override
     public boolean onReceive(CoAPMessage message, Reference<InetSocketAddress> senderAddressReference) {
-        if (message.isRequest())
-            return true;
+        if (message.isRequest()) return true;
 
-        if (message.getToken() == null)
-            return true;
+        if (message.getToken() == null) return true;
 
         if (message.getType() == CoAPMessageType.CON)
             sendAckMessage(message, senderAddressReference.get());
 
-        if (message.getType() == CoAPMessageType.ACK &&
-                message.getCode() == CoAPMessageCode.CoapCodeEmpty)
+        if (message.getType() == CoAPMessageType.ACK
+                && message.getCode() == CoAPMessageCode.CoapCodeEmpty)
             return false;
 
         String key = keyForMessage(message);
         CoAPMessage request = requests.get(key);
 
-        if (request == null)
-            return true;
+        if (request == null) return true;
 
-        String responseError = null;
-        CoAPMessagePayload payload = message.getPayload();
-        if (message.getType() == CoAPMessageType.RST) {
-            responseError = "Request has been reset!";
-        } else if (message.getCode().getCodeClass() != 2) {
-            responseError = message.getCode().name();
-            if (payload != null)
-                responseError += ", " + payload.toString();
-        }
-
-        ResponseHandler responseHandler = request.getResponseHandler();
+        CoAPException responseError = errorFactory.proceed(message);
         if (responseError != null) {
             LogHelper.w("ResponseError: " + responseError);
-            responseHandler.onError(new CoAPException(message.getCode(), payload == null ? responseError : payload.toString()));
+            request.getResponseHandler().onError(responseError);
         } else {
-            ResponseData responseData = new ResponseData(payload == null ? null : payload.content);
+            ResponseData responseData = new ResponseData(message.getPayload() == null ? null : message.getPayload().content);
             if (message.getPeerPublicKey() != null)
                 responseData.setPeerPublicKey(message.getPeerPublicKey());
-            responseHandler.onResponse(responseData);
+            request.getResponseHandler().onResponse(responseData);
         }
 
         return false;

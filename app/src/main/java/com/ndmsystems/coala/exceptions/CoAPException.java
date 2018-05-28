@@ -21,6 +21,6 @@ public class CoAPException extends Throwable {
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName() + "  code: " + code + "  message: " + getMessage();
+        return this.getClass().getSimpleName() + "  code: " + code + ", code.value: " + code.value + "  message: " + getMessage();
     }
 }
