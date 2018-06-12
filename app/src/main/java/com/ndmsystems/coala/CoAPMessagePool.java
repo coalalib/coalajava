@@ -81,7 +81,7 @@ public class CoAPMessagePool {
                     next.sendTime = TimeHelper.getTimeForMeasurementInMilliseconds();
                     next.sendAttempts++;
 
-                    return next.message;
+                    return new CoAPMessage(next.message);
                 } else {
                     // check if need to resend this message
                     if (next.sendTime != null && (now - next.sendTime) >= RESEND_PERIOD) {

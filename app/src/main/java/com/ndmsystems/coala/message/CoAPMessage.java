@@ -67,7 +67,7 @@ public class CoAPMessage {
     public CoAPMessage(CoAPMessage message) {
         this(message.getType(), message.getCode(), message.getId());
         if (message.getPayload() != null) {
-            payload = new CoAPMessagePayload(message.toString());
+            payload = new CoAPMessagePayload(message.getPayload().content);
         }
         options = new ArrayList<>(message.getOptions());
         if (message.getToken() != null) {
