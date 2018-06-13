@@ -55,8 +55,8 @@ public class ResponseLayer implements ReceiveLayer, SendLayer {
         if (request == null) return true;
 
         CoAPException responseError = errorFactory.proceed(message);
+        LogHelper.w("ResponseError: " + responseError);
         if (responseError != null) {
-            LogHelper.w("ResponseError: " + responseError);
             request.getResponseHandler().onError(responseError);
         } else {
             ResponseData responseData = new ResponseData(message.getPayload() == null ? null : message.getPayload().content);
