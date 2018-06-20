@@ -1,5 +1,8 @@
 package com.ndmsystems.coala.crypto;
 
+import android.os.Build;
+
+import com.ndmsystems.coala.BuildConfig;
 import com.ndmsystems.coala.helpers.Hex;
 import com.ndmsystems.infrastructure.logging.LogHelper;
 
@@ -34,6 +37,10 @@ public class AesGcm {
 
     public AesGcm(byte[] key) {
         this.key = new SecretKeySpec(key, "AES");
+        initCipher();
+    }
+
+    private void initCipher() {
         try {
             cipher = Cipher.getInstance("AES/GCM/NoPadding", bouncyCastleProvider);
         } catch (Exception e) {
@@ -44,6 +51,11 @@ public class AesGcm {
 
     //TODO: сделать поддержку additionalAuthenticatedData
     public byte[] seal(byte[] plainText, byte[] nonce, byte[] additionalAuthenticatedData) throws InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
+            initCipher();
+        }
+
         cipher.init(Cipher.ENCRYPT_MODE, key, new AEADParameterSpec(nonce, TAG_LENGTH * 8));
 
         return cipher.doFinal(plainText);
@@ -52,6 +64,10 @@ public class AesGcm {
     // the input comes from users
     //TODO: сделать поддержку additionalAuthenticatedData
     public byte[] open(byte[] cipherText, byte[] nonce, byte[] additionalAuthenticatedData) throws Exception {
+
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
+            initCipher();
+        }
 
         AEADParameterSpec params = new AEADParameterSpec(nonce, TAG_LENGTH * 8);
         cipher.init(Cipher.DECRYPT_MODE, key, params);
