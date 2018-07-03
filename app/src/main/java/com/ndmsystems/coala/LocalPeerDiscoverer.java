@@ -15,13 +15,15 @@ import java.util.List;
 
 public class LocalPeerDiscoverer {
 
+    private final Integer port;
     private ResourceDiscoveryHelper resourceDiscoveryHelper;
     private CoAPClient client;
 
     public LocalPeerDiscoverer(ResourceDiscoveryHelper resourceDiscoveryHelper,
-                               CoAPClient client) {
+                               CoAPClient client, Integer port) {
         this.resourceDiscoveryHelper = resourceDiscoveryHelper;
         this.client = client;
+        this.port = port;
     }
 
     public synchronized void runResourceDiscovery(CoAPServer.OnResourcesDiscovered onResourcesDiscovered) {
@@ -41,7 +43,7 @@ public class LocalPeerDiscoverer {
 
     private void sendDiscoveryMulticast() {
         CoAPMessage message = new CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET); // ID will be auto-generated
-        message.setURI("coap://224.0.0.187:5683/.well-known/core");
+        message.setURI("coap://224.0.0.187:" + port + "/.well-known/core");
         client.send(message, null);
     }
 
