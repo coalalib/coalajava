@@ -54,7 +54,7 @@ dependencies {
     testCompile 'org.mockito:mockito-core:2.8.9'
     compile 'com.squareup.okhttp3:okhttp:3.5.0'
     compile 'com.google.code.gson:gson:2.8.0'
-    compile 'io.reactivex.rxjava2:rxjava:2.0.9'
+    compile 'io.reactivex.rxjava2:rxjava:2.1.2'
     compile 'net.jodah:expiringmap:0.5.8'
     compile project(':libs:infrastructure')
 }

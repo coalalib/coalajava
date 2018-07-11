@@ -55,7 +55,6 @@ public class ResponseLayer implements ReceiveLayer, SendLayer {
         if (request == null) return true;
 
         CoAPException responseError = errorFactory.proceed(message);
-        LogHelper.w("ResponseError: " + responseError);
         if (responseError != null) {
             request.getResponseHandler().onError(responseError);
         } else {
@@ -78,8 +77,7 @@ public class ResponseLayer implements ReceiveLayer, SendLayer {
     public boolean onSend(CoAPMessage message, Reference<InetSocketAddress> receiverAddress) {
         if (message.getToken() != null &&
                 message.isRequest() &&
-                message.getResponseHandler() != null &&
-                !requests.containsValue(message)) {
+                message.getResponseHandler() != null) {
             String key = keyForMessage(message);
             requests.put(key, message);
         }

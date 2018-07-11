@@ -51,14 +51,11 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
         InetSocketAddress senderAddress = senderAddressReference.get();
 
         CoAPMessage mainMessage = messagePool.getSourceMessageByToken(message.getHexToken());
-        InetSocketAddress sessionAddress = mainMessage != null ?
-                (mainMessage.getProxy() == null ? mainMessage.getAddress() : senderAddress)//because senderAddress already fixed at proxy layer
-                : senderAddress;
 
         CoAPMessageOption option = message.getOption(CoAPMessageOptionCode.OptionHandshakeType);
         if (option != null) {
             LogHelper.d("OptionHandshakeType: " + option.value);
-            processHandshake(HandshakeType.fromInt((int) option.value), message, senderAddress);
+            processHandshake(HandshakeType.fromInt((int) option.value), message, mainMessage, senderAddress);
             return false;
         }
 
@@ -67,17 +64,17 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
 
         if (sessionNotFound != null
                 || sessionExpired != null) {
-            LogHelper.w("Session not found or expired for address: " + sessionAddress.toString() + ", try to restart.");
-            removeSessionForAddressIfNotInProgress(sessionAddress);
+            LogHelper.w("Session not found or expired for address: " + senderAddress.toString() + ", try to restart.");
+            removeSessionForAddressIfNotInProgress(mainMessage);
             messagePool.requeue(message.getId());
             return false;
         }
 
         if (message.getURIScheme() == CoAPMessage.Scheme.SECURE) {
-            SecuredSession session = getSessionForAddress(sessionAddress);
+            SecuredSession session = getSessionForAddress(mainMessage);
 
             if (session == null || !session.isReady()) {
-                LogHelper.e("Encrypt message error: " + message.getId() + ", token: " + message.getHexToken() + ", sessionAddress: " + sessionAddress);
+                LogHelper.e("Encrypt message error: " + message.getId() + ", token: " + message.getHexToken() + ", sessionAddress: " + senderAddress);
                 if (mainMessage != null) addMessageToPending(mainMessage);
                 sendSessionError(message, senderAddress, CoAPMessageOptionCode.OptionSessionNotFound);
                 return false;
@@ -87,7 +84,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
             if (decryptResult) {
                 message.setPeerPublicKey(session.getPeerPublicKey());
             } else {
-                removeSessionForAddressIfNotInProgress(sessionAddress);
+                removeSessionForAddressIfNotInProgress(mainMessage);
                 LogHelper.w("Can't decrypt, send SessionExpired");
                 if (mainMessage != null) addMessageToPending(mainMessage);
                 sendSessionError(message, senderAddress, CoAPMessageOptionCode.OptionSessionExpired);
@@ -102,12 +99,12 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
     public boolean onSend(CoAPMessage message, Reference<InetSocketAddress> receiverAddressReference) {
         final InetSocketAddress receiverAddress = receiverAddressReference.get();
         if (message.getURIScheme() == CoAPMessage.Scheme.SECURE) {
-            SecuredSession session = getSessionForAddress(receiverAddress);
+            SecuredSession session = getSessionForAddress(message);
 
             if (session == null) {
                 LogHelper.d("Try to start session with: " + receiverAddress.getAddress().getHostAddress() + ":" + receiverAddress.getPort());
                 session = new SecuredSession(false);
-                setSessionForAddress(session, receiverAddress);
+                setSessionForAddress(session, message);
                 sendClientHello(message.getProxy(), receiverAddress, session.getPublicKey(), new CoAPHandler() {
                     @Override
                     public void onMessage(CoAPMessage clientHelloResponseMessage, String error) {
@@ -116,15 +113,15 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
                             if (message.getPeerPublicKey() == null
                                     || Arrays.equals(message.getPeerPublicKey(), publicKey)) {
                                 LogHelper.d("Session with " + receiverAddress.toString() + " started");
-                                SecuredSession securedSession = getSessionForAddress(receiverAddress);
+                                SecuredSession securedSession = getSessionForAddress(message);
                                 securedSession.start(publicKey);
 
-                                setSessionForAddress(securedSession, receiverAddress);
+                                setSessionForAddress(securedSession, message);
 
                                 sendPendingMessage(receiverAddress);
                             } else {
                                 LogHelper.w("Expected key: " + Hex.encodeHexString(message.getPeerPublicKey()) + ", actual key: " + Hex.encodeHexString(publicKey));
-                                removeSessionForAddress(receiverAddress);
+                                removeSessionForAddress(message);
                                 throwMismatchKeysError(message, receiverAddress);
 
                                 removePendingMessagesByAddress(receiverAddress);
@@ -132,7 +129,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
 
                         } else {
                             LogHelper.e("Error then try to client hello: " + error);
-                            removeSessionForAddress(receiverAddress);
+                            removeSessionForAddress(message);
                             removePendingMessagesByAddress(receiverAddress);
                         }
                     }
@@ -140,7 +137,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
                     @Override
                     public void onAckError(String error) {
                         LogHelper.e("Error then try to client hello: " + error);
-                        removeSessionForAddress(receiverAddress);
+                        removeSessionForAddress(message);
                         removePendingMessagesByAddress(receiverAddress);
                     }
                 });
@@ -158,7 +155,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
                 EncryptionHelper.encrypt(message, session.getAead());
             } else {
                 LogHelper.w("Expected key: " + Hex.encodeHexString(message.getPeerPublicKey()) + ", actual key: " + Hex.encodeHexString(session.getPeerPublicKey()));
-                removeSessionForAddressIfNotInProgress(receiverAddress);
+                removeSessionForAddressIfNotInProgress(message);
                 throwMismatchKeysError(message, receiverAddress);
                 return false;
             }
@@ -222,11 +219,11 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
         }
     }
 
-    private void processHandshake(HandshakeType handshakeType, CoAPMessage message, InetSocketAddress senderAddress) {
+    private void processHandshake(HandshakeType handshakeType, CoAPMessage message, CoAPMessage mainMessage, InetSocketAddress senderAddress) {
         switch (handshakeType) {
             case ClientHello:
             case ClientSignature:
-                processIncomingHandshake(handshakeType, message, senderAddress);
+                processIncomingHandshake(handshakeType, message, mainMessage, senderAddress);
                 break;
             case PeerSignature:
             case PeerHello:
@@ -249,13 +246,13 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
         }
     }
 
-    private void processIncomingHandshake(HandshakeType handshakeType, CoAPMessage message, InetSocketAddress senderAddress) {
+    private void processIncomingHandshake(HandshakeType handshakeType, CoAPMessage message, CoAPMessage mainMessage, InetSocketAddress senderAddress) {
         if (message.getPayload() == null)
             return;
 
         if (handshakeType == HandshakeType.ClientHello) {
             SecuredSession peerSession = new SecuredSession(true);
-            setSessionForAddress(peerSession, senderAddress);
+            setSessionForAddress(peerSession, mainMessage);
             LogHelper.d("Received HANDSHAKE Client Public Key");
             // Update peer public key and send my public key to peer
             peerSession.startPeer(message.getPayload().content);
@@ -307,25 +304,30 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
         client.send(responseMessage, null);
     }
 
-    private SecuredSession getSessionForAddress(InetSocketAddress address) {
-        return sessionPool.get(address.getAddress().getHostAddress() + ":" + address.getPort());
+    private SecuredSession getSessionForAddress(CoAPMessage mainMessage) {
+        return sessionPool.get(getHashAddressString(mainMessage));
     }
 
-    private void setSessionForAddress(SecuredSession securedSession, InetSocketAddress address) {
-        this.sessionPool.set(address.getAddress().getHostAddress() + ":" + address.getPort(), securedSession);
+    private String getHashAddressString(CoAPMessage mainMessage) {
+        LogHelper.d("getHashAddressString " + mainMessage.getAddress().getAddress().getHostAddress() + ":" + mainMessage.getAddress().getPort() + (mainMessage.getProxy() == null ? "" : mainMessage.getProxy().toString()));
+        return mainMessage.getAddress().getAddress().getHostAddress() + ":" + mainMessage.getAddress().getPort() + (mainMessage.getProxy() == null ? "" : mainMessage.getProxy().toString());
     }
 
-    private void removeSessionForAddressIfNotInProgress(InetSocketAddress address) {
-        SecuredSession securedSession = getSessionForAddress(address);
+    private void setSessionForAddress(SecuredSession securedSession, CoAPMessage mainMessage) {
+        this.sessionPool.set(getHashAddressString(mainMessage), securedSession);
+    }
+
+    private void removeSessionForAddressIfNotInProgress(CoAPMessage mainMessage) {
+        SecuredSession securedSession = getSessionForAddress(mainMessage);
 
         if (securedSession != null) {
             LogHelper.d("removeSessionForAddressIfNotInProgress, ready: " + securedSession.isReady());
             if (securedSession.isReady())
-                removeSessionForAddress(address);
+                removeSessionForAddress(mainMessage);
         }
     }
 
-    private void removeSessionForAddress(InetSocketAddress address) {
-        this.sessionPool.remove(address.getAddress().getHostAddress() + ":" + address.getPort());
+    private void removeSessionForAddress(CoAPMessage mainMessage) {
+        this.sessionPool.remove(getHashAddressString(mainMessage));
     }
 }
