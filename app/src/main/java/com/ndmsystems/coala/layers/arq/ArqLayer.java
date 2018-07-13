@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ArqLayer implements ReceiveLayer, SendLayer {
 
     private static final int WINDOW_SIZE = 70;
-    private static final int MAX_PAYLOAD_SIZE = 512;
+    private static final int MAX_PAYLOAD_SIZE = 1024;
 
     private final CoAPClient client;
     private final CoAPMessagePool messagePool;

@@ -22,7 +22,7 @@ import com.ndmsystems.coala.utils.Reference;
 import java.net.InetSocketAddress;
 
 public class BlockwiseLayer implements ReceiveLayer, SendLayer {
-    public static final Integer MAX_PAYLOAD_SIZE = 512;
+    public static final Integer MAX_PAYLOAD_SIZE = 1024;
 
     private IBlockwiseInput blockwiseInput = BlockwiseInputPool.getBlockwiseInput();
     private IBlockwiseOutput blockwiseOutput = BlockwiseOutputPool.getBlockwiseOutput();
