@@ -309,7 +309,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
     }
 
     private String getHashAddressString(CoAPMessage mainMessage) {
-        return mainMessage.getAddress().getAddress().getHostAddress() + ":" + mainMessage.getAddress().getPort() + (mainMessage.getProxy() == null ? "" : mainMessage.getProxy().toString());
+        return (mainMessage.getAddress() != null ? mainMessage.getAddress().getAddress().getHostAddress() + ":" + mainMessage.getAddress().getPort() : mainMessage.getURI()) + (mainMessage.getProxy() == null ? "" : mainMessage.getProxy().toString());
     }
 
     private void setSessionForAddress(SecuredSession securedSession, CoAPMessage mainMessage) {
