@@ -309,6 +309,10 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
     }
 
     private String getHashAddressString(CoAPMessage mainMessage) {
+        if (mainMessage == null) {
+            LogHelper.e("Try to get hash for null message!");
+            return null;
+        }
         return (mainMessage.getAddress() != null ? mainMessage.getAddress().getAddress().getHostAddress() + ":" + mainMessage.getAddress().getPort() : mainMessage.getURI()) + (mainMessage.getProxy() == null ? "" : mainMessage.getProxy().toString());
     }
 
