@@ -36,6 +36,11 @@ public class CoAPReceiver {
         this.receiveLayerStack = receiveLayerStack;
     }
 
+
+    public boolean isStarted() {
+        return isRunning;
+    }
+
     public synchronized void start() {
         if (connection == null)
             connectionProvider.waitForConnection()

@@ -292,6 +292,10 @@ public class Coala extends CoAPTransport {
         sender.start();
     }
 
+    public boolean isStarted() {
+        return receiver.isStarted() && sender.isStarted();
+    }
+
     public ICoalaStorage getStorage() {
         return storage;
     }

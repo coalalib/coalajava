@@ -12,10 +12,16 @@ public class SecuredSessionPool {
 
 
     public void set(String hash, SecuredSession session) {
-        pool.put(hash, session);
+        if (hash != null) {
+            pool.put(hash, session);
+        }
     }
 
     public SecuredSession get(String hash) {
+        if (hash == null) {
+            return null;
+        }
+
         return pool.get(hash);
     }
 
