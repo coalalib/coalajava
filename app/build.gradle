@@ -11,15 +11,23 @@ buildscript {
     }
 }
 
+ext{
+    supportLibraryVersion = '27.1.1'
+    buildToolsVersion = '27.0.3'
+    compileSdkVersion = 27
+    targetSdkVersion = 27
+    minSdkVersion = 16
+}
+
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion '26.0.2'
+    compileSdkVersion project.ext.compileSdkVersion
+    buildToolsVersion project.ext.buildToolsVersion
     defaultConfig {
         multiDexEnabled true
-        minSdkVersion 16
-        targetSdkVersion 22
+        minSdkVersion project.ext.minSdkVersion
+        targetSdkVersion project.ext.targetSdkVersion
         versionCode 1
         versionName "0.1"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -46,7 +54,7 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile "com.android.support:appcompat-v7:${project.ext.supportLibraryVersion}"
     compile 'com.madgag.spongycastle:bctls-jdk15on:1.56.0.0'
     compile 'com.google.dagger:dagger:2.11'
     annotationProcessor 'com.google.dagger:dagger-compiler:2.11'
