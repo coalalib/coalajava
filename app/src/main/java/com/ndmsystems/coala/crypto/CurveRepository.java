@@ -1,6 +1,5 @@
 package com.ndmsystems.coala.crypto;
 
-import com.google.gson.Gson;
 import com.ndmsystems.coala.ICoalaStorage;
 
 /**

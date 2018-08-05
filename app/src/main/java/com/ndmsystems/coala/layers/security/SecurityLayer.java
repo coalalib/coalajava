@@ -112,7 +112,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
                             byte[] publicKey = clientHelloResponseMessage.getPayload().content;
                             if (message.getPeerPublicKey() == null
                                     || Arrays.equals(message.getPeerPublicKey(), publicKey)) {
-                                LogHelper.d("Session with " + receiverAddress.toString() + " started");
+                                LogHelper.d("Session with " + receiverAddress.toString() + " started, publicKey = " + Hex.encodeHexString(publicKey));
                                 SecuredSession securedSession = getSessionForAddress(message);
                                 securedSession.start(publicKey);
 
@@ -317,6 +317,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
     }
 
     private void setSessionForAddress(SecuredSession securedSession, CoAPMessage mainMessage) {
+        LogHelper.v("setSessionForAddress " + getHashAddressString(mainMessage));
         this.sessionPool.set(getHashAddressString(mainMessage), securedSession);
     }
 
@@ -331,6 +332,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
     }
 
     private void removeSessionForAddress(CoAPMessage mainMessage) {
+        LogHelper.v("removeSessionForAddress " + getHashAddressString(mainMessage));
         this.sessionPool.remove(getHashAddressString(mainMessage));
     }
 }
