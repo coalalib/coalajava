@@ -252,7 +252,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
 
         if (handshakeType == HandshakeType.ClientHello) {
             SecuredSession peerSession = new SecuredSession(true);
-            setSessionForAddress(peerSession, mainMessage);
+            setSessionForAddress(peerSession, message);
             LogHelper.d("Received HANDSHAKE Client Public Key");
             // Update peer public key and send my public key to peer
             peerSession.startPeer(message.getPayload().content);
@@ -316,9 +316,9 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
         return (mainMessage.getAddress() != null ? mainMessage.getAddress().getAddress().getHostAddress() + ":" + mainMessage.getAddress().getPort() : mainMessage.getURI()) + (mainMessage.getProxy() == null ? "" : mainMessage.getProxy().toString());
     }
 
-    private void setSessionForAddress(SecuredSession securedSession, CoAPMessage mainMessage) {
-        LogHelper.v("setSessionForAddress " + getHashAddressString(mainMessage));
-        this.sessionPool.set(getHashAddressString(mainMessage), securedSession);
+    private void setSessionForAddress(SecuredSession securedSession, CoAPMessage message) {
+        LogHelper.v("setSessionForAddress " + getHashAddressString(message));
+        this.sessionPool.set(getHashAddressString(message), securedSession);
     }
 
     private void removeSessionForAddressIfNotInProgress(CoAPMessage mainMessage) {
