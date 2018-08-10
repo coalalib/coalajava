@@ -71,7 +71,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
         }
 
         if (message.getURIScheme() == CoAPMessage.Scheme.SECURE) {
-            SecuredSession session = getSessionForAddress(mainMessage);
+            SecuredSession session = getSessionForAddress(mainMessage != null ? mainMessage : message);
 
             if (session == null || !session.isReady()) {
                 LogHelper.e("Encrypt message error: " + message.getId() + ", token: " + message.getHexToken() + ", sessionAddress: " + senderAddress);
@@ -84,7 +84,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
             if (decryptResult) {
                 message.setPeerPublicKey(session.getPeerPublicKey());
             } else {
-                removeSessionForAddressIfNotInProgress(mainMessage);
+                removeSessionForAddressIfNotInProgress(mainMessage != null ? mainMessage : message);
                 LogHelper.w("Can't decrypt, send SessionExpired");
                 if (mainMessage != null) addMessageToPending(mainMessage);
                 sendSessionError(message, senderAddress, CoAPMessageOptionCode.OptionSessionExpired);
