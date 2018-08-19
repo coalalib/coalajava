@@ -28,6 +28,8 @@ class ResponseErrorFactory {
             }else if(message.getPayload().toString().contains("code")){
                 return proceedByResponsePayloadErrorCode(message);
             }
+
+            return proceedByResponseCode(message);
         }
         return null;
     }
