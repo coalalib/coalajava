@@ -97,6 +97,11 @@ public class RequestLayer implements ReceiveLayer {
             responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize, message.getOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize).value));
         }
 
+        if (message.hasOption(CoAPMessageOptionCode.OptionProxyURI))
+            responseMessage.addOption(message.getOption(CoAPMessageOptionCode.OptionProxyURI));
+        if (message.getProxy() != null)
+            responseMessage.setProxy(message.getProxy());
+
         // Validate message scheme
         responseMessage.setURIScheme(message.getURIScheme());
     }
