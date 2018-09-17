@@ -307,4 +307,12 @@ public class Coala extends CoAPTransport {
     public String getVersion() {
         return BuildConfig.VERSION_NAME;
     }
+
+    public void setOnPortIsBusyHandler(OnPortIsBusyHandler onPortIsBusyHandler) {
+        connectionProvider.setOnPortIsBusyHandler(onPortIsBusyHandler);
+    }
+
+    public interface OnPortIsBusyHandler {
+        void onPortIsBusy();
+    }
 }
