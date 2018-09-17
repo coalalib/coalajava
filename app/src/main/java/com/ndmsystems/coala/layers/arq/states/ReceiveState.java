@@ -41,8 +41,8 @@ public class ReceiveState extends LoggableState {
             initiatingMessage.setCode(code);
 
         if (window.getSize() != windowSize) {
-            LogHelper.e("ARQ: sending side trying to change window size");
-            throw new RuntimeException("Window size change is not supported");
+            LogHelper.d("ARQ: sending side trying to change window size");
+            window.setSize(windowSize);
         }
 
         window.set(block.getNumber(), block);

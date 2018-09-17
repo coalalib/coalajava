@@ -61,4 +61,10 @@ public class SlidingWindow<T> {
         return offset + values.length - 1;
     }
 
+    public void setSize(int windowSize) {
+        Object[] tempValues = new Object[windowSize];
+        System.arraycopy(values, 0, tempValues, 0, Math.min(windowSize, size));
+        values = tempValues;
+        size = windowSize;
+    }
 }
