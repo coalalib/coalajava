@@ -65,6 +65,9 @@ public class ObserveTest extends BaseAsyncTest {
             }
         });
 
+        client.start();
+        server.start();
+
         client.registerObserver("coap://127.0.0.1:5683/msg").blockingFirst();
         waitAndExit(2000);
     }
@@ -82,6 +85,10 @@ public class ObserveTest extends BaseAsyncTest {
                 return new CoAPResourceOutput(new CoAPMessagePayload("Hello!".getBytes()), CoAPMessageCode.CoapCodeContent, CoAPMessage.MediaType.TextPlain);
             }
         });
+
+        client.start();
+        server.start();
+
 
         client.registerObserver("coap://127.0.0.1:2222/msg").subscribe(
                 response -> onDataReceived(true),
@@ -105,6 +112,10 @@ public class ObserveTest extends BaseAsyncTest {
                 return new CoAPResourceOutput(new CoAPMessagePayload(bigText.getBytes()), CoAPMessageCode.CoapCodeContent, CoAPMessage.MediaType.TextPlain);
             }
         });
+
+        client.start();
+        server.start();
+
 
         AtomicBoolean isNotificationReceived = new AtomicBoolean(false);
 
@@ -146,6 +157,10 @@ public class ObserveTest extends BaseAsyncTest {
                 return new CoAPResourceOutput(new CoAPMessagePayload("Hello!".getBytes()), CoAPMessageCode.CoapCodeContent, CoAPMessage.MediaType.TextPlain);
             }
         });
+
+        client.start();
+        server.start();
+
 
         byte[] token = new byte[]{1, 2};
 

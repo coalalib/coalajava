@@ -37,6 +37,7 @@ public class RequestTest {
         String expectedResponse = "response!";
 
         Coala client = new Coala(3333);
+        client.start();
         Coala server = new Coala(2222);
         server.addResource("path", CoAPRequestMethod.GET, new CoAPResource.CoAPResourceHandler() {
             @Override
@@ -45,6 +46,7 @@ public class RequestTest {
                 return new CoAPResourceOutput(payload, CoAPMessageCode.CoapCodeContent, null);
             }
         });
+        server.start();
 
         Thread.sleep(50);
 

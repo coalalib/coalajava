@@ -46,6 +46,10 @@ public class BigDataTest {
                 return new CoAPResourceOutput(new CoAPMessagePayload(bigData.getBytes()), CoAPMessageCode.CoapCodeContent, null);
             }
         });
+
+        client.start();
+        server.start();
+
         w(100);
 
         CoAPMessage request = new CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET);
@@ -96,6 +100,10 @@ public class BigDataTest {
                 }
             }
         });
+
+        client.start();
+        server.start();
+
         w(100);
 
         CoAPMessage request = new CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.POST);
@@ -146,6 +154,10 @@ public class BigDataTest {
                 }
             }
         });
+
+        client.start();
+        server.start();
+
         w(100);
 
         CoAPMessage request = new CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.POST);

@@ -232,11 +232,9 @@ public class CoalaModule {
     public CoAPReceiver provideReceiver(ConnectionProvider connectionProvider,
                                         CoAPClient client,
                                         @Named("receive") LayersStack receiveLayerStack) {
-        CoAPReceiver receiver = new CoAPReceiver(connectionProvider,
+        return new CoAPReceiver(connectionProvider,
                 client,
                 receiveLayerStack);
-        receiver.start();
-        return receiver;
     }
 
     @Provides
@@ -244,11 +242,9 @@ public class CoalaModule {
     public CoAPSender provideSender(ConnectionProvider connectionProvider,
                                     CoAPMessagePool messagePool,
                                     @Named("send") LayersStack sendLayerStack) {
-        CoAPSender sender = new CoAPSender(connectionProvider,
+        return new CoAPSender(connectionProvider,
                 messagePool,
                 sendLayerStack);
-        sender.start();
-        return sender;
     }
 
     @Provides

@@ -1,5 +1,7 @@
 package com.ndmsystems.coala;
 
+import android.os.Build;
+
 import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.io.IOException;
@@ -42,7 +44,6 @@ public class ConnectionProvider {
     public synchronized void close() {
         if (connection != null &&
                 !connection.isClosed()) {
-            connection.disconnect();
             connection.close();
             connection = null;
         }
@@ -74,15 +75,16 @@ public class ConnectionProvider {
 
     private synchronized MulticastSocket createConnection() throws IOException {
         try {
-            DatagramSocket testSocket = new DatagramSocket(port);
-            testSocket.setReuseAddress(true);
-            testSocket.disconnect();
-            testSocket.close();
+            if (onPortIsBusyHandler != null) {
+                DatagramSocket testSocket = new DatagramSocket(port);
+                testSocket.setReuseAddress(true);
+                testSocket.disconnect();
+                testSocket.close();
+            } else LogHelper.d("onPortIsBusyHandler is null");
 
             MulticastSocket connection = new MulticastSocket(port);
             connection.joinGroup(Inet4Address.getByName("224.0.0.187"));
             connection.setReceiveBufferSize(409600);
-            connection.setLoopbackMode(true);
             LogHelper.w("MulticastSocket receiveBufferSize: " + connection.getReceiveBufferSize()
                     + ", socket isBound = " + connection.isBound()
                     + ", socket isClosed = " + connection.isClosed()
@@ -99,6 +101,7 @@ public class ConnectionProvider {
     }
 
     public void setOnPortIsBusyHandler(Coala.OnPortIsBusyHandler onPortIsBusyHandler) {
+        LogHelper.d("setOnPortIsBusyHandler");
         this.onPortIsBusyHandler = onPortIsBusyHandler;
     }
 }
