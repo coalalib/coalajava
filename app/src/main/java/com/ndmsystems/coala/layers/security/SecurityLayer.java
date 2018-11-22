@@ -7,7 +7,7 @@ import com.ndmsystems.coala.CoAPMessagePool;
 import com.ndmsystems.coala.exceptions.PeerPublicKeyMismatchException;
 import com.ndmsystems.coala.helpers.EncryptionHelper;
 import com.ndmsystems.coala.helpers.Hex;
-import com.ndmsystems.infrastructure.logging.LogHelper;
+import com.ndmsystems.coala.layers.LogLayer;
 import com.ndmsystems.coala.layers.ReceiveLayer;
 import com.ndmsystems.coala.layers.SendLayer;
 import com.ndmsystems.coala.layers.response.ResponseHandler;
@@ -20,6 +20,7 @@ import com.ndmsystems.coala.message.CoAPMessageOptionCode;
 import com.ndmsystems.coala.message.CoAPMessagePayload;
 import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.utils.Reference;
+import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -85,7 +86,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
                 message.setPeerPublicKey(session.getPeerPublicKey());
             } else {
                 removeSessionForAddressIfNotInProgress(mainMessage != null ? mainMessage : message);
-                LogHelper.w("Can't decrypt, send SessionExpired");
+                LogHelper.w("Can't decrypt, message: " + LogLayer.getStringToPrintReceivedMessage(message, senderAddressReference) + ", mainMessage:" + (mainMessage != null ? LogLayer.getStringToPrintSendingMessage(mainMessage, senderAddressReference) : "null") + ", send SessionExpired");
                 if (mainMessage != null) addMessageToPending(mainMessage);
                 sendSessionError(message, senderAddress, CoAPMessageOptionCode.OptionSessionExpired);
                 return false;

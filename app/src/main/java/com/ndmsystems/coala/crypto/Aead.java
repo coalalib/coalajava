@@ -29,6 +29,7 @@ public class Aead {
 
 
     public byte[] decrypt(byte[] cipherText, int counter, byte[] associatedData){
+        LogHelper.e("decrypt with counter: " + counter + ", nonce: " + Hex.encodeHexString(makeNonce(peerIV, counter)));
         try {
             return decryptor.open(cipherText, makeNonce(peerIV, counter), associatedData);
         } catch (Exception e) {
@@ -43,6 +44,7 @@ public class Aead {
     }
 
     public byte[] encrypt(byte[] plainText, int counter, byte[] associatedData){
+        LogHelper.e("encrypt with counter: " + counter + ", nonce: " + Hex.encodeHexString(makeNonce(myIV, counter)));
         try {
             return encryptor.seal(plainText, makeNonce(myIV, counter), associatedData);
         } catch (Exception e) {

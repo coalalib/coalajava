@@ -55,7 +55,7 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     compile "com.android.support:appcompat-v7:${project.ext.supportLibraryVersion}"
-    compile 'com.madgag.spongycastle:bctls-jdk15on:1.56.0.0'
+    compile 'com.madgag.spongycastle:bctls-jdk15on:1.58.0.0'
     compile 'com.google.dagger:dagger:2.11'
     annotationProcessor 'com.google.dagger:dagger-compiler:2.11'
 
