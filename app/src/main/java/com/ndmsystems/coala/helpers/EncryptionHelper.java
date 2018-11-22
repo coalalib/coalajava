@@ -1,10 +1,10 @@
 package com.ndmsystems.coala.helpers;
 
+import com.ndmsystems.coala.crypto.Aead;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageOption;
 import com.ndmsystems.coala.message.CoAPMessageOptionCode;
 import com.ndmsystems.coala.message.CoAPMessagePayload;
-import com.ndmsystems.coala.crypto.Aead;
 import com.ndmsystems.infrastructure.logging.LogHelper;
 
 
@@ -29,7 +29,7 @@ public class EncryptionHelper {
         if (message.getPayload() != null && message.getPayload().content != null) {
             byte[] newPayload = aead.decrypt(message.getPayload().content, message.getId(), null);
             if (newPayload == null) {
-                LogHelper.e("Can't decrypt, payload is null!");
+                LogHelper.e("Can't decrypt message with id: " + message.getId() + ", token: " + message.getHexToken());
                 message.setPayload(null);
                 return false;
             }
