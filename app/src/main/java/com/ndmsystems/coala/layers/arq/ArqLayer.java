@@ -5,7 +5,6 @@ import com.ndmsystems.coala.CoAPMessagePool;
 import com.ndmsystems.coala.helpers.Hex;
 import com.ndmsystems.coala.helpers.MessageHelper;
 import com.ndmsystems.coala.helpers.StringHelper;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 import com.ndmsystems.coala.layers.ReceiveLayer;
 import com.ndmsystems.coala.layers.SendLayer;
 import com.ndmsystems.coala.layers.arq.data.DataFactory;
@@ -20,6 +19,7 @@ import com.ndmsystems.coala.message.CoAPMessageOptionCode;
 import com.ndmsystems.coala.message.CoAPMessagePayload;
 import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.utils.Reference;
+import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -155,24 +155,26 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
                 ackMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize, windowSize));
 
                 if (receiveState.isTransferCompleted()) {
-                    LogHelper.v("ARQ: Receive completed, passing message " + incomingMessage.getId() + " along");
                     logArqTransmission(receiveState);
                     receiveStates.remove(token);
+
+                    CoAPMessage originalMessage = messagePool.getSourceMessageByToken(incomingMessage.getHexToken());
+                    if (originalMessage != null) {
+                        LogHelper.v("ARQ: Receive completed, passing message " + originalMessage.getId() + ", with token: " + Hex.encodeHexString(originalMessage.getToken()) + " along");
+                        if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI))
+                            ackMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI));
+                        if (originalMessage.getProxy() != null)
+                            ackMessage.setProxy(originalMessage.getProxy());
+                        incomingMessage.setId(originalMessage.getId());
+                    }
+                    ackMessage.setCode(CoAPMessageCode.CoapCodeEmpty);
+                    client.send(ackMessage, null);
+
                     //incomingMessage = messagePool.getSourceMessageByToken(incomingMessage.getHexToken());
                     incomingMessage.setPayload(new CoAPMessagePayload(receiveState.getData().get()));
                     incomingMessage.setCode(CoAPMessageCode.CoapCodeContent);
                     incomingMessage.setType(CoAPMessageType.ACK);
 
-                    CoAPMessage originalMessage = messagePool.getSourceMessageByToken(incomingMessage.getHexToken());
-
-                    if (originalMessage != null) {
-                        if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI))
-                            ackMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI));
-                        if (originalMessage.getProxy() != null)
-                            ackMessage.setProxy(originalMessage.getProxy());
-                    }
-
-                    client.send(ackMessage, null);
                     return true;
                 } else {
                     LogHelper.v("ARQ: Receive in progress, responding with ACK: continued");

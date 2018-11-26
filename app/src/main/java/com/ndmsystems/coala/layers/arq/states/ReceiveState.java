@@ -18,6 +18,7 @@ public class ReceiveState extends LoggableState {
     private SlidingWindow<Block> window;
     private CoAPMessage initiatingMessage;
     private int lastBlockNumber = Integer.MIN_VALUE;
+    private int numberOfReceivedBlocks = 0;
 
     public ReceiveState(int windowSize, CoAPMessage initiatingMessage) {
         window = new SlidingWindow<>(windowSize);
@@ -33,12 +34,13 @@ public class ReceiveState extends LoggableState {
     }
 
     public boolean isTransferCompleted() {
-        return window.getOffset() - 1 == lastBlockNumber;
+        return window.getOffset() - 1 == lastBlockNumber && numberOfReceivedBlocks >= lastBlockNumber;
     }
 
     public void didReceiveBlock(Block block, int windowSize, CoAPMessageCode code) {
         if (code != CoAPMessageCode.CoapCodeContinue)
             initiatingMessage.setCode(code);
+        numberOfReceivedBlocks++;
 
         if (window.getSize() != windowSize) {
             LogHelper.d("ARQ: sending side trying to change window size");
