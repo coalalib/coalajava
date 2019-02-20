@@ -77,7 +77,7 @@ public class CoalaModule {
     public LocalPeerDiscoverer provideLocalPeerDiscoverer(ResourceDiscoveryHelper resourceDiscoveryHelper,
                                                           CoAPClient client) {
         return new LocalPeerDiscoverer(resourceDiscoveryHelper,
-                client, port);
+                client, 5683);
     }
 
     @Provides

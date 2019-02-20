@@ -68,7 +68,7 @@ public class ObserveTest extends BaseAsyncTest {
         client.start();
         server.start();
 
-        client.registerObserver("coap://127.0.0.1:5683/msg").blockingFirst();
+        client.registerObserver("coap://127.0.0.1:5685/msg").blockingFirst();
         waitAndExit(2000);
     }
 

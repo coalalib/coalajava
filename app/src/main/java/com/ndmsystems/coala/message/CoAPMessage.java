@@ -299,7 +299,7 @@ public class CoAPMessage {
             if (destination != null) {
                 return destination.getPort();
             }
-            return 5683;
+            return 5685;
         }
 
         return (Integer) option.value;
