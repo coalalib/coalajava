@@ -1,22 +1,19 @@
 package com.ndmsystems.coala;
 
-import android.os.Build;
-
 import com.ndmsystems.coala.di.CoalaComponent;
 import com.ndmsystems.coala.di.CoalaModule;
 import com.ndmsystems.coala.di.DaggerCoalaComponent;
 import com.ndmsystems.coala.exceptions.CoAPException;
 import com.ndmsystems.coala.helpers.TokenGenerator;
 import com.ndmsystems.coala.layers.response.ResponseData;
-import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 import com.ndmsystems.coala.layers.response.ResponseHandler;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessagePayload;
-import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.message.CoAPRequestMethod;
 import com.ndmsystems.coala.observer.RegistryOfObservingResources;
+import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult;
+import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.util.List;
 import java.util.Random;
@@ -211,11 +208,11 @@ public class Coala extends CoAPTransport {
                             emitter.onError(error);
                         }
                     };
-                    if (sender.isStarted()) {
-                        message.setResponseHandler(responseHandler);
-                        send(message, null);
-                    } else {
-                        emitter.onError(new Throwable("Sender not started"));
+                    message.setResponseHandler(responseHandler);
+                    send(message, null);
+
+                    if (!sender.isStarted()) {
+                        LogHelper.e("Sender not started");
                     }
 
                 }
