@@ -8,6 +8,7 @@ import io.reactivex.Observable;
 public interface CoAPClient {
 
     void send(CoAPMessage message, CoAPHandler handler);
+    void send(CoAPMessage message, CoAPHandler handler, boolean isNeedAddTokenForced);
     Observable<CoAPMessage> send(CoAPMessage message);
     Observable<ResponseData> sendRequest(CoAPMessage message);
 

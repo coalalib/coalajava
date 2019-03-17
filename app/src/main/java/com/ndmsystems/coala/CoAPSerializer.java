@@ -1,12 +1,12 @@
 package com.ndmsystems.coala;
 
-import com.ndmsystems.infrastructure.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessageOption;
 import com.ndmsystems.coala.message.CoAPMessageOptionCode;
 import com.ndmsystems.coala.message.CoAPMessagePayload;
 import com.ndmsystems.coala.message.CoAPMessageType;
+import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -272,7 +272,7 @@ public class CoAPSerializer {
 
         int encodedHeader = ((COAP_PROTOCOL_VERSION & 0x03) << 30)
                 | ((message.getType().value & 0x03) << 28)
-                | ((token.length & 0x0F) << 24)
+                | (((token != null ? token.length : 0) & 0x0F) << 24)
                 | ((message.getCode().value & 0xFF) << 16)
                 | ((message.getId() & 0xFFFF));
         buffer.write((encodedHeader & 0xFF000000) >> 24);
@@ -281,7 +281,7 @@ public class CoAPSerializer {
         buffer.write((encodedHeader & 0x000000FF));
 
         // Write token
-        if (token.length > 0) {
+        if (token != null && token.length > 0) {
             buffer.write(token, 0, token.length);
         }
     }

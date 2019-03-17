@@ -6,16 +6,15 @@ import com.ndmsystems.coala.CoAPResourceInput;
 import com.ndmsystems.coala.CoAPResourceOutput;
 import com.ndmsystems.coala.CoAPResourcesGroupForPath;
 import com.ndmsystems.coala.ResourceRegistry;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessageOption;
 import com.ndmsystems.coala.message.CoAPMessageOptionCode;
 import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.utils.Reference;
+import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.net.InetSocketAddress;
-import java.util.List;
 
 public class RequestLayer implements ReceiveLayer {
 
@@ -54,7 +53,7 @@ public class RequestLayer implements ReceiveLayer {
 
                         responseMessage.setToken(message.getToken());
 
-                        client.send(responseMessage, null);
+                        client.send(responseMessage, null, false);
                         return false;
                     } else {
                         return false;
@@ -66,7 +65,7 @@ public class RequestLayer implements ReceiveLayer {
                 // validate message address
                 addOptions(responseMessage, message, senderAddressReference.get());
 
-                client.send(responseMessage, null);
+                client.send(responseMessage, null, false);
 
             } else {
                 LogHelper.e("Resource for path '" + message.getURIPathString() + ", code: " + message.getCode() + " does not exists");
@@ -74,7 +73,7 @@ public class RequestLayer implements ReceiveLayer {
                 // validate message address
                 addOptions(responseMessage, message, senderAddressReference.get());
 
-                client.send(responseMessage, null);
+                client.send(responseMessage, null, false);
             }
             return false;
         }

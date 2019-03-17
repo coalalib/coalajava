@@ -177,8 +177,13 @@ public class Coala extends CoAPTransport {
      * Send the message. Handler will executed then answer received(or message can't be delivered)
      */
     public void send(CoAPMessage message, CoAPHandler handler) {
+        send(message, handler, true);
+    }
+
+    @Override
+    public void send(CoAPMessage message, CoAPHandler handler, boolean isNeedAddTokenForced) {
         if (message != null) {
-            if (message.getToken() == null) {
+            if (isNeedAddTokenForced && message.getToken() == null) {
                 message.setToken(TokenGenerator.getToken());
             }
 
