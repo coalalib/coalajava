@@ -7,6 +7,7 @@ import com.ndmsystems.coala.CoAPMessagePool;
 import com.ndmsystems.coala.exceptions.PeerPublicKeyMismatchException;
 import com.ndmsystems.coala.helpers.EncryptionHelper;
 import com.ndmsystems.coala.helpers.Hex;
+import com.ndmsystems.coala.helpers.RandomGenerator;
 import com.ndmsystems.coala.layers.LogLayer;
 import com.ndmsystems.coala.layers.ReceiveLayer;
 import com.ndmsystems.coala.layers.SendLayer;
@@ -105,8 +106,11 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
             if (session == null) {
                 LogHelper.d("Try to start session with: " + receiverAddress.getAddress().getHostAddress() + ":" + receiverAddress.getPort());
                 session = new SecuredSession(false);
+                if (message.getProxy() != null) {
+                    generateProxySessionSecurityIdAndAddToMessageAndSession(session, message);
+                }
                 setSessionForAddress(session, message);
-                sendClientHello(message.getProxy(), receiverAddress, session.getPublicKey(), new CoAPHandler() {
+                sendClientHello(message.getProxy(), session.getPeerProxySecurityId(), receiverAddress, session.getPublicKey(), new CoAPHandler() {
                     @Override
                     public void onMessage(CoAPMessage clientHelloResponseMessage, String error) {
                         if (error == null) {
@@ -151,6 +155,14 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
                 return false;
             }
 
+            if (session.getPeerProxySecurityId() != null) {
+                message.setProxySecurityId(session.getPeerProxySecurityId());//Don't need be encrypted
+            } else {
+                if (message.getProxy() != null) {
+                    generateProxySessionSecurityIdAndAddToMessageAndSession(session, message);
+                }
+            }
+
             if (message.getPeerPublicKey() == null
                     || Arrays.equals(message.getPeerPublicKey(), session.getPeerPublicKey())) {
                 EncryptionHelper.encrypt(message, session.getAead());
@@ -163,6 +175,11 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
         }
 
         return true;
+    }
+
+    private void generateProxySessionSecurityIdAndAddToMessageAndSession(SecuredSession session, CoAPMessage message) {
+        session.setPeerProxySecurityId(RandomGenerator.getRandomInt());
+        message.setProxySecurityId(session.getPeerProxySecurityId());
     }
 
     private void throwMismatchKeysError(CoAPMessage message, InetSocketAddress receiverAddress) {
@@ -277,12 +294,15 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
         client.send(responseMessage, null);
     }
 
-    public void sendClientHello(InetSocketAddress proxyAddress, InetSocketAddress address, byte[] myPublicKey, CoAPHandler handler) {
+    public void sendClientHello(InetSocketAddress proxyAddress, Integer proxySecurityId, InetSocketAddress address, byte[] myPublicKey, CoAPHandler handler) {
         CoAPMessage message = new CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET);
         message.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionURIHost, address.getAddress().getHostAddress()));
         message.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionURIPort, address.getPort()));
 
         message.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionHandshakeType, HandshakeType.ClientHello.toInt()));
+        if (proxySecurityId != null) {
+            message.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionProxySecurityID, proxySecurityId));
+        }
         message.setPayload(new CoAPMessagePayload(myPublicKey));
 
         message.setProxy(proxyAddress);

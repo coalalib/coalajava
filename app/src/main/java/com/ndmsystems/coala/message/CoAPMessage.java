@@ -534,6 +534,28 @@ public class CoAPMessage {
         this.peerPublicKey = peerPublicKey;
     }
 
+    public Integer getProxySecurityId() {
+        CoAPMessageOption option = this.getOption(CoAPMessageOptionCode.OptionProxySecurityID);
+
+        if (option == null) {
+            return null;
+        }
+
+        return (Integer) option.value;
+    }
+
+    public CoAPMessage setProxySecurityId(Integer proxyId) {
+        CoAPMessageOption option = this.getOption(CoAPMessageOptionCode.OptionProxySecurityID);
+
+        if (option == null) {
+            option = new CoAPMessageOption(CoAPMessageOptionCode.OptionProxySecurityID, proxyId);
+        }
+        option.value = proxyId;
+
+        addOption(option);
+        return this;
+    }
+
     public enum MediaType {
         TextPlain(0),
         LinkFormat(40),

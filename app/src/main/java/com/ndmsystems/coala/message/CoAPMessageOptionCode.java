@@ -29,6 +29,7 @@ public enum CoAPMessageOptionCode {
     OptionURIScheme(2111),
     //OptionURIScheme(71),
     OptionSelectiveRepeatWindowSize(3001),
+    OptionProxySecurityID(3004),
     OptionHandshakeType(3999),
     OptionSessionNotFound(4001),
     OptionSessionExpired(4003),
@@ -95,6 +96,8 @@ public enum CoAPMessageOptionCode {
             //case 71: return OptionURIScheme;OptionSelectiveRepeatWindowSize
             case 3001:
                 return OptionSelectiveRepeatWindowSize;
+            case 3004:
+                return OptionProxySecurityID;
             case 3999:
                 return OptionHandshakeType;
             case 4001:

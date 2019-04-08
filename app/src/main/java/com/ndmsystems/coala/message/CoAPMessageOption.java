@@ -56,6 +56,7 @@ public class CoAPMessageOption implements Comparable<CoAPMessageOption> {
             case OptionSessionExpired:
             case OptionSelectiveRepeatWindowSize:
             case OptionURIScheme:
+            case OptionProxySecurityID:
                 if (data.length > 4) this.value = ByteBuffer.wrap(data).getInt();
                 else {
                     byte[] bigData = new byte[4];

@@ -4,7 +4,6 @@ package com.ndmsystems.coala.layers.security.session;
 import com.ndmsystems.coala.Coala;
 import com.ndmsystems.coala.crypto.Aead;
 import com.ndmsystems.coala.crypto.Curve25519;
-import com.ndmsystems.coala.crypto.CurveRepository;
 import com.ndmsystems.coala.crypto.Hkdf;
 import com.ndmsystems.coala.helpers.Hex;
 import com.ndmsystems.coala.helpers.RBGHelper;
@@ -19,6 +18,8 @@ public class SecuredSession {
     private Aead aead;
 
     private byte[] peerPublicKey;
+
+    private Integer peerProxySecurityId;
 
     public SecuredSession(boolean incoming) {
     }
@@ -127,6 +128,14 @@ public class SecuredSession {
 
     private void setAead(Aead aead) {
         this.aead = aead;
+    }
+
+    public Integer getPeerProxySecurityId() {
+        return peerProxySecurityId;
+    }
+
+    public void setPeerProxySecurityId(Integer peerProxySecurityId) {
+        this.peerProxySecurityId = peerProxySecurityId;
     }
 
     // ASSIGN KEYS IN REVERS ORDER!!!!

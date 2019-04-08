@@ -4,7 +4,7 @@ import com.ndmsystems.coala.di.CoalaComponent;
 import com.ndmsystems.coala.di.CoalaModule;
 import com.ndmsystems.coala.di.DaggerCoalaComponent;
 import com.ndmsystems.coala.exceptions.CoAPException;
-import com.ndmsystems.coala.helpers.TokenGenerator;
+import com.ndmsystems.coala.helpers.RandomGenerator;
 import com.ndmsystems.coala.layers.response.ResponseData;
 import com.ndmsystems.coala.layers.response.ResponseHandler;
 import com.ndmsystems.coala.message.CoAPMessage;
@@ -184,7 +184,7 @@ public class Coala extends CoAPTransport {
     public void send(CoAPMessage message, CoAPHandler handler, boolean isNeedAddTokenForced) {
         if (message != null) {
             if (isNeedAddTokenForced && message.getToken() == null) {
-                message.setToken(TokenGenerator.getToken());
+                message.setToken(RandomGenerator.getRandom(8));
             }
 
             // The handler First!

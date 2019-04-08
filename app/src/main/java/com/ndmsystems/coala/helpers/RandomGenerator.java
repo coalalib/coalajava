@@ -10,14 +10,18 @@ import java.util.Random;
  * Created by bas on 15.11.16.
  */
 
-public class TokenGenerator {
+public class RandomGenerator {
 
     private static Random random = new Random();
 
-    public static byte[] getToken() {
-        byte[] b = new byte[8];
+    public static byte[] getRandom(int size) {
+        byte[] b = new byte[size];
         random.nextBytes(b);
         return b;
+    }
+
+    public static Integer getRandomInt() {
+        return random.nextInt();
     }
 
     private static byte[] sha(final byte[] uri) {
