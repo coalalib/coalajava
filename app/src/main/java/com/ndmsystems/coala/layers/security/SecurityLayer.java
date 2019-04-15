@@ -288,6 +288,9 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
             responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionURIHost, senderAddress.getAddress().getHostAddress()));
             responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionURIPort, senderAddress.getPort()));
         }
+        if (message.getProxySecurityId() != null) {
+            responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionProxySecurityID, message.getProxySecurityId()));
+        }
         responseMessage.addOption(new CoAPMessageOption(code, 1));
         responseMessage.setToken(message.getToken());
 
