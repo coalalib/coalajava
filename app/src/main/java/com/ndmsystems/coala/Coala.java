@@ -231,7 +231,7 @@ public class Coala extends CoAPTransport {
                     @Override
                     public void onMessage(CoAPMessage response, String error) {
                         if (error != null)
-                            emitter.onError(new CoAPException(response.getCode(), error));
+                            emitter.onError(new CoAPException((response != null ? response.getCode() : CoAPMessageCode.CoapCodeEmpty), error));
                         else {
                             emitter.onNext(response);
                             emitter.onComplete();
@@ -267,10 +267,14 @@ public class Coala extends CoAPTransport {
                 emitter -> registryOfObservingResources.registerObserver(uri, new CoAPHandler() {
                     @Override
                     public void onMessage(CoAPMessage message, String error) {
-                        if (message.getPayload() != null)
-                            emitter.onNext(message.getPayload().toString());
-                        else
-                            emitter.onError(new Throwable());
+                        if (error != null) {
+                            emitter.onError(new Throwable(error));
+                        } else {
+                            if (message.getPayload() != null)
+                                emitter.onNext(message.getPayload().toString());
+                            else
+                                emitter.onError(new Throwable());
+                        }
                     }
 
                     @Override
