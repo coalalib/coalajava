@@ -1,11 +1,10 @@
 package com.ndmsystems.coala;
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
-import com.ndmsystems.coala.helpers.Hex;
 import com.ndmsystems.coala.helpers.TimeHelper;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 import com.ndmsystems.coala.layers.response.ResponseHandler;
 import com.ndmsystems.coala.message.CoAPMessage;
+import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
@@ -133,6 +132,12 @@ public class CoAPMessagePool {
     }
 
     public void clear() {
+        for (QueueElement queueElement : pool.values()) {
+            if (queueElement.message != null && queueElement.message.getResponseHandler() != null) {
+                queueElement.message.getResponseHandler().onError(new Throwable("Pool is cleared"));
+            }
+        }
+
         pool.clear();
         messageIdForToken.clear();
     }

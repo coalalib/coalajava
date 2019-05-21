@@ -2,8 +2,8 @@ package com.ndmsystems.coala;
 
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
+import com.ndmsystems.infrastructure.logging.LogHelper;
 
 public class AckHandlersPool {
     private ConcurrentLinkedHashMap<Integer, CoAPHandler> pool;
@@ -26,6 +26,9 @@ public class AckHandlersPool {
     }
 
     public void clear() {
+        for (CoAPHandler coAPHandler : pool.values()) {
+            coAPHandler.onMessage(null, "Pool is cleared");
+        }
         pool.clear();
     }
 
