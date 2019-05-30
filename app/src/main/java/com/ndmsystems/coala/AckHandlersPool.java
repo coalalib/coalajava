@@ -14,6 +14,7 @@ public class AckHandlersPool {
 
 
     public void add(int id, CoAPHandler handler) {
+        LogHelper.v("Add handler for message: " + id + " to pool");
         pool.put(id, handler);
     }
 
@@ -22,14 +23,15 @@ public class AckHandlersPool {
     }
 
     public void remove(int id) {
+        LogHelper.v("Remove handler for message: " + id + " from pool");
         pool.remove(id);
     }
 
-    public void clear() {
+    public void clear(Exception exception) {
+        LogHelper.v("Clear handlers pool");
         for (CoAPHandler coAPHandler : pool.values()) {
-            coAPHandler.onMessage(null, "Pool is cleared");
+            coAPHandler.onAckError(exception.getMessage());
         }
-        pool.clear();
     }
 
     public void raiseAckError(CoAPMessage message, String error) {

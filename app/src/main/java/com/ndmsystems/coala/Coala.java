@@ -4,6 +4,7 @@ import com.ndmsystems.coala.di.CoalaComponent;
 import com.ndmsystems.coala.di.CoalaModule;
 import com.ndmsystems.coala.di.DaggerCoalaComponent;
 import com.ndmsystems.coala.exceptions.CoAPException;
+import com.ndmsystems.coala.exceptions.CoalaStoppedException;
 import com.ndmsystems.coala.helpers.RandomGenerator;
 import com.ndmsystems.coala.layers.response.ResponseData;
 import com.ndmsystems.coala.layers.response.ResponseHandler;
@@ -210,6 +211,7 @@ public class Coala extends CoAPTransport {
 
                         @Override
                         public void onError(Throwable error) {
+                            LogHelper.v("sendRequest message: " + message.getId() + ", throwable " + error);
                             emitter.onError(error);
                         }
                     };
@@ -251,8 +253,9 @@ public class Coala extends CoAPTransport {
      */
     public void stop() {
         LogHelper.i("Coala stop");
-        messagePool.clear();
-        ackHandlersPool.clear();
+        CoalaStoppedException coalaStoppedException = new CoalaStoppedException("Coala stopped");
+        messagePool.clear(coalaStoppedException);
+        ackHandlersPool.clear(coalaStoppedException);
         receiver.stop();
         sender.stop();
         connectionProvider.close();

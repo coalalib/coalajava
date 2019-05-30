@@ -131,10 +131,11 @@ public class CoAPMessagePool {
         }
     }
 
-    public void clear() {
+    public void clear(Exception exception) {
+        LogHelper.v("Clear message pool");
         for (QueueElement queueElement : pool.values()) {
             if (queueElement.message != null && queueElement.message.getResponseHandler() != null) {
-                queueElement.message.getResponseHandler().onError(new Throwable("Pool is cleared"));
+                queueElement.message.getResponseHandler().onError(exception);
             }
         }
 
