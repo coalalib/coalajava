@@ -1,7 +1,5 @@
 package com.ndmsystems.coala;
 
-import android.os.Build;
-
 import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.io.IOException;
@@ -103,5 +101,14 @@ public class ConnectionProvider {
     public void setOnPortIsBusyHandler(Coala.OnPortIsBusyHandler onPortIsBusyHandler) {
         LogHelper.d("setOnPortIsBusyHandler");
         this.onPortIsBusyHandler = onPortIsBusyHandler;
+    }
+
+    public void restartConnection() {
+        if (connection != null && !connection.isClosed()) {
+            connection.close();
+        }
+
+        connection = null;
+
     }
 }

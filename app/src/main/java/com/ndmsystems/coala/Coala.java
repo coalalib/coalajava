@@ -321,6 +321,12 @@ public class Coala extends CoAPTransport {
         connectionProvider.setOnPortIsBusyHandler(onPortIsBusyHandler);
     }
 
+    public void restartConnection() {
+        stop();
+        connectionProvider.restartConnection();
+        start();
+    }
+
     public interface OnPortIsBusyHandler {
         void onPortIsBusy();
     }
