@@ -1,11 +1,11 @@
 package com.ndmsystems.coala.layers.arq.states;
 
-import com.ndmsystems.infrastructure.logging.LogHelper;
 import com.ndmsystems.coala.layers.arq.Block;
 import com.ndmsystems.coala.layers.arq.SlidingWindow;
 import com.ndmsystems.coala.layers.arq.data.DataFactory;
 import com.ndmsystems.coala.layers.arq.data.IData;
 import com.ndmsystems.coala.message.CoAPMessage;
+import com.ndmsystems.infrastructure.logging.LogHelper;
 
 /**
  * Created by Владимир on 16.08.2017.
@@ -55,6 +55,9 @@ public class SendState extends LoggableState{
         }
 
         IData blockData = DataFactory.create(data.get(rangeStart, rangeEnd));
+        if (blockNumber == -1) {
+            LogHelper.w("BlockNumber = -1 oO, ");
+        }
         return new Block(blockNumber, blockData, rangeEnd != data.size());
     }
 

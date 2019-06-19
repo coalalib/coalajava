@@ -203,8 +203,10 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
     private void didTransmit(int blockNumber, String token) {
         LogHelper.v("ARQ: did transmit block = " + blockNumber + " for token = " + token);
         SendState sendState = sendStates.get(token);
-        sendState.didTransmit(blockNumber);
-        sendMoreData(token);
+        if (sendState != null) {
+            sendState.didTransmit(blockNumber);
+            sendMoreData(token);
+        }
     }
 
     private void sendMoreData(String token) {
