@@ -26,6 +26,9 @@ public class Block {
         int rawBlockNumber = number << 4;
         int rawMoreBlocks = ((isMoreComing ? 1 : 0) << 3);
         int rawBlockSize = (int) ((Math.log(data.size()) / Math.log(2)) - 4);
+        if (rawBlockSize < 0) {
+            rawBlockSize = 1;
+        }
         return rawBlockNumber | rawMoreBlocks | rawBlockSize;
     }
 
