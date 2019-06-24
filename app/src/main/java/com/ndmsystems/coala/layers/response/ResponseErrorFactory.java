@@ -1,6 +1,6 @@
 package com.ndmsystems.coala.layers.response;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.ndmsystems.coala.exceptions.CoAPException;
 import com.ndmsystems.coala.exceptions.WrongAuthDataException;

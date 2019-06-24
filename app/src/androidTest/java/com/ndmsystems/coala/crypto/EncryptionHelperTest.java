@@ -1,6 +1,6 @@
 package com.ndmsystems.coala.crypto;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 
 import com.ndmsystems.coala.BaseTest;
 import com.ndmsystems.coala.helpers.EncryptionHelper;
