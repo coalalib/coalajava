@@ -54,8 +54,9 @@ public class CoAPSender {
         if (sendingThread != null) {
             sendingThread.interrupt();
             sendingThread = null;
-            connection = null;
         }
+
+        connection = null;
     }
 
     public boolean isStarted() {

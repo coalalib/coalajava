@@ -13,8 +13,6 @@ import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 
-import io.reactivex.disposables.Disposable;
-
 public class CoAPReceiver {
 
     private final ConnectionProvider connectionProvider;
@@ -22,7 +20,6 @@ public class CoAPReceiver {
     private Boolean isRunning = false;
     private ReceivingThread receivingThread = null;
     private MulticastSocket connection;
-    private Disposable connectionSubscription;
 
     private LayersStack receiveLayerStack;
 
@@ -66,12 +63,8 @@ public class CoAPReceiver {
             receivingThread.interrupt();
             receivingThread = null;
         }
-        if (connectionSubscription != null &&
-                !connectionSubscription.isDisposed()) {
-            connectionSubscription.dispose();
-            connectionSubscription = null;
-            connection = null;
-        }
+
+        connection = null;
     }
 
     private class ReceivingThread extends Thread {
