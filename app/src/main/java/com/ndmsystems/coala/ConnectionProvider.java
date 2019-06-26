@@ -1,12 +1,15 @@
 package com.ndmsystems.coala;
 
+import android.util.Log;
+
 import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.io.IOException;
-import java.net.DatagramSocket;
 import java.net.Inet4Address;
+import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
@@ -43,8 +46,8 @@ public class ConnectionProvider {
         if (connection != null &&
                 !connection.isClosed()) {
             connection.close();
-            connection = null;
         }
+        connection = null;
 
         if (timerSubscription != null &&
                 !timerSubscription.isDisposed()) {
@@ -73,13 +76,6 @@ public class ConnectionProvider {
 
     private synchronized MulticastSocket createConnection() throws IOException {
         try {
-            if (onPortIsBusyHandler != null) {
-                DatagramSocket testSocket = new DatagramSocket(port);
-                testSocket.setReuseAddress(true);
-                testSocket.disconnect();
-                testSocket.close();
-            } else LogHelper.d("onPortIsBusyHandler is null");
-
             MulticastSocket connection = new MulticastSocket(port);
             connection.joinGroup(Inet4Address.getByName("224.0.0.187"));
             connection.setReceiveBufferSize(409600);
@@ -90,7 +86,44 @@ public class ConnectionProvider {
             saveConnection(connection);
             return connection;
         } catch (SocketException ex) {
-            LogHelper.e("MulticastSocket can't be created: " + ex.getLocalizedMessage());
+            LogHelper.e("MulticastSocket can't be created, try to reuse: " + ex.getClass() + " " + ex.getLocalizedMessage() + " " + Log.getStackTraceString(ex));
+            return tryToReuseSocket();
+        }
+    }
+
+    private MulticastSocket tryToReuseSocket() {
+        try {
+            InetSocketAddress srcAddress = new InetSocketAddress(port);
+
+            MulticastSocket connection = new MulticastSocket(null);
+            connection.setReuseAddress(true);
+            connection.joinGroup(Inet4Address.getByName("224.0.0.187"));
+            connection.setReceiveBufferSize(409600);
+            connection.bind(srcAddress);
+
+            LogHelper.w("MulticastSocket receiveBufferSize: " + connection.getReceiveBufferSize()
+                    + ", socket isBound = " + connection.isBound()
+                    + ", socket isClosed = " + connection.isClosed()
+                    + ", socket isConnected = " + connection.isConnected());
+            saveConnection(connection);
+            return connection;
+        } catch (SocketException ex) {
+            LogHelper.e("MulticastSocket can't be created, and can't be reused: " + ex.getClass() + " " + ex.getLocalizedMessage() + " " + Log.getStackTraceString(ex));
+
+            if (onPortIsBusyHandler != null) {
+                onPortIsBusyHandler.onPortIsBusy();
+            }
+            return null;
+        } catch (UnknownHostException e) {
+            LogHelper.e("MulticastSocket can't be created, and can't be reuse UnknownHostException: " + e.getLocalizedMessage());
+            e.printStackTrace();
+            if (onPortIsBusyHandler != null) {
+                onPortIsBusyHandler.onPortIsBusy();
+            }
+            return null;
+        } catch (IOException e) {
+            LogHelper.e("MulticastSocket can't be created, and can't be reuse IOException: " + e.getLocalizedMessage());
+            e.printStackTrace();
             if (onPortIsBusyHandler != null) {
                 onPortIsBusyHandler.onPortIsBusy();
             }
