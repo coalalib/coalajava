@@ -119,11 +119,17 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
                                     || Arrays.equals(message.getPeerPublicKey(), publicKey)) {
                                 LogHelper.d("Session with " + receiverAddress.toString() + " started, publicKey = " + Hex.encodeHexString(publicKey));
                                 SecuredSession securedSession = getSessionForAddress(message);
-                                securedSession.start(publicKey);
+                                if (securedSession != null) {
+                                    securedSession.start(publicKey);
 
-                                setSessionForAddress(securedSession, message);
+                                    setSessionForAddress(securedSession, message);
 
-                                sendPendingMessage(receiverAddress);
+                                    sendPendingMessage(receiverAddress);
+                                } else {
+                                    LogHelper.e("Error then try to client hello, session removed: " + error);
+                                    removeSessionForAddress(message);
+                                    removePendingMessagesByAddress(receiverAddress);
+                                }
                             } else {
                                 LogHelper.w("Expected key: " + Hex.encodeHexString(message.getPeerPublicKey()) + ", actual key: " + Hex.encodeHexString(publicKey));
                                 removeSessionForAddress(message);
