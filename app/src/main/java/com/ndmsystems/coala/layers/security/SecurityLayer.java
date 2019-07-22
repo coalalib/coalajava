@@ -104,27 +104,27 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
             SecuredSession session = getSessionForAddress(message);
 
             if (session == null) {
-                LogHelper.d("Try to start session with: " + receiverAddress.getAddress().getHostAddress() + ":" + receiverAddress.getPort());
+                LogHelper.d("Try to start session with: " + receiverAddress.getAddress().getHostAddress() + ":" + receiverAddress.getPort() + " proxy: " + message.getProxy());
                 session = new SecuredSession(false);
                 if (message.getProxy() != null) {
                     generateProxySessionSecurityIdAndAddToMessageAndSession(session, message);
                 }
                 setSessionForAddress(session, message);
-                sendClientHello(message.getProxy(), session.getPeerProxySecurityId(), receiverAddress, session.getPublicKey(), new CoAPHandler() {
+                sendClientHello(message.getProxy(), session.getPeerProxySecurityId(), message.getAddress(), session.getPublicKey(), new CoAPHandler() {
                     @Override
                     public void onMessage(CoAPMessage clientHelloResponseMessage, String error) {
                         if (error == null) {
                             byte[] publicKey = clientHelloResponseMessage.getPayload().content;
                             if (message.getPeerPublicKey() == null
                                     || Arrays.equals(message.getPeerPublicKey(), publicKey)) {
-                                LogHelper.d("Session with " + receiverAddress.toString() + " started, publicKey = " + Hex.encodeHexString(publicKey));
+                                LogHelper.d("Session with " + message.getDestination() + " started, publicKey = " + Hex.encodeHexString(publicKey));
                                 SecuredSession securedSession = getSessionForAddress(message);
                                 if (securedSession != null) {
                                     securedSession.start(publicKey);
 
                                     setSessionForAddress(securedSession, message);
 
-                                    sendPendingMessage(receiverAddress);
+                                    sendPendingMessage(message.getDestination());
                                 } else {
                                     LogHelper.e("Error then try to client hello, session removed: " + error);
                                     removeSessionForAddress(message);
@@ -184,8 +184,9 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
     }
 
     private void generateProxySessionSecurityIdAndAddToMessageAndSession(SecuredSession session, CoAPMessage message) {
-        session.setPeerProxySecurityId(RandomGenerator.getRandomInt());
-        message.setProxySecurityId(session.getPeerProxySecurityId());
+        Integer securityId = RandomGenerator.getRandomInt();
+        session.setPeerProxySecurityId(securityId);
+        message.setProxySecurityId(securityId);
     }
 
     private void throwMismatchKeysError(CoAPMessage message, InetSocketAddress receiverAddress) {
@@ -318,7 +319,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
 
         client.send(message, handler);
 
-        LogHelper.d("sendClientHello messageId: " + message.getId() + " address: " + address.getAddress().getHostAddress() + ":" + address.getPort() + ", publicKey: " + Hex.encodeHexString(myPublicKey));
+        LogHelper.d("sendClientHello messageId: " + message.getId() + " address: " + address.getAddress().getHostAddress() + ":" + address.getPort() + ", publicKey: " + Hex.encodeHexString(myPublicKey) + ", securityId " + message.getOption(CoAPMessageOptionCode.OptionProxySecurityID));
     }
 
     public void sendPeerHello(InetSocketAddress address, byte[] publicKey, CoAPMessage message) {

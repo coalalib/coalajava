@@ -163,8 +163,10 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
                         LogHelper.v("ARQ: Receive completed, passing message " + originalMessage.getId() + ", with token: " + Hex.encodeHexString(originalMessage.getToken()) + " along");
                         if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI))
                             ackMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI));
-                        if (originalMessage.getProxy() != null)
+                        if (originalMessage.getProxy() != null) {
                             ackMessage.setProxy(originalMessage.getProxy());
+                            ackMessage.setProxySecurityId(originalMessage.getProxySecurityId());
+                        }
                         incomingMessage.setId(originalMessage.getId());
                     }
                     ackMessage.setCode(CoAPMessageCode.CoapCodeEmpty);

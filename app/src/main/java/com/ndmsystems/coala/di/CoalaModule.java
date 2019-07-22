@@ -192,12 +192,12 @@ public class CoalaModule {
                 new SendLayer[]{
                         responseLayer,
                         arqLayer,
-                        logLayer,
 //                        blockwiseLayer
 
-                        securityLayer,
+                        logLayer,
                         observeLayer,
                         proxyLayer,
+                        securityLayer,
                 }, null);
     }
 
@@ -216,9 +216,9 @@ public class CoalaModule {
         return new LayersStack(null,
                 new ReceiveLayer[]{
                         proxyLayer,
+                        logLayer,
                         securityLayer,
                         arqLayer,
-                        logLayer,
 //                        blockwiseLayer,
                         reliabilityLayer,
                         observeLayer,

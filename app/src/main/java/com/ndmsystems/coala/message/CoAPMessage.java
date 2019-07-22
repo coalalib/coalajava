@@ -38,6 +38,9 @@ public class CoAPMessage {
         CoAPMessageOption option = message.getOption(CoAPMessageOptionCode.OptionObserve);
         if (option != null)
             result.addOption(option);
+        CoAPMessageOption proxySecurityId = message.getOption(CoAPMessageOptionCode.OptionProxySecurityID);
+        if (proxySecurityId != null)
+            result.addOption(proxySecurityId);
         return result;
     }
 

@@ -2,12 +2,12 @@ package com.ndmsystems.coala.layers;
 
 import com.ndmsystems.coala.CoAPClient;
 import com.ndmsystems.coala.CoAPMessagePool;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessageOptionCode;
 import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.utils.Reference;
+import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.net.InetSocketAddress;
 
@@ -53,6 +53,8 @@ public class ProxyLayer implements ReceiveLayer, SendLayer {
     public boolean onSend(CoAPMessage message, Reference<InetSocketAddress> receiverAddressReference) {
         if (!isAboutProxying(message))
             return true;
+        LogHelper.v("ProxyLayer onSend, message: " + message.getId()
+                + " destination: " + (message == null ? null : message.getDestination()) + ", proxy: " + (message == null || message.getProxy() == null ? "null" : message.getProxy()));
 
         removeRestrictedOptionsFromProxiedMessage(message);
 
