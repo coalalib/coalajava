@@ -1,29 +1,18 @@
-buildscript {
-    repositories {
-        jcenter()
-        maven {
-            url 'https://maven.google.com'
-        }
-        google()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.3'
-    }
-}
+apply plugin: 'com.android.library'
+apply plugin: 'de.mannodermaus.android-junit5'
+apply plugin: 'jacoco'
 
-ext{
+ext {
     supportLibraryVersion = '27.1.1'
     buildToolsVersion = '28.0.3'
-    compileSdkVersion = 27
+    compileSdkVersion = 28
     targetSdkVersion = 27
     minSdkVersion = 16
 }
 
-apply plugin: 'com.android.library'
-
 android {
     compileSdkVersion project.ext.compileSdkVersion
-    buildToolsVersion project.ext.buildToolsVersion
+
     defaultConfig {
         multiDexEnabled true
         minSdkVersion project.ext.minSdkVersion
@@ -38,14 +27,36 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    sourceSets.each {
+        it.java.srcDirs += "src/$it.name/kotlin"
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
     testOptions {
-        unitTests.all {
-            jvmArgs '-Djava.net.preferIPv4Stack=true'
+        junitPlatform {
+            unitTests.all {
+                testLogging.events = ["passed", "skipped", "failed"]
+                jvmArgs '-Djava.net.preferIPv4Stack=true'
+            }
+
+            filters {
+                engines {
+                    include 'spek2'
+                }
+            }
+            jacocoOptions {
+                // here goes all jacoco config, for example
+                html.enabled = true
+                xml.enabled = false
+                csv.enabled = false
+            }
         }
+
     }
 }
 
@@ -59,15 +70,29 @@ dependencies {
     implementation 'com.google.dagger:dagger:2.11'
     annotationProcessor 'com.google.dagger:dagger-compiler:2.11'
 
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'org.mockito:mockito-core:2.8.9'
     implementation 'com.squareup.okhttp3:okhttp:3.5.0'
     implementation 'com.google.code.gson:gson:2.8.0'
     implementation 'io.reactivex.rxjava2:rxjava:2.1.2'
     implementation 'net.jodah:expiringmap:0.5.8'
-    compile project(':libs:infrastructure')
-}
+    implementation project(':libs:infrastructure')
 
-repositories {
-    google()
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+
+    //unit tests
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.mockito:mockito-core:2.8.9'
+
+    testImplementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testImplementation "org.spekframework.spek2:spek-dsl-jvm:$spek_version"
+    testImplementation "org.spekframework.spek2:spek-runner-junit5:$spek_version"
+
+//    testRuntimeOnly "org.junit.vintage:junit-vintage-engine:5.5.1"
+//
+//    testImplementation "org.junit.jupiter:junit-jupiter-api:5.5.1"
+//    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.5.1"
+//
+//    androidTestImplementation "androidx.test:runner:1.1.1"
+//    androidTestImplementation "de.mannodermaus.junit5:android-test-core:1.0.0"
+
 }
