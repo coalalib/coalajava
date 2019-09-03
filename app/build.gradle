@@ -1,18 +1,20 @@
 buildscript {
+    ext {
+        kotlin_version = '1.3.50'
+        android_junit5_version = '1.5.1.0'
+        spek_version = '2.0.6'
+    }
     repositories {
         google()
         jcenter()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.5.0'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.20"
-        classpath "de.mannodermaus.gradle.plugins:android-junit5:1.5.1.0"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "de.mannodermaus.gradle.plugins:android-junit5:$android_junit5_version"
 
     }
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'de.mannodermaus.android-junit5'
 
 ext {
     supportLibraryVersion = '27.1.1'
@@ -20,10 +22,11 @@ ext {
     compileSdkVersion = 28
     targetSdkVersion = 27
     minSdkVersion = 16
-    kotlin_version = '1.3.20'
-    android_junit5_version = '1.5.1.0'
-    spek_version = '2.0.6'
 }
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'de.mannodermaus.android-junit5'
 
 android {
     compileSdkVersion project.ext.compileSdkVersion
@@ -43,13 +46,9 @@ android {
         }
     }
 
-    sourceSets.each {
-        it.java.srcDirs += "src/$it.name/kotlin"
-    }
-
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
     }
 
     testOptions {
