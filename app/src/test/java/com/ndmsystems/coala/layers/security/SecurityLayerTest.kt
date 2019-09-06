@@ -13,6 +13,7 @@ import com.ndmsystems.coala.utils.Reference
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.junit.Assert.assertArrayEquals
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.net.InetSocketAddress
@@ -21,10 +22,12 @@ import kotlin.test.assertTrue
 
 object SecurityLayerTest: Spek({
 
-    val mockCoAPMessagePool = mockk<CoAPMessagePool>()
-    val mockAckHandlersPool = mockk<AckHandlersPool>()
-    val mockCoAPClient = mockk<CoAPClient>()
-    val mockSecuredSessionPool = mockk<SecuredSessionPool>()
+    val mockCoAPMessagePool = mockk<CoAPMessagePool>(relaxed = true)
+    val mockAckHandlersPool = mockk<AckHandlersPool>(relaxed = true)
+    val mockCoAPClient = mockk<CoAPClient>(relaxed = true)
+    val mockSecuredSessionPool = mockk<SecuredSessionPool>(relaxed = true)
+    val mockRefAddress = mockk<Reference<InetSocketAddress>>()
+    every { mockRefAddress.get() } returns InetSocketAddress("123.123.123.123", 12345)
 
     val securityLayer = SecurityLayer(
             mockCoAPMessagePool,
@@ -37,7 +40,7 @@ object SecurityLayerTest: Spek({
         val msg = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.POST)
         msg.token = ByteArray(5){i -> i.toByte()}
 
-        securityLayer.onReceive(msg, mockk<Reference<InetSocketAddress>>())
+        securityLayer.onReceive(msg, mockRefAddress)
         it("get main message by hex token"){
             verify { mockCoAPMessagePool.getSourceMessageByToken(msg.hexToken) }
         }
@@ -48,7 +51,7 @@ object SecurityLayerTest: Spek({
         msg.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionHandshakeType, HandshakeType.PeerHello.toInt()))
 
         it("return false"){
-            assertFalse { securityLayer.onReceive(msg, mockk<Reference<InetSocketAddress>>()) }
+            assertFalse { securityLayer.onReceive(msg, mockRefAddress) }
         }
     }
 
@@ -57,7 +60,7 @@ object SecurityLayerTest: Spek({
         msg.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionSessionNotFound, 1))
 
         it("return false"){
-            assertFalse { securityLayer.onReceive(msg, mockk<Reference<InetSocketAddress>>()) }
+            assertFalse { securityLayer.onReceive(msg, mockRefAddress) }
         }
     }
 
@@ -66,7 +69,7 @@ object SecurityLayerTest: Spek({
         msg.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionSessionExpired, 1))
 
         it("return false"){
-            assertFalse { securityLayer.onReceive(msg, mockk<Reference<InetSocketAddress>>()) }
+            assertFalse { securityLayer.onReceive(msg, mockRefAddress) }
         }
     }
 
@@ -76,7 +79,7 @@ object SecurityLayerTest: Spek({
 
         every { mockSecuredSessionPool.get(any()) } returns null
         it("return false"){
-            assertFalse { securityLayer.onReceive(msg, mockk<Reference<InetSocketAddress>>()) }
+            assertFalse { securityLayer.onReceive(msg, mockRefAddress) }
         }
     }
 
@@ -91,17 +94,27 @@ object SecurityLayerTest: Spek({
                 Hex.decodeHex("b3efe5ce".toCharArray())
         ))
 
-        val secSession = mockk<SecuredSession>()
+
+        val secSession = mockk<SecuredSession>(relaxed = true)
         every { secSession.aead } returns Aead(
                 Hex.decodeHex("aaa1cf3e4a5d0d1c009be633da60a372".toCharArray()),
                 Hex.decodeHex("aaa86ac093054578dc5308b966b9ff28".toCharArray()),
                 Hex.decodeHex("aaa212a9".toCharArray()),
                 Hex.decodeHex("aaafe5ce".toCharArray())
         )
-        every { mockSecuredSessionPool.get(any()) } returns secSession
+
+        val securedSessionPool = mockk<SecuredSessionPool>()
+        every { securedSessionPool.get(any()) } returns secSession
+
+        val securityLayerTest = SecurityLayer(
+                mockCoAPMessagePool,
+                mockAckHandlersPool,
+                mockCoAPClient,
+                securedSessionPool
+        )
 
         it("return false"){
-            assertFalse { securityLayer.onReceive(msg, mockk<Reference<InetSocketAddress>>()) }
+            assertFalse { securityLayerTest.onReceive(msg, mockRefAddress) }
         }
     }
 
@@ -116,17 +129,33 @@ object SecurityLayerTest: Spek({
                 Hex.decodeHex("b3efe5ce".toCharArray())
         ))
 
-        val secSession = mockk<SecuredSession>()
-        every { secSession.aead } returns Aead(
-                Hex.decodeHex("6e486ac093054578dc5308b966b9ff28".toCharArray()),
-                Hex.decodeHex("bdd1cf3e4a5d0d1c009be633da60a372".toCharArray()),
-                Hex.decodeHex("b3efe5ce".toCharArray()),
-                Hex.decodeHex("799212a9".toCharArray())
+        val session = mockk<SecuredSession>{
+            every { isReady } returns true
+            every { aead } returns Aead(
+                    Hex.decodeHex("6e486ac093054578dc5308b966b9ff28".toCharArray()),
+                    Hex.decodeHex("bdd1cf3e4a5d0d1c009be633da60a372".toCharArray()),
+                    Hex.decodeHex("b3efe5ce".toCharArray()),
+                    Hex.decodeHex("799212a9".toCharArray())
+            )
+            every { peerPublicKey } returns ByteArray(5){0b0}
+        }
+
+        val securedSessionPool = mockk<SecuredSessionPool>()
+        every { securedSessionPool.get(any()) } returns session
+
+        val securityLayerTest = SecurityLayer(
+                mockCoAPMessagePool,
+                mockAckHandlersPool,
+                mockCoAPClient,
+                securedSessionPool
         )
-        every { mockSecuredSessionPool.get(any()) } returns secSession
 
         it("return true"){
-            assertTrue { securityLayer.onReceive(msg, mockk<Reference<InetSocketAddress>>()) }
+            assertTrue { securityLayerTest.onReceive(msg, mockRefAddress) }
+        }
+
+        it("msg peer key eq session peer key"){
+            assertArrayEquals(msg.peerPublicKey, session.peerPublicKey)
         }
     }
 
@@ -135,7 +164,7 @@ object SecurityLayerTest: Spek({
         msg.uri = "coap://192.168.1.1:8080/test?param=1&param=value"
 
         it("return true"){
-            assertTrue { securityLayer.onReceive(msg, mockk<Reference<InetSocketAddress>>()) }
+            assertTrue { securityLayer.onReceive(msg, mockRefAddress) }
         }
     }
 
@@ -149,7 +178,7 @@ object SecurityLayerTest: Spek({
 
         every { mockSecuredSessionPool.get(any()) } returns null
         it("return false"){
-            assertFalse { securityLayer.onSend(msg, mockk<Reference<InetSocketAddress>>()) }
+            assertFalse { securityLayer.onSend(msg, mockRefAddress) }
         }
     }
 
@@ -157,12 +186,12 @@ object SecurityLayerTest: Spek({
         val msg = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.POST)
         msg.uri = "coaps://192.168.1.1:8080/test?param=1&param=value"
 
-        val secSession = mockk<SecuredSession>()
+        val secSession = mockk<SecuredSession>(relaxed = true)
         every { secSession.isReady } returns false
         every { mockSecuredSessionPool.get(any()) } returns secSession
 
         it("return false"){
-            assertFalse { securityLayer.onReceive(msg, mockk<Reference<InetSocketAddress>>()) }
+            assertFalse { securityLayer.onReceive(msg, mockRefAddress) }
         }
     }
 
@@ -171,12 +200,12 @@ object SecurityLayerTest: Spek({
         msg.uri = "coaps://192.168.1.1:8080/test?param=1&param=value"
         msg.peerPublicKey = ByteArray(5){0b00000000}
 
-        val secSession = mockk<SecuredSession>()
+        val secSession = mockk<SecuredSession>(relaxed = true)
         every { secSession.peerPublicKey } returns ByteArray(5){0b00000001}
         every { mockSecuredSessionPool.get(any()) } returns secSession
 
         it("return false"){
-            assertFalse { securityLayer.onReceive(msg, mockk<Reference<InetSocketAddress>>()) }
+            assertFalse { securityLayer.onReceive(msg, mockRefAddress) }
         }
     }
 
@@ -185,7 +214,7 @@ object SecurityLayerTest: Spek({
         msg.uri = "coap://192.168.1.1:8080/test?param=1&param=value"
 
         it("return true"){
-            assertTrue { securityLayer.onSend(msg, mockk<Reference<InetSocketAddress>>()) }
+            assertTrue { securityLayer.onSend(msg, mockRefAddress) }
         }
     }
 
