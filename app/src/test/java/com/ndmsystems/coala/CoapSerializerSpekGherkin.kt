@@ -16,21 +16,6 @@ object CoapSerializerSpekGherkin : Spek({
 
     Feature("testing decode") {
 
-        Scenario("Parametrized scenario") {
-
-            val list = listOf(1, 2, 3, 4, 5)
-            var negval: Int = Int.MAX_VALUE
-
-            list.forEach { value ->
-                When("print value name $value") {
-                    negval = value * -1
-                }
-                Then("check equality") {
-                    assertEquals(negval, value)
-                }
-            }
-        }
-
         Scenario("Testing CoAP message code") {
 
             lateinit var testValue: ByteArray
