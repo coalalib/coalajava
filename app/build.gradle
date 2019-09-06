@@ -88,7 +88,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.0'
     implementation 'io.reactivex.rxjava2:rxjava:2.1.2'
     implementation 'net.jodah:expiringmap:0.5.8'
-    implementation project(':libs:infrastructure')
+    api project(':libs:infrastructure')
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
