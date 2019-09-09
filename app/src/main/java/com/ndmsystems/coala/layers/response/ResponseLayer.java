@@ -36,6 +36,12 @@ public class ResponseLayer implements ReceiveLayer, SendLayer {
         errorFactory = new ResponseErrorFactory();
     }
 
+    public ResponseLayer(CoAPClient client, Map<String, CoAPMessage> requests, ResponseErrorFactory errorFactory) {
+        this.client = client;
+        this.requests = requests;
+        this.errorFactory = errorFactory;
+    }
+
     @Override
     public boolean onReceive(CoAPMessage message, Reference<InetSocketAddress> senderAddressReference) {
         if (message.isRequest()) return true;
