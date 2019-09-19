@@ -19,15 +19,15 @@ object ReliabilityLayerTest: Spek( {
 
     Feature("RequestLayer receive test") {
 
-        Scenario("Msg with non request code and with non ACK or RST type should return true and add result in resourceDiscoveryHelper") {
+        val coAPMessagePool by memoized { mockk<CoAPMessagePool>(relaxed = true) }
+        val resourceDiscoveryHelper by memoized { mockk<ResourceDiscoveryHelper>(relaxed = true) }
+        val ackHandlersPool by memoized { mockk<AckHandlersPool>(relaxed = true) }
+        val reliabilityLayer by memoized { ReliabilityLayer(coAPMessagePool, resourceDiscoveryHelper, ackHandlersPool) }
+        val mockRefAddress by memoized { mockk<Reference<InetSocketAddress>> {
+            every { get() } returns InetSocketAddress("123.123.123.123", 12345)
+        } }
 
-            val coAPMessagePool = mockk<CoAPMessagePool>(relaxed = true)
-            val resourceDiscoveryHelper = mockk<ResourceDiscoveryHelper>(relaxed = true)
-            val ackHandlersPool = mockk<AckHandlersPool>(relaxed = true)
-            val reliabilityLayer = ReliabilityLayer(coAPMessagePool, resourceDiscoveryHelper, ackHandlersPool)
-            val mockRefAddress = mockk<Reference<InetSocketAddress>> {
-                every { get() } returns InetSocketAddress("123.123.123.123", 12345)
-            }
+        Scenario("Msg with non request code and with non ACK or RST type should return true and add result in resourceDiscoveryHelper") {
 
             lateinit var msg: CoAPMessage
 
@@ -58,11 +58,6 @@ object ReliabilityLayerTest: Spek( {
         }
 
         Scenario("Msg with non request code and with non ACK or RST type should return true and not add result in resourceDiscoveryHelper if sender address is local") {
-
-            val coAPMessagePool = mockk<CoAPMessagePool>(relaxed = true)
-            val resourceDiscoveryHelper = mockk<ResourceDiscoveryHelper>(relaxed = true)
-            val ackHandlersPool = mockk<AckHandlersPool>(relaxed = true)
-            val reliabilityLayer = ReliabilityLayer(coAPMessagePool, resourceDiscoveryHelper, ackHandlersPool)
 
             lateinit var mockRefAddress: Reference<InetSocketAddress>
             lateinit var msg: CoAPMessage
@@ -96,14 +91,6 @@ object ReliabilityLayerTest: Spek( {
 
         Scenario("Msg with request code should return true and shouldn't call other methods") {
 
-            val coAPMessagePool = mockk<CoAPMessagePool>(relaxed = true)
-            val resourceDiscoveryHelper = mockk<ResourceDiscoveryHelper>(relaxed = true)
-            val ackHandlersPool = mockk<AckHandlersPool>(relaxed = true)
-            val reliabilityLayer = ReliabilityLayer(coAPMessagePool, resourceDiscoveryHelper, ackHandlersPool)
-            val mockRefAddress = mockk<Reference<InetSocketAddress>> {
-                every { get() } returns InetSocketAddress("123.123.123.123", 12345)
-            }
-
             lateinit var msg: CoAPMessage
 
             Given("message with CON type and request code") {
@@ -128,13 +115,6 @@ object ReliabilityLayerTest: Spek( {
 
         Scenario("Msg with non request code and with RST type and with id should return true and remove msg from msgPool and proceed error") {
 
-            val coAPMessagePool = mockk<CoAPMessagePool>(relaxed = true)
-            val resourceDiscoveryHelper = mockk<ResourceDiscoveryHelper>(relaxed = true)
-            val ackHandlersPool = mockk<AckHandlersPool>(relaxed = true)
-            val reliabilityLayer = ReliabilityLayer(coAPMessagePool, resourceDiscoveryHelper, ackHandlersPool)
-            val mockRefAddress = mockk<Reference<InetSocketAddress>> {
-                every { get() } returns InetSocketAddress("123.123.123.123", 12345)
-            }
             val msgHandler = mockk<CoAPHandler>(relaxed = true)
 
             lateinit var msg: CoAPMessage
@@ -173,13 +153,6 @@ object ReliabilityLayerTest: Spek( {
 
         Scenario("Msg with non request code and with ACK type and with id should return true and remove msg from msgPool and proceed error") {
 
-            val coAPMessagePool = mockk<CoAPMessagePool>(relaxed = true)
-            val resourceDiscoveryHelper = mockk<ResourceDiscoveryHelper>(relaxed = true)
-            val ackHandlersPool = mockk<AckHandlersPool>(relaxed = true)
-            val reliabilityLayer = ReliabilityLayer(coAPMessagePool, resourceDiscoveryHelper, ackHandlersPool)
-            val mockRefAddress = mockk<Reference<InetSocketAddress>> {
-                every { get() } returns InetSocketAddress("123.123.123.123", 12345)
-            }
             val msgHandler = mockk<CoAPHandler>(relaxed = true)
 
             lateinit var msg: CoAPMessage
@@ -218,13 +191,6 @@ object ReliabilityLayerTest: Spek( {
 
         Scenario("Msg with non request code and with ACK or RST type and WITHOUT id should return true and remove msg from msgPool and proceed error") {
 
-            val coAPMessagePool = mockk<CoAPMessagePool>(relaxed = true)
-            val resourceDiscoveryHelper = mockk<ResourceDiscoveryHelper>(relaxed = true)
-            val ackHandlersPool = mockk<AckHandlersPool>(relaxed = true)
-            val reliabilityLayer = ReliabilityLayer(coAPMessagePool, resourceDiscoveryHelper, ackHandlersPool)
-            val mockRefAddress = mockk<Reference<InetSocketAddress>> {
-                every { get() } returns InetSocketAddress("123.123.123.123", 12345)
-            }
             val msgHandler = mockk<CoAPHandler>(relaxed = true)
 
             lateinit var msg: CoAPMessage
