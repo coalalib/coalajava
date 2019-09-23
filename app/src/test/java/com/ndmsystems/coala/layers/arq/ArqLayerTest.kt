@@ -1,11 +1,13 @@
 package com.ndmsystems.coala.layers.arq
 
-import com.ndmsystems.coala.CoAPMessagePool
-import com.ndmsystems.coala.Coala
+import com.ndmsystems.coala.*
+import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.layers.arq.data.DataFactory
 import com.ndmsystems.coala.layers.arq.data.IData
+import com.ndmsystems.coala.layers.arq.states.SendState
 import com.ndmsystems.coala.message.*
 import com.ndmsystems.coala.utils.Reference
+import com.ndmsystems.infrastructure.logging.LogHelper
 import io.mockk.*
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.gherkin.Feature
@@ -21,19 +23,15 @@ import kotlin.test.assertTrue
 
 object ArqLayerTest : Spek({
 
-    Feature("ArqLayer testing receiving") {
+    defaultTimeout = 1111111111111111
 
-        lateinit var coala: Coala
-        lateinit var messagePool: CoAPMessagePool
-        lateinit var arqLayer: ArqLayer
+    Feature("ArqLayer") {
 
-        beforeGroup {
-            messagePool = mockk(relaxUnitFun = true)
-            coala = mockk(relaxed = true, relaxUnitFun = true)
-            arqLayer = ArqLayer(coala, messagePool)
-        }
+        val messagePool by memoized<CoAPMessagePool> { mockk(relaxUnitFun = true) }
+        val coala by memoized<Coala> { mockk(relaxed = true, relaxUnitFun = true) }
+        val arqLayer by memoized { ArqLayer(coala, messagePool) }
 
-        Scenario("Receiving all ARQ message should correctly compose data") {
+        Scenario("onReceive() all ARQ message should correctly compose data") {
 
             val data = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
 
@@ -60,11 +58,11 @@ object ArqLayerTest : Spek({
             }
         }
 
-        Scenario("Receiving last ARQ message should pass message to next layer") {
+        Scenario("onReceive() last ARQ message should pass message to next layer") {
             lateinit var senderReference: Reference<InetSocketAddress>
             lateinit var message: CoAPMessage
 
-            var passNext: Boolean = false
+            var passNext: Boolean? = null
 
             Given("CoAP messages with divided payload") {
                 senderReference = Reference(InetSocketAddress("8.8.8.8", 5008))
@@ -77,19 +75,18 @@ object ArqLayerTest : Spek({
             }
 
             Then("message should be passed to next layers") {
-                assertTrue(passNext)
+                assertEquals(true, passNext)
             }
         }
 
-        Scenario("Receiving first ARQ message of request ") {
+        Scenario("onReceive() first ARQ message of request ") {
             val capturedMessage = slot<CoAPMessage>()
 
             lateinit var message: CoAPMessage
             lateinit var firstMessageOption: CoAPMessageOption
             lateinit var senderAddressReference: Reference<InetSocketAddress>
 
-            var passNext: Boolean = true
-
+            var passNext: Boolean? = null
 
             Given("simple arq request") {
                 message = ArqLayerTest.arqMessageOfRequest(0, false, null)
@@ -114,14 +111,114 @@ object ArqLayerTest : Spek({
                 assertTrue(value)
             }
 
-            And("request shouldn't be passed to another layers") {
-                assertFalse(passNext)
+            And("request shouldn't be processes in another layers") {
+                assertEquals(false, passNext)
             }
+        }
+
+
+        Scenario("onSend() CoAP message which is too small to be split") {
+
+            lateinit var message: CoAPMessage
+            val addressReference = Reference<InetSocketAddress>(mockk())
+
+            var result: Boolean? = null
+
+            Given("CoAP message with payload size = 1024") {
+                message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
+                        .apply {
+                            payload = CoAPMessagePayload(ByteArray(1024))
+                            token = byteArrayOf(1, 2)
+                        }
+                every { messagePool.remove(any()) } just Runs
+            }
+
+            When("send message through ARQ") {
+                result = arqLayer.onSend(message, addressReference)
+            }
+
+            Then("message shouldn't be processed in this layer") {
+                verify(exactly = 0) { messagePool.remove(any()) }
+            }
+
+        }
+
+        Scenario("onSend() CoAP message which is have OptionSelectiveRepeatWindowSize") {
+
+            lateinit var message: CoAPMessage
+            val addressReference = Reference<InetSocketAddress>(mockk())
+
+            var result: Boolean? = null
+
+            Given("CoAP message with OptionSelectiveRepeatWindowSize") {
+                message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.CoapCodeContent)
+                        .apply {
+                            payload = CoAPMessagePayload(ByteArray(1024))
+                            token = byteArrayOf(1, 2)
+                            addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize, 70))
+                            addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionBlock2, 70))
+                        }
+            }
+
+            When("send message through ARQ") {
+                result = arqLayer.onSend(message, addressReference)
+            }
+
+            Then("message shouldn't be processed in this layer") {
+                verify(exactly = 0) { messagePool.remove(any()) }
+            }
+        }
+
+        Scenario("onSend() CoAP message which is response") {
+
+            val testCase = 48000
+            lateinit var message: CoAPMessage
+            val addressReference = Reference(InetSocketAddress("8.8.8.8", 5008))
+
+            var result: Boolean? = null
+            val sentMessages = mutableListOf<CoAPMessage>()
+
+            Given("CoAP message with CoapCodeContent") {
+                message = CoAPMessage(CoAPMessageType.ACK, CoAPMessageCode.CoapCodeContent)
+                        .apply {
+                            payload = CoAPMessagePayload(ByteArray(testCase))
+                            token = byteArrayOf(1, 2)
+                        }
+                every { coala.send(capture(sentMessages), any()) } answers {
+                    val srcMsg = firstArg<CoAPMessage>()
+                    val cb = secondArg<CoAPHandler>()
+                    cb.onMessage(CoAPMessage.ackTo(srcMsg, srcMsg.address, CoAPMessageCode.CoapCodeEmpty), null)
+                }
+            }
+
+            When("send message through ARQ") {
+                result = arqLayer.onSend(message, addressReference)
+            }
+
+            Then("message should be processed in this layer") {
+                assertEquals(true, result)
+            }
+
+            And("message should be split") {
+                assertEquals(47, sentMessages.size)
+            }
+
+            And("each message should have OptionBlock2") {
+                sentMessages.forEach {
+                    assertTrue(it.hasOption(CoAPMessageOptionCode.OptionBlock2))
+                }
+            }
+
+
         }
 
     }
 
 }) {
+
+    init {
+        LogHelper.addLogger(TestHelper())
+    }
 
     private fun arqMessageOfRequest(blockNumber: Int, last: Boolean, data: IData?): CoAPMessage {
         val request = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.POST)
@@ -152,4 +249,5 @@ object ArqLayerTest : Spek({
 
         return true
     }
+
 }
