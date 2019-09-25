@@ -13,6 +13,7 @@ import kotlin.test.assertTrue
  */
 
 object BlockTest : Spek({
+    defaultTimeout = 1000000000000L
 
     Feature("Testing block option") {
 
@@ -48,28 +49,71 @@ object BlockTest : Spek({
             }
         }
 
-        Scenario("toInt test") {
+        Scenario("toInt() test") {
+            val testCases = listOf(
+                    8,
+                    16,
+                    32,
+                    64,
+                    128,
+                    240,
+                    250,
+                    256,
+                    512,
+                    553,
+                    1024,
+                    6200,
+                    7837,
+                    8854,
+                    365827,
+                    4801235
+            )
             lateinit var block: Block
 
-            Given("block with number 34 and size 54 and more flag is set") {
-                block = Block(553, DataFactory.create(ByteArray(54)))
+            testCases.forEach { value ->
+
+                Given("create block by value: $value ") {
+                    block = Block(value, DataFactory.createEmpty())
+                }
+
+                Then("toInt() should return $value back") {
+                    assertEquals(value, block.toInt())
+
+                }
             }
 
-            Then("result should be 553") {
-                assertEquals(553, block.toInt())
-            }
+
         }
 
-        Scenario("toInt test") {
-            lateinit var block: Block
 
-            Given("block with number 3 and size 149 and more flag is unset") {
-                block = Block(3, DataFactory.create(ByteArray(149)), false)
+        Scenario("test getBlockSizeByData return next smaller szx value") {
+            val testCases = mapOf(
+                    -123 to 0,
+                    16 to 0,
+                    32 to 1,
+                    64 to 2,
+                    128 to 3,
+                    250 to 3,
+                    256 to 4,
+                    550 to 5,
+                    512 to 5,
+                    1024 to 6,
+                    6200 to 6,
+                    480123 to 6
+            )
+
+            testCases.forEach { (given, expect) ->
+
+                Given("block with value $given ") {
+                }
+
+                Then("result should be $expect") {
+                    assertEquals(expect, Block.BlockSize.getBlockSizeByDataBlock(given).ordinal)
+
+                }
             }
 
-            Then("result should be 51") {
-                assertEquals(51, block.toInt())
-            }
+
         }
     }
 })
