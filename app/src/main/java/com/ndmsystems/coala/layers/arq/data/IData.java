@@ -10,8 +10,8 @@ package com.ndmsystems.coala.layers.arq.data;
 
 public interface IData {
     /**
-     * @param from
-     * @param to
+     * @param from initial index of range - inclusive
+     * @param to   final index of range - exclusive
      * @return requested bytes
      */
     byte[] get(int from, int to);

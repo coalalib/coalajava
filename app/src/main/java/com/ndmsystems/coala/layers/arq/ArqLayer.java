@@ -37,8 +37,8 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
     private final CoAPClient client;
     private final CoAPMessagePool messagePool;
 
-    protected Map<String, ReceiveState> receiveStates = new ConcurrentHashMap<>();
-    protected Map<String, SendState> sendStates = new ConcurrentHashMap<>();
+    private Map<String, ReceiveState> receiveStates = new ConcurrentHashMap<>();
+    private Map<String, SendState> sendStates = new ConcurrentHashMap<>();
 
     public ArqLayer(CoAPClient client,
                     CoAPMessagePool messagePool) {
@@ -81,7 +81,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
             return false;
         }
 
-        if(!isBlockedMessage(message))
+        if (!isBlockedMessage(message))
             return true;
 
         if (message.getToken() == null)
@@ -105,14 +105,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
 
     private void sendResetMessage(CoAPMessage incomingMessage, InetSocketAddress fromAddress) {
         CoAPMessage resetMessage = CoAPMessage.resetTo(incomingMessage, fromAddress);
-        client.send(resetMessage).subscribe(
-                response -> {
-                    //ignore
-                },
-                throwable -> {
-                    //ignore
-                }
-        );
+        client.send(resetMessage, null);
     }
 
     private boolean process(CoAPMessage incomingMessage, CoAPMessageOptionCode blockOptionCode, Block block, int windowSize, CoAPMessage ackMessage) {
