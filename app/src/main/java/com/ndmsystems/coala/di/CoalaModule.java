@@ -214,11 +214,8 @@ public class CoalaModule {
     @Provides
     @Singleton
     public CoAPReceiver provideReceiver(ConnectionProvider connectionProvider,
-                                        CoAPClient client,
                                         @Named("receive") LayersStack receiveLayerStack) {
-        return new CoAPReceiver(connectionProvider,
-                client,
-                receiveLayerStack);
+        return new CoAPReceiver(connectionProvider, receiveLayerStack);
     }
 
     @Provides
@@ -226,9 +223,7 @@ public class CoalaModule {
     public CoAPSender provideSender(ConnectionProvider connectionProvider,
                                     CoAPMessagePool messagePool,
                                     @Named("send") LayersStack sendLayerStack) {
-        return new CoAPSender(connectionProvider,
-                messagePool,
-                sendLayerStack);
+        return new CoAPSender(connectionProvider, messagePool, sendLayerStack);
     }
 
     @Provides

@@ -1,10 +1,6 @@
 package com.ndmsystems.coala;
 
 import com.ndmsystems.coala.message.CoAPMessage;
-import com.ndmsystems.coala.message.CoAPMessageCode;
-import com.ndmsystems.coala.message.CoAPMessageOption;
-import com.ndmsystems.coala.message.CoAPMessageOptionCode;
-import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.utils.Reference;
 import com.ndmsystems.infrastructure.logging.LogHelper;
 
@@ -15,19 +11,18 @@ import java.net.MulticastSocket;
 
 public class CoAPReceiver {
 
+    public static final String TAG = "CoAPReceiver";
+
     private final ConnectionProvider connectionProvider;
-    private final CoAPClient client;
+    private final LayersStack receiveLayerStack;
+
     private Boolean isRunning = false;
     private ReceivingThread receivingThread = null;
     private MulticastSocket connection;
 
-    private LayersStack receiveLayerStack;
 
-    public CoAPReceiver(ConnectionProvider connectionProvider,
-                        CoAPClient client,
-                        LayersStack receiveLayerStack) {
+    public CoAPReceiver(ConnectionProvider connectionProvider, LayersStack receiveLayerStack) {
         this.connectionProvider = connectionProvider;
-        this.client = client;
         this.receiveLayerStack = receiveLayerStack;
     }
 
@@ -67,18 +62,14 @@ public class CoAPReceiver {
         connection = null;
     }
 
+    //это не окончательный вариант, но NPE баг закрывает
     private class ReceivingThread extends Thread {
 
         @Override
         public void run() {
             LogHelper.v("ReceivingAsyncTask start");
 
-            while (true) {
-                // check if Cancelled
-                if (isInterrupted() || !isRunning) {
-                    LogHelper.i("ReceivingAsyncTask stopped");
-                    break;
-                }
+            while (!isInterrupted() && isRunning) {
 
                 // prepare udp packer
                 byte[] input = new byte[4096];
@@ -86,14 +77,18 @@ public class CoAPReceiver {
 
                 // Reading from UDP
                 try {
-                    connection.receive(udpPacket);
-                } catch (IOException e) {
-                    LogHelper.d("isInterrupted() = " + isInterrupted() + " isRunning = " + isRunning);
-                    e.printStackTrace();
-                    if (isInterrupted() || !isRunning) {
-                        LogHelper.i("ReceivingAsyncTask stopped");
-                        break;
+                    if (connection != null && !connection.isClosed())
+                        connection.receive(udpPacket);
+                    else {
+                        interrupt();
                     }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                if (isInterrupted() || !isRunning) {
+                    LogHelper.d("isInterrupted() = " + isInterrupted() + " isRunning = " + isRunning + " stopping");
+                    break;
                 }
 
                 // Build message from bytes
@@ -105,9 +100,6 @@ public class CoAPReceiver {
                     continue;
                 }
 
-                //String block1Options = (message.getOption(Coala.OptionCode.OptionBlock1) != null ? " Block1: " + Block.fromInt((Integer) message.getOption(Coala.OptionCode.OptionBlock1).value).getPayload() : "");
-                //String block2Options = (message.getOption(Coala.OptionCode.OptionBlock2) != null ? " Block2: " + Block.fromInt((Integer) message.getOption(Coala.OptionCode.OptionBlock2).value).getPayload() : "");
-
                 // Run Layers Chain
                 try {
                     Reference<InetSocketAddress> senderAddressReference = new Reference<>((InetSocketAddress) udpPacket.getSocketAddress());
@@ -115,7 +107,6 @@ public class CoAPReceiver {
                     receiveLayerStack.onReceive(message, senderAddressReference);
                 } catch (LayersStack.InterruptedException e) {
                     e.printStackTrace();
-                    continue;
                 }
             }
 
@@ -145,17 +136,8 @@ public class CoAPReceiver {
         try {
             message = CoAPSerializer.fromBytes(data);
         } catch (CoAPSerializer.DeserializeException e) {
-            e.printStackTrace();
-
-            if (e.getMessageId() != null) {//TODO: вероятно стоит перенести в другое место
-                CoAPMessage resetMessage = new CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.CoapCodeEmpty, e.getMessageId());
-                resetMessage.setStringPayload(e.getMessage());
-
-                resetMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionURIHost, udpPacket.getAddress().getHostAddress()));
-                resetMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionURIPort, udpPacket.getPort()));
-
-                client.send(resetMessage, null);
-            }
+            LogHelper.e("Deserialization error: " + e.getMessage());
+            if (BuildConfig.DEBUG) e.printStackTrace();
             return null;
         }
         return message;
