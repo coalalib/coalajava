@@ -64,12 +64,7 @@ public class CoAPObservableResource extends CoAPResource {
     }
 
     private void addOptions(CoAPMessage responseMessage, CoAPMessage message, InetSocketAddress senderAddress) {
-        CoAPMessageOption option = responseMessage.getOption(CoAPMessageOptionCode.OptionURIHost);
-        if (option == null) {
-            responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionURIHost, senderAddress.getAddress().getHostAddress()));
-            responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionURIPort, senderAddress.getPort()));
-        }
-
+        responseMessage.setDestination(senderAddress);
         if (message.getOption(CoAPMessageOptionCode.OptionBlock1) != null) {
             responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionBlock1, message.getOption(CoAPMessageOptionCode.OptionBlock1).value));
         }

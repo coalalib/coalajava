@@ -56,8 +56,6 @@ public class ProxyLayer implements ReceiveLayer, SendLayer {
         LogHelper.v("ProxyLayer onSend, message: " + message.getId()
                 + " destination: " + (message == null ? null : message.getDestination()) + ", proxy: " + (message == null || message.getProxy() == null ? "null" : message.getProxy()));
 
-        removeRestrictedOptionsFromProxiedMessage(message);
-
         receiverAddressReference.set(message.getProxy());
 
         return true;
@@ -79,15 +77,4 @@ public class ProxyLayer implements ReceiveLayer, SendLayer {
         client.send(responseMessage, null);
     }
 
-    /**
-     * The Proxy-Uri Option MUST take precedence over any of the Uri-Host,
-     * Uri-Port, Uri-Path or Uri-Query options (each of which MUST NOT be
-     * included in a request containing the Proxy-Uri Option).
-     *
-     * @param message
-     */
-    private void removeRestrictedOptionsFromProxiedMessage(CoAPMessage message) {
-        message.removeOption(CoAPMessageOptionCode.OptionURIHost);
-        message.removeOption(CoAPMessageOptionCode.OptionURIPort);
-    }
 }

@@ -289,12 +289,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
 
     private void sendSessionError(CoAPMessage message, InetSocketAddress senderAddress, CoAPMessageOptionCode code) {
         CoAPMessage responseMessage = new CoAPMessage(CoAPMessageType.ACK, CoAPMessageCode.CoapCodeUnauthorized, message.getId());
-
-        CoAPMessageOption option = responseMessage.getOption(CoAPMessageOptionCode.OptionURIHost);
-        if (option == null) {
-            responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionURIHost, senderAddress.getAddress().getHostAddress()));
-            responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionURIPort, senderAddress.getPort()));
-        }
+        responseMessage.setDestination(senderAddress);
         if (message.getProxySecurityId() != null) {
             responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionProxySecurityID, message.getProxySecurityId()));
         }
@@ -305,28 +300,24 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
     }
 
     public void sendClientHello(InetSocketAddress proxyAddress, Integer proxySecurityId, InetSocketAddress address, byte[] myPublicKey, CoAPHandler handler) {
-        CoAPMessage message = new CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET);
-        message.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionURIHost, address.getAddress().getHostAddress()));
-        message.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionURIPort, address.getPort()));
-
-        message.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionHandshakeType, HandshakeType.ClientHello.toInt()));
+        CoAPMessage responseMessage = new CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET);
+        responseMessage.setDestination(address);
+        responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionHandshakeType, HandshakeType.ClientHello.toInt()));
         if (proxySecurityId != null) {
-            message.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionProxySecurityID, proxySecurityId));
+            responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionProxySecurityID, proxySecurityId));
         }
-        message.setPayload(new CoAPMessagePayload(myPublicKey));
+        responseMessage.setPayload(new CoAPMessagePayload(myPublicKey));
+        responseMessage.setProxy(proxyAddress);
 
-        message.setProxy(proxyAddress);
+        client.send(responseMessage, handler);
 
-        client.send(message, handler);
-
-        LogHelper.d("sendClientHello messageId: " + message.getId() + " address: " + address.getAddress().getHostAddress() + ":" + address.getPort() + ", publicKey: " + Hex.encodeHexString(myPublicKey) + ", securityId " + message.getOption(CoAPMessageOptionCode.OptionProxySecurityID));
+        LogHelper.d("sendClientHello messageId: " + responseMessage.getId() + " address: " + address.getAddress().getHostAddress() + ":" + address.getPort() + ", publicKey: " + Hex.encodeHexString(myPublicKey) + ", securityId " + responseMessage.getOption(CoAPMessageOptionCode.OptionProxySecurityID));
     }
 
     public void sendPeerHello(InetSocketAddress address, byte[] publicKey, CoAPMessage message) {
         LogHelper.d("sendPeerHello");
         CoAPMessage responseMessage = new CoAPMessage(CoAPMessageType.ACK, CoAPMessageCode.CoapCodeContent, message.getId());
-        responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionURIHost, address.getAddress().getHostAddress()));
-        responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionURIPort, address.getPort()));
+        responseMessage.setDestination(address);
         responseMessage.setURIScheme(message.getURIScheme());
 
         responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionHandshakeType, HandshakeType.PeerHello.toInt()));

@@ -267,15 +267,16 @@ object CoapSerializerSpek : Spek({
             it("successfully serialize and deserialize uri string") {
                 val source = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.GET)
 
-                source.uri = "coaps://192.168.1.1:8080/test?param=1&param=value"
+                source.uri = "coaps://192.168.1.1:8080/test?param=1&param2=value"
 
                 val sourceBytes = CoAPSerializer.toBytes(source)
                 assertNotNull(sourceBytes)
 
                 val result = CoAPSerializer.fromBytes(sourceBytes)
+                result.destination = source.destination
                 assertNotNull(result)
 
-                assertEquals("coaps://192.168.1.1:8080/test?param=1&param=value", result.uri)
+                assertEquals("coaps://192.168.1.1:8080/test?param=1&param2=value", result.uri)
             }
 
         }
