@@ -1,5 +1,7 @@
 package com.ndmsystems.coala.message;
 
+import android.util.Log;
+
 import com.ndmsystems.coala.Coala;
 import com.ndmsystems.coala.helpers.Hex;
 import com.ndmsystems.coala.helpers.MessageHelper;
@@ -55,7 +57,7 @@ public class CoAPMessage {
     }
 
 
-    private InetSocketAddress destination;
+    private InetSocketAddress address;
     private InetSocketAddress proxy;
 
 
@@ -81,7 +83,7 @@ public class CoAPMessage {
         }
 
         if (message.getProxy() != null) this.proxy = message.getProxy();
-        if (message.destination != null) this.destination = message.destination;
+        if (message.address != null) this.address = message.address;
         if (message.responseHandler != null) this.responseHandler = message.responseHandler;
         if (message.resendHandler != null) this.resendHandler = message.resendHandler;
         if (message.peerPublicKey != null) this.peerPublicKey = message.peerPublicKey;
@@ -197,15 +199,6 @@ public class CoAPMessage {
         return this;
     }
 
-    public void setDestination(InetSocketAddress address) {
-        this.destination = address;
-    }
-
-    public InetSocketAddress getDestination() {
-        if (destination != null) return destination;
-        return getAddress();
-    }
-
     /**
      * Example: <code>[scheme]://[host]:[port]{/resource}*?{&amp;query}*</code>
      *
@@ -226,9 +219,11 @@ public class CoAPMessage {
     public CoAPMessage setURI(URI uri) {
         setURIScheme(Scheme.fromString(uri.getScheme()));
 
-        setURIHost(uri.getHost());
+        removeOption(CoAPMessageOptionCode.OptionURIHost);
+        removeOption(CoAPMessageOptionCode.OptionURIPort);
 
-        setURIPort(uri.getPort());
+        int port = uri.getPort() != -1 ? uri.getPort() : Coala.DEFAULT_PORT;
+        address = new InetSocketAddress(uri.getHost(), port);
 
         setURIPath(uri.getPath());
 
@@ -240,11 +235,24 @@ public class CoAPMessage {
     public String getURI() {
         StringBuilder builder = new StringBuilder();
 
+        int port;
+        if (address != null && address.getPort() != -1)
+            port = address.getPort();
+        else
+            port = Coala.DEFAULT_PORT;
+
+        String host;
+        if (address != null && address.getAddress().getHostAddress() != null)
+            host = address.getAddress().getHostAddress();
+        else {
+            LogHelper.w("Address is null! return \"localhost\"");
+            host = "localhost";
+        }
+
         if (hasOption(CoAPMessageOptionCode.OptionProxyURI)) {
             builder.append((String) getOption(CoAPMessageOptionCode.OptionProxyURI).value);
         } else {
-            builder.append(getURIScheme().toString()).append("://")
-                    .append(getURIHost()).append(":").append(getURIPort());
+            builder.append(getURIScheme().toString()).append("://").append(host).append(":").append(port);
         }
 
         String uriPath = getURIPathString();
@@ -271,24 +279,6 @@ public class CoAPMessage {
         }
 
         return builder.toString();
-    }
-
-    public String getURIHost() {
-        return destination != null ? destination.getAddress().getHostAddress() : "localhost";
-    }
-
-    public CoAPMessage setURIHost(String host) {
-        destination = new InetSocketAddress(host, getURIPort());
-        return this;
-    }
-
-    public Integer getURIPort() {
-        return (destination != null) ? destination.getPort() : Coala.DEFAULT_PORT;
-    }
-
-    public CoAPMessage setURIPort(int port) {
-        destination = new InetSocketAddress(getURIHost(), port == -1 ? Coala.DEFAULT_PORT : port);
-        return this;
     }
 
     public String getURIPathString() {
@@ -427,14 +417,23 @@ public class CoAPMessage {
         return null;
     }
 
+    public InetSocketAddress getAddress() {
+        return address;
+    }
+
+    public CoAPMessage setAddress(InetSocketAddress address) {
+        this.address = address;
+        return this;
+    }
+
     public InetSocketAddress getProxy() {
         return proxy;
     }
 
-    public void setProxy(InetSocketAddress address) {
-        if (address == null) return;
-        proxy = address;
-        CoAPMessageOption option = new CoAPMessageOption(CoAPMessageOptionCode.OptionProxyURI, getURIScheme().toString() +"://" + getURIHost() + ":" + getURIPort().toString());
+    public void setProxy(InetSocketAddress proxyAddress) {
+        if (proxyAddress == null) return;
+        proxy = proxyAddress;
+        CoAPMessageOption option = new CoAPMessageOption(CoAPMessageOptionCode.OptionProxyURI, getURIScheme().toString() + "://" + address.getAddress().getHostAddress() + ":" + address.getPort());
         addOption(option);
     }
 
@@ -476,20 +475,6 @@ public class CoAPMessage {
     @Override
     public int hashCode() {
         return id;
-    }
-
-    public void setAddress(InetSocketAddress address) {
-        if (address.getAddress() != null
-                && address.getAddress().getHostAddress() != null) {
-            setURIHost(address.getAddress().getHostAddress());
-        } else {
-            setURIHost(address.getHostName());
-        }
-        setURIPort(address.getPort());
-    }
-
-    public InetSocketAddress getAddress() {
-        return new InetSocketAddress(getURIHost(), getURIPort());
     }
 
     public void setResendHandler(ResendHandler resendHandler) {

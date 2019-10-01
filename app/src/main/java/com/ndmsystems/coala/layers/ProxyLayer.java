@@ -13,11 +13,10 @@ import java.net.InetSocketAddress;
 
 public class ProxyLayer implements ReceiveLayer, SendLayer {
 
-    private CoAPClient client;
-    private CoAPMessagePool messagePool;
+    private final CoAPClient client;
+    private final CoAPMessagePool messagePool;
 
-    public ProxyLayer(CoAPClient client,
-                      CoAPMessagePool messagePool) {
+    public ProxyLayer(CoAPClient client, CoAPMessagePool messagePool) {
         this.client = client;
         this.messagePool = messagePool;
     }
@@ -25,11 +24,16 @@ public class ProxyLayer implements ReceiveLayer, SendLayer {
     @Override
     public boolean onReceive(CoAPMessage message, Reference<InetSocketAddress> senderAddressReference) {
         CoAPMessage sourceMessage = messagePool.getSourceMessageByToken(message.getHexToken());
-        LogHelper.v("ProxyLayer onReceive, message: " + message.getId() + " sourceMessage id = " + (sourceMessage == null ? "null" : sourceMessage.getId())
-        + " destination: " + (sourceMessage == null ? null : sourceMessage.getDestination()) + ", proxy: " + (sourceMessage == null || sourceMessage.getProxy() == null ? "null" : sourceMessage.getProxy()));
+        LogHelper.v("ProxyLayer onReceive:" +
+                " message: " + message.getId() +
+                " sourceMessage id = " + (sourceMessage == null ? "null" : sourceMessage.getId()) +
+                " destination: " + (sourceMessage == null ? null : sourceMessage.getAddress()) +
+                " proxy: " + (sourceMessage == null || sourceMessage.getProxy() == null ? "null" : sourceMessage.getProxy()));
+
         if (sourceMessage != null && sourceMessage.getProxy() != null) {
-            LogHelper.i("Set destination: " + sourceMessage.getDestination() + ", proxy: " + sourceMessage.getProxy());
-            senderAddressReference.set(sourceMessage.getDestination());
+            LogHelper.i("Set destination: " + sourceMessage.getAddress() + ", proxy: " + sourceMessage.getProxy());
+            message.setAddress(sourceMessage.getAddress());
+            senderAddressReference.set(sourceMessage.getAddress());
         } else {
             if (sourceMessage == null) {
                 LogHelper.v("Source message is null");
@@ -51,10 +55,12 @@ public class ProxyLayer implements ReceiveLayer, SendLayer {
 
     @Override
     public boolean onSend(CoAPMessage message, Reference<InetSocketAddress> receiverAddressReference) {
-        if (!isAboutProxying(message))
-            return true;
-        LogHelper.v("ProxyLayer onSend, message: " + message.getId()
-                + " destination: " + (message == null ? null : message.getDestination()) + ", proxy: " + (message == null || message.getProxy() == null ? "null" : message.getProxy()));
+        if (!isAboutProxying(message)) return true;
+
+        LogHelper.v("ProxyLayer onSend:" +
+                " message: " + message.getId() +
+                " destination: " + (message == null ? null : message.getAddress()) +
+                " proxy: " + (message == null || message.getProxy() == null ? "null" : message.getProxy()));
 
         receiverAddressReference.set(message.getProxy());
 
@@ -70,8 +76,7 @@ public class ProxyLayer implements ReceiveLayer, SendLayer {
         CoAPMessage responseMessage = new CoAPMessage(CoAPMessageType.NON, CoAPMessageCode.CoapCodeProxyingNotSupported, message.getId());
         if (message.getToken() != null) responseMessage.setToken(message.getToken());
 
-        responseMessage.setURIHost(senderAddress.getAddress().getHostAddress());
-        responseMessage.setURIPort(senderAddress.getPort());
+        responseMessage.setAddress(senderAddress);
         responseMessage.setURIScheme(message.getURIScheme());
 
         client.send(responseMessage, null);

@@ -181,10 +181,7 @@ public class ObserveLayer implements ReceiveLayer, SendLayer {
         LogHelper.v("Send reset message");
         CoAPMessage responseMessage = new CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.CoapCodeEmpty, message.getId());
         if (message.getToken() != null) responseMessage.setToken(message.getToken());
-
-        responseMessage.setURIHost(senderAddress.getAddress().getHostAddress());
-        responseMessage.setURIPort(senderAddress.getPort());
-
+        responseMessage.setAddress(senderAddress);
         if (message.getOption(CoAPMessageOptionCode.OptionBlock1) != null) {
             responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionBlock1, message.getOption(CoAPMessageOptionCode.OptionBlock1).value));
         }

@@ -103,7 +103,7 @@ public class CoAPReceiver {
                 // Run Layers Chain
                 try {
                     Reference<InetSocketAddress> senderAddressReference = new Reference<>((InetSocketAddress) udpPacket.getSocketAddress());
-                    message.setDestination(senderAddressReference.get());
+                    message.setAddress(senderAddressReference.get());
                     receiveLayerStack.onReceive(message, senderAddressReference);
                 } catch (LayersStack.InterruptedException e) {
                     e.printStackTrace();
