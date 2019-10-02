@@ -76,6 +76,7 @@ public class CoAPMessageOption implements Comparable<CoAPMessageOption> {
             case OptionProxyURI:
                 this.value = new String(data);
                 break;
+            case OptionCookie:
             case OptionCoapsURI:
                 this.value = data;
                 break;
