@@ -1,8 +1,9 @@
 package com.ndmsystems.coala.exceptions;
 
-import androidx.annotation.Nullable;
 
 import com.ndmsystems.coala.message.CoAPMessageCode;
+
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Created by Владимир on 21.07.2017.
