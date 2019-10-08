@@ -1,6 +1,5 @@
 package com.ndmsystems.coala.layers.response;
 
-import androidx.annotation.Nullable;
 
 import com.ndmsystems.coala.exceptions.CoAPException;
 import com.ndmsystems.coala.exceptions.WrongAuthDataException;
@@ -8,6 +7,7 @@ import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessageType;
 
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
