@@ -5,7 +5,6 @@ import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageType
 import org.junit.Assert.assertArrayEquals
 import org.spekframework.spek2.Spek
-import org.spekframework.spek2.dsl.Skip
 import org.spekframework.spek2.style.specification.describe
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -244,19 +243,6 @@ object CoapSerializerSpek : Spek({
                 val result = CoAPSerializer.fromBytes(binaryMessage)
 
                 assertEquals(loremText, result.payload.toString())
-            }
-
-
-            //todo
-            //   The presence of a
-            //   marker followed by a zero-length payload MUST be processed as a
-            //   message format error.
-            //   у нас ничего не происходит, а должно ли?
-            it("deserialization failed when payload marker presence but payload is zero length", skip = Skip.Yes()) {
-                val binaryMessage = byteArrayOf(0b01000000.toByte(), 1, 0, 0, 255.toByte())
-                val exception = assertFailsWith(CoAPSerializer.DeserializeException::class) {
-                    CoAPSerializer.fromBytes(binaryMessage)
-                }
             }
 
         }

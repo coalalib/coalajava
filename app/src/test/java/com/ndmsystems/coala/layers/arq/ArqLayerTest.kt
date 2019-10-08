@@ -23,8 +23,6 @@ import kotlin.test.assertTrue
 
 object ArqLayerTest : Spek({
 
-    defaultTimeout = 1111111111111111
-
     Feature("ArqLayer") {
 
         val messagePool by memoized<CoAPMessagePool> { mockk(relaxUnitFun = true) }

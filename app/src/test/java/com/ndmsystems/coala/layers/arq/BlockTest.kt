@@ -13,7 +13,6 @@ import kotlin.test.assertTrue
  */
 
 object BlockTest : Spek({
-    defaultTimeout = 1000000000000L
 
     Feature("Testing block option") {
 
