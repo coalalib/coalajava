@@ -51,8 +51,11 @@ public class LogLayer implements ReceiveLayer, SendLayer {
 
     private boolean isResourceDiscoveryMessage(CoAPMessage message) {
         CoAPMessageOption option = message.getOption(CoAPMessageOptionCode.OptionContentFormat);
-        return option != null &&
-                (((int) option.value) == 40) || message.getURIHost().equals("224.0.0.187");
+        String dist = null;
+        if (message.getAddress() != null && message.getAddress().getAddress().getHostAddress() != null)
+            dist = message.getAddress().getAddress().getHostAddress();
+
+        return option != null && (((int) option.value) == 40) || "224.0.0.187".equals(dist);
     }
 
     public static String getStringToPrintSendingMessage(CoAPMessage message, Reference<InetSocketAddress> receiverAddress) {

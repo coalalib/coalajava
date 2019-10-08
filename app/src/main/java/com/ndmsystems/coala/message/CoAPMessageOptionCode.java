@@ -27,7 +27,6 @@ public enum CoAPMessageOptionCode {
     OptionProxyScheme(39),
     OptionSize1(60),
     OptionURIScheme(2111),
-    //OptionURIScheme(71),
     OptionSelectiveRepeatWindowSize(3001),
     OptionProxySecurityID(3004),
     OptionCookie(3036),
@@ -36,7 +35,6 @@ public enum CoAPMessageOptionCode {
     OptionSessionExpired(4003),
     OptionCoapsURI(4005),
     DefaultOption(999999);//For errors
-    //OptionHandshakeType(81);
 
     /**
      * The integer value of a message type.
@@ -94,7 +92,6 @@ public enum CoAPMessageOptionCode {
                 return OptionSize1;
             case 2111:
                 return OptionURIScheme;
-            //case 71: return OptionURIScheme;OptionSelectiveRepeatWindowSize
             case 3001:
                 return OptionSelectiveRepeatWindowSize;
             case 3004:
@@ -109,7 +106,6 @@ public enum CoAPMessageOptionCode {
                 return OptionSessionExpired;
             case 4005:
                 return OptionCoapsURI;
-            //case 81: return OptionHandshakeType;
             default:
                 LogHelper.e("Unknown CoAP Option Code " + value);
                 return DefaultOption;
