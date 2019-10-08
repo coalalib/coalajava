@@ -3,7 +3,6 @@ package com.ndmsystems.coala.layers;
 import com.ndmsystems.coala.CoAPClient;
 import com.ndmsystems.coala.CoAPHandler;
 import com.ndmsystems.coala.CoAPMessagePool;
-import com.ndmsystems.coala.layers.ProxyLayer;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessageOption;
@@ -17,7 +16,9 @@ import org.mockito.ArgumentCaptor;
 
 import java.net.InetSocketAddress;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -52,10 +53,10 @@ public class ProxyLayerTest {
     }
 
     @Test
-    public void onSend_messageThroughProxy_shouldRemoveRestrictedOptions(){
+    public void onSend_messageThroughProxy_shouldRemoveRestrictedOptions() {
         CoAPMessage message = new CoAPMessage(CoAPMessageType.NON, CoAPMessageCode.GET);
         message.setURI("coap://123.123.123.124:5556/asd?asd=asd");
-        InetSocketAddress destinationAddress = message.getDestination();
+        InetSocketAddress destinationAddress = message.getAddress();
         InetSocketAddress proxyAddress = new InetSocketAddress("123.123.123.123", 5432);
         Reference<InetSocketAddress> addressReference = new Reference<>(proxyAddress);
         message.setProxy(proxyAddress);
@@ -99,7 +100,7 @@ public class ProxyLayerTest {
         CoAPMessage response = argumentCaptor.getValue();
         assertEquals(CoAPMessageCode.CoapCodeProxyingNotSupported, response.getCode());
         assertEquals(CoAPMessageType.NON, response.getType());
-        assertEquals(proxyAddress.getAddress().getHostAddress(), response.getURIHost());
-        assertEquals((long) proxyAddress.getPort(), (long) response.getURIPort());
+        assertEquals(proxyAddress.getAddress().getHostAddress(), response.getAddress().getAddress().getHostAddress());
+        assertEquals((long) proxyAddress.getPort(), (long) response.getAddress().getPort());
     }
 }

@@ -1,10 +1,11 @@
 package com.ndmsystems.coala.layers.arq
 
-import com.ndmsystems.coala.*
-import com.ndmsystems.coala.helpers.Hex
+import com.ndmsystems.coala.CoAPHandler
+import com.ndmsystems.coala.CoAPMessagePool
+import com.ndmsystems.coala.Coala
+import com.ndmsystems.coala.TestHelper
 import com.ndmsystems.coala.layers.arq.data.DataFactory
 import com.ndmsystems.coala.layers.arq.data.IData
-import com.ndmsystems.coala.layers.arq.states.SendState
 import com.ndmsystems.coala.message.*
 import com.ndmsystems.coala.utils.Reference
 import com.ndmsystems.infrastructure.logging.LogHelper
@@ -13,7 +14,6 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.gherkin.Feature
 import java.net.InetSocketAddress
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 
@@ -234,8 +234,8 @@ object ArqLayerTest : Spek({
 
     private fun isAckCorrect(request: CoAPMessage, senderAddress: InetSocketAddress, ackMessage: CoAPMessage, requestBlock1Option: CoAPMessageOption): Boolean {
         assertEquals(CoAPMessageType.ACK, ackMessage.type)
-        assertEquals(senderAddress.port.toLong(), (ackMessage.uriPort as Int).toLong())
-        assertEquals(senderAddress.address.hostAddress, ackMessage.uriHost)
+        assertEquals(senderAddress.port.toLong(), ackMessage.address.port.toLong())
+        assertEquals(senderAddress.address.hostAddress, ackMessage.address.address.hostAddress)
 
         val block = Block(requestBlock1Option.value as Int, DataFactory.create(request.payload.content))
         val ackBlockOption = ackMessage.getOption(CoAPMessageOptionCode.OptionBlock1)

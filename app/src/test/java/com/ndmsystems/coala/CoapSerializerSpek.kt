@@ -273,7 +273,7 @@ object CoapSerializerSpek : Spek({
                 assertNotNull(sourceBytes)
 
                 val result = CoAPSerializer.fromBytes(sourceBytes)
-                result.destination = source.destination
+                result.address = source.address
                 assertNotNull(result)
 
                 assertEquals("coaps://192.168.1.1:8080/test?param=1&param2=value", result.uri)

@@ -344,11 +344,11 @@ object ObserveLayerTest : Spek({
             }
 
             And("original host matches ACK message host") {
-                assertEquals(address.address.hostAddress, ackMessage.captured.uriHost)
+                assertEquals(address.address.hostAddress, ackMessage.captured.address.address.hostAddress)
             }
 
             And("original port matches ACK message port") {
-                assertEquals(address.port, ackMessage.captured.uriPort)
+                assertEquals(address.port, ackMessage.captured.address.port)
             }
 
             And("original URIScheme matches ACK message URIScheme") {
@@ -474,11 +474,11 @@ object ObserveLayerTest : Spek({
             }
 
             And("original host matches RESET message host") {
-                assertEquals(address.address.hostAddress, sentMessage.captured.uriHost)
+                assertEquals(address.address.hostAddress, sentMessage.captured.address.address.hostAddress)
             }
 
             And("original port matches RESET message port") {
-                assertEquals(address.port, sentMessage.captured.uriPort)
+                assertEquals(address.port, sentMessage.captured.address.port)
             }
 
             And("original URIScheme matches RESET message URIScheme") {
@@ -535,11 +535,11 @@ object ObserveLayerTest : Spek({
             }
 
             And("original host matches RESET message host") {
-                assertEquals(address.address.hostAddress, sentMessage.captured.uriHost)
+                assertEquals(address.address.hostAddress, sentMessage.captured.address.address.hostAddress)
             }
 
             And("original port matches RESET message port") {
-                assertEquals(address.port, sentMessage.captured.uriPort)
+                assertEquals(address.port, sentMessage.captured.address.port)
             }
 
             And("original URIScheme matches RESET message URIScheme") {
