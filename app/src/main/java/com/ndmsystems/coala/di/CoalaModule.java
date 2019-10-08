@@ -20,7 +20,6 @@ import com.ndmsystems.coala.layers.ReliabilityLayer;
 import com.ndmsystems.coala.layers.RequestLayer;
 import com.ndmsystems.coala.layers.SendLayer;
 import com.ndmsystems.coala.layers.arq.ArqLayer;
-import com.ndmsystems.coala.layers.blockwise.BlockwiseLayer;
 import com.ndmsystems.coala.layers.response.ResponseLayer;
 import com.ndmsystems.coala.layers.security.SecurityLayer;
 import com.ndmsystems.coala.layers.security.session.SecuredSessionPool;
@@ -132,16 +131,6 @@ public class CoalaModule {
 
     @Provides
     @Singleton
-    public BlockwiseLayer provideBlockwiseLayer(CoAPMessagePool messagePool,
-                                                CoAPClient client,
-                                                RegistryOfObservingResources registryOfObservingResources) {
-        return new BlockwiseLayer(messagePool,
-                client,
-                registryOfObservingResources);
-    }
-
-    @Provides
-    @Singleton
     public ReliabilityLayer provideReliabilityLayer(CoAPMessagePool messagePool,
                                                     ResourceDiscoveryHelper resourceDiscoveryHelper,
                                                     AckHandlersPool ackHandlersPool) {
@@ -183,7 +172,6 @@ public class CoalaModule {
     @Singleton
     public LayersStack provideSendLayerStack(ResponseLayer responseLayer,
                                              ArqLayer arqLayer,
-//                                             BlockwiseLayer blockwiseLayer,
                                              LogLayer logLayer,
                                              SecurityLayer securityLayer,
                                              ObserveLayer observeLayer,
@@ -192,8 +180,6 @@ public class CoalaModule {
                 new SendLayer[]{
                         responseLayer,
                         arqLayer,
-//                        blockwiseLayer
-
                         logLayer,
                         observeLayer,
                         proxyLayer,
@@ -208,7 +194,6 @@ public class CoalaModule {
                                                 SecurityLayer securityLayer,
                                                 ArqLayer arqLayer,
                                                 LogLayer logLayer,
-//                                                BlockwiseLayer blockwiseLayer,
                                                 ReliabilityLayer reliabilityLayer,
                                                 ObserveLayer observeLayer,
                                                 RequestLayer requestLayer,
@@ -219,7 +204,6 @@ public class CoalaModule {
                         logLayer,
                         securityLayer,
                         arqLayer,
-//                        blockwiseLayer,
                         reliabilityLayer,
                         observeLayer,
                         requestLayer,
@@ -230,11 +214,8 @@ public class CoalaModule {
     @Provides
     @Singleton
     public CoAPReceiver provideReceiver(ConnectionProvider connectionProvider,
-                                        CoAPClient client,
                                         @Named("receive") LayersStack receiveLayerStack) {
-        return new CoAPReceiver(connectionProvider,
-                client,
-                receiveLayerStack);
+        return new CoAPReceiver(connectionProvider, receiveLayerStack);
     }
 
     @Provides
@@ -242,9 +223,7 @@ public class CoalaModule {
     public CoAPSender provideSender(ConnectionProvider connectionProvider,
                                     CoAPMessagePool messagePool,
                                     @Named("send") LayersStack sendLayerStack) {
-        return new CoAPSender(connectionProvider,
-                messagePool,
-                sendLayerStack);
+        return new CoAPSender(connectionProvider, messagePool, sendLayerStack);
     }
 
     @Provides

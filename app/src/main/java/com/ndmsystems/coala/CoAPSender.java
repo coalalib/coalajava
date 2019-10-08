@@ -88,9 +88,9 @@ public class CoAPSender {
                             break;
                         }
 
-                        Reference<InetSocketAddress> destinationAddressReference = new Reference<>(message.getDestination());
+                        Reference<InetSocketAddress> destinationAddressReference = new Reference<>(message.getAddress());
                         //Этот мерзкий хак нужен для того чтобы сохранить исходный адрес назначения, не измененный слоями
-                        message.setDestination(destinationAddressReference.get());
+                        message.setAddress(destinationAddressReference.get());
 
                         boolean isNeedToSend;
                         // Run Layers Chain

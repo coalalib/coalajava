@@ -43,13 +43,11 @@ public class ObserveLayer implements ReceiveLayer, SendLayer {
 
     @Override
     public boolean onSend(CoAPMessage message, Reference<InetSocketAddress> receiverAddressReference) {
-        if (isRegistrationRequest(message) || isDeregistrationRequest(message)) {
-            byte[] token = message.getToken();
-            if (isRegistrationRequest(message)) {
-                registryOfObservingResources.addObservingResource(token, new ObservingResource(message, ackHandlers.get(message.getId())));
-            } else if (isDeregistrationRequest(message)) {
-                registryOfObservingResources.removeObservingResource(token);
-            }
+        byte[] token = message.getToken();
+        if (isRegistrationRequest(message)) {
+            registryOfObservingResources.addObservingResource(token, new ObservingResource(message, ackHandlers.get(message.getId())));
+        } else if (isDeregistrationRequest(message)) {
+            registryOfObservingResources.removeObservingResource(token);
         }
         return true;
     }
@@ -170,7 +168,7 @@ public class ObserveLayer implements ReceiveLayer, SendLayer {
         if (message.getOption(CoAPMessageOptionCode.OptionBlock2) != null)
             responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionBlock2, message.getOption(CoAPMessageOptionCode.OptionBlock2).value));
 
-        if(message.hasOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize))
+        if (message.hasOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize))
             responseMessage.addOption(message.getOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize));
 
         // Validate message scheme
@@ -183,10 +181,7 @@ public class ObserveLayer implements ReceiveLayer, SendLayer {
         LogHelper.v("Send reset message");
         CoAPMessage responseMessage = new CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.CoapCodeEmpty, message.getId());
         if (message.getToken() != null) responseMessage.setToken(message.getToken());
-
-        responseMessage.setURIHost(senderAddress.getAddress().getHostAddress());
-        responseMessage.setURIPort(senderAddress.getPort());
-
+        responseMessage.setAddress(senderAddress);
         if (message.getOption(CoAPMessageOptionCode.OptionBlock1) != null) {
             responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionBlock1, message.getOption(CoAPMessageOptionCode.OptionBlock1).value));
         }

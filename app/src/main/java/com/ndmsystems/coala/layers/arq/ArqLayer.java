@@ -1,6 +1,7 @@
 package com.ndmsystems.coala.layers.arq;
 
 import com.ndmsystems.coala.CoAPClient;
+import com.ndmsystems.coala.CoAPHandler;
 import com.ndmsystems.coala.CoAPMessagePool;
 import com.ndmsystems.coala.helpers.Hex;
 import com.ndmsystems.coala.helpers.MessageHelper;
@@ -37,8 +38,8 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
     private final CoAPClient client;
     private final CoAPMessagePool messagePool;
 
-    protected Map<String, ReceiveState> receiveStates = new ConcurrentHashMap<>();
-    protected Map<String, SendState> sendStates = new ConcurrentHashMap<>();
+    private Map<String, ReceiveState> receiveStates = new ConcurrentHashMap<>();
+    private Map<String, SendState> sendStates = new ConcurrentHashMap<>();
 
     public ArqLayer(CoAPClient client,
                     CoAPMessagePool messagePool) {
@@ -72,17 +73,14 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
     @Override
     public boolean onReceive(CoAPMessage message, Reference<InetSocketAddress> senderAddressReference) {
 
-        if (!isAboutArq(message))
-            return true;
+        if (!isAboutArq(message)) return true;
 
-        if (message.getCode() == CoAPMessageCode.CoapCodeEmpty &&
-                message.getType() == CoAPMessageType.ACK) {
+        if (message.getCode() == CoAPMessageCode.CoapCodeEmpty && message.getType() == CoAPMessageType.ACK) {
             messagePool.setNoNeededSending(message);
             return false;
         }
 
-        if(!isBlockedMessage(message))
-            return true;
+        if (!isBlockedMessage(message)) return true;
 
         if (message.getToken() == null)
             sendResetMessage(message, senderAddressReference.get());
@@ -105,14 +103,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
 
     private void sendResetMessage(CoAPMessage incomingMessage, InetSocketAddress fromAddress) {
         CoAPMessage resetMessage = CoAPMessage.resetTo(incomingMessage, fromAddress);
-        client.send(resetMessage).subscribe(
-                response -> {
-                    //ignore
-                },
-                throwable -> {
-                    //ignore
-                }
-        );
+        client.send(resetMessage, null);
     }
 
     private boolean process(CoAPMessage incomingMessage, CoAPMessageOptionCode blockOptionCode, Block block, int windowSize, CoAPMessage ackMessage) {
@@ -241,15 +232,24 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
         if (originalMessage.getProxy() != null)
             blockMessage.setProxy(originalMessage.getProxy());
         blockMessage.setResendHandler(state);
-        client.send(blockMessage).subscribe(
-                response -> {
-                    //ignore
-                },
-                throwable -> {
+        client.send(blockMessage, new CoAPHandler() {
+            @Override
+            public void onMessage(CoAPMessage message, String error) {
+                if (error != null) {
                     LogHelper.v("Block number = " + block.getNumber() + " failed");
                     fail(token);
+                    return;
                 }
-        );
+                LogHelper.v("Block number = " + block.getNumber() + " sent");
+            }
+
+            @Override
+            public void onAckError(String error) {
+                LogHelper.v("Block number = " + block.getNumber() + " failed");
+                fail(token);
+            }
+        });
+
     }
 
     private void fail(String token) {
@@ -264,12 +264,10 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
 
     @Override
     public boolean onSend(CoAPMessage message, Reference<InetSocketAddress> receiverAddressReference) {
-        if (hasWindowSizeOption(message)
-                && !isStartMixingModeMessage(message))
+        if (hasWindowSizeOption(message) && !isStartMixingModeMessage(message))
             return true;
 
-        if (!isBiggerThenCanBeTransferedBySingleBlock(message) ||
-                message.getToken() == null)
+        if (!isBiggerThenCanBeTransferedBySingleBlock(message) || message.getToken() == null)
             return true;
 
 
@@ -289,8 +287,14 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
                 CoAPMessage.convertToEmptyAck(message, receiverAddressReference.get());
                 ackMessage = message;
                 ackMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize, WINDOW_SIZE));
-                LogHelper.d("ARQ: Send empty ack, id " + ackMessage.getId() + ", payload: '" + ackMessage.toString() + "', destination host: " + ackMessage.getURI() + " type " + ackMessage.getType() + " code " + ackMessage.getCode().name() + " token " + Hex.encodeHexString(ackMessage.getToken())
-                        + "\n" + "Options: " + MessageHelper.getMessageOptionsString(ackMessage));
+                LogHelper.d(
+                        "ARQ: Send empty ack, id " + ackMessage.getId() + " " +
+                                "payload: '" + ackMessage.toString() + " " +
+                                "destination host: " + ackMessage.getURI() + " " +
+                                "type: " + ackMessage.getType() + " " +
+                                "code: " + ackMessage.getCode().name() + " " +
+                                "token: " + Hex.encodeHexString(ackMessage.getToken()) + " " +
+                                "options: " + MessageHelper.getMessageOptionsString(ackMessage));
                 break;
             case NON:
                 originalMessage = new CoAPMessage(message);
@@ -305,7 +309,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
         sendStates.put(token, sendState);
         sendMoreData(token);
 
-        LogHelper.v("ARQ: splitting message " + message.getId() + " to values. Sending payload = " + payload.content.length);
+        LogHelper.v("ARQ: split message " + message.getId() + " to values. Sending payload = " + payload.content.length);
 
         if (ackMessage != null)
             return true;

@@ -1,7 +1,8 @@
 package com.ndmsystems.coala.helpers;
 
 
-import com.ndmsystems.coala.layers.blockwise.Block;
+import com.ndmsystems.coala.layers.arq.Block;
+import com.ndmsystems.coala.layers.arq.data.DataFactory;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageOption;
 
@@ -28,10 +29,20 @@ public class MessageHelper {
             switch (option.code) {
                 case OptionBlock1:
                 case OptionBlock2:
-                    buf.append(option.code.toString()).append(" : '").append(option.value == null ? "null" : (Block.fromInt((Integer) option.value) + "'(" + option.value + ") "));
+                    buf
+                            .append(option.code.toString()).append(" : '")
+                            .append(option.value == null ? "null" :
+                                    new Block(
+                                            (Integer) option.value,
+                                            message.getPayload() == null
+                                                    ? DataFactory.createEmpty()
+                                                    : DataFactory.create(message.getPayload().content)) + "'(" + option.value + ") ");
                     break;
                 default:
-                    buf.append(option.code.toString()).append(" : '").append(option.value == null ? "null" : option.value.toString()).append("' ");
+                    buf
+                            .append(option.code.toString())
+                            .append(" : '")
+                            .append(option.value == null ? "null" : option.value.toString()).append("' ");
             }
         }
 

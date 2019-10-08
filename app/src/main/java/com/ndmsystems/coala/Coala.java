@@ -25,6 +25,8 @@ import io.reactivex.Observable;
 
 public class Coala extends CoAPTransport {
 
+    public static final int DEFAULT_PORT = 5685;
+
     private static CoalaComponent dependencyGraph;
 
     @Inject

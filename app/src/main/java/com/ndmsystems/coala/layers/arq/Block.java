@@ -8,28 +8,35 @@ import com.ndmsystems.coala.layers.arq.data.IData;
 
 public class Block {
 
-    private int number;
-    private boolean isMoreComing;
+    private final int number;
+    private final boolean isMoreComing;
+    public final BlockSize szx;
     private final IData data;
 
-    public Block(int number, IData data, boolean isMoreComing){
+    private Block(int number, boolean isMoreComing, BlockSize szx, IData data) {
         this.number = number;
         this.data = data;
+        this.szx = szx;
         this.isMoreComing = isMoreComing;
     }
 
-    public Block(int value, IData data){
-        this(value >> 4, data, (value & 8) >> 3 == 1);
+    public Block(int number, IData data, boolean isMoreComing) {
+        this(number, isMoreComing, BlockSize.getBlockSizeByDataBlock(data.size()), data);
+    }
+
+    public Block(int value, IData data) {
+        this(value >> 0x4, (value >> 0x3 & 0x1) == 1, BlockSize.values()[(value & 7)], data);
     }
 
     public int toInt() {
         int rawBlockNumber = number << 4;
         int rawMoreBlocks = ((isMoreComing ? 1 : 0) << 3);
-        int rawBlockSize = (int) ((Math.log(data.size()) / Math.log(2)) - 4);
-        if (rawBlockSize < 0) {
-            rawBlockSize = 1;
-        }
-        return rawBlockNumber | rawMoreBlocks | rawBlockSize;
+
+        return rawBlockNumber | rawMoreBlocks | szx.ordinal();
+    }
+
+    public BlockSize getBlockSize() {
+        return szx;
     }
 
     public int getNumber() {
@@ -40,8 +47,40 @@ public class Block {
         return isMoreComing;
     }
 
+    public int getSzx() {
+        return szx.ordinal();
+    }
+
     public IData getData() {
         return data;
     }
 
+
+    public enum BlockSize {
+
+        BLOCK_SIZE_16,
+        BLOCK_SIZE_32,
+        BLOCK_SIZE_64,
+        BLOCK_SIZE_128,
+        BLOCK_SIZE_256,
+        BLOCK_SIZE_512,
+        BLOCK_SIZE_1024;
+
+
+        public static BlockSize getBlockSizeByDataBlock(int blockSize) {
+            if (blockSize >= 1024) {
+                return BlockSize.BLOCK_SIZE_1024;
+            } else if (blockSize <= 16) {
+                return BlockSize.BLOCK_SIZE_16;
+            } else {
+                int maxOneBit = Integer.highestOneBit(blockSize);
+                return BlockSize.values()[Integer.numberOfTrailingZeros(maxOneBit) - 4];
+            }
+        }
+
+        public final int getValue() {
+            return 1 << (ordinal() + 4);
+        }
+    }
 }
+
