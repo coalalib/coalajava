@@ -42,7 +42,7 @@ public class LocalPeerDiscoverer {
     }
 
     private void sendDiscoveryMulticast() {
-        CoAPMessage message = new CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET); // ID will be auto-generated
+        CoAPMessage message = new CoAPMessage(CoAPMessageType.NON, CoAPMessageCode.GET); // ID will be auto-generated
         message.setURI("coap://224.0.0.187:" + port + "/.well-known/core");
         client.send(message, null);
     }

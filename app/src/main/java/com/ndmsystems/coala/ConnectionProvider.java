@@ -23,6 +23,10 @@ import io.reactivex.subjects.Subject;
 
 public class ConnectionProvider {
 
+    private static final int IPTOS_RELIABILITY = 0x04;
+    private static final int IPTOS_THROUGHPUT = 0x08;
+    private static final int IPTOS_LOWDELAY = 0x10;
+
     private Coala.OnPortIsBusyHandler onPortIsBusyHandler;
     private int port;
     private MulticastSocket connection;
@@ -30,7 +34,7 @@ public class ConnectionProvider {
     private Disposable timerSubscription;
 
     public ConnectionProvider(int port) {
-        this.port = port;;
+        this.port = port;
     }
 
     public synchronized Observable<MulticastSocket> waitForConnection() {
@@ -79,6 +83,7 @@ public class ConnectionProvider {
             MulticastSocket connection = new MulticastSocket(port);
             connection.joinGroup(Inet4Address.getByName("224.0.0.187"));
             connection.setReceiveBufferSize(409600);
+            connection.setTrafficClass(IPTOS_RELIABILITY | IPTOS_THROUGHPUT | IPTOS_LOWDELAY);
             LogHelper.w("MulticastSocket receiveBufferSize: " + connection.getReceiveBufferSize()
                     + ", socket isBound = " + connection.isBound()
                     + ", socket isClosed = " + connection.isClosed()
@@ -97,6 +102,7 @@ public class ConnectionProvider {
 
             MulticastSocket connection = new MulticastSocket(null);
             connection.setReuseAddress(true);
+            connection.setTrafficClass(IPTOS_RELIABILITY | IPTOS_THROUGHPUT | IPTOS_LOWDELAY);
             connection.joinGroup(Inet4Address.getByName("224.0.0.187"));
             connection.setReceiveBufferSize(409600);
             connection.bind(srcAddress);
