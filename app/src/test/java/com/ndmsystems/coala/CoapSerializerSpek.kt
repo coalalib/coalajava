@@ -267,6 +267,14 @@ object CoapSerializerSpek : Spek({
 
         }
 
+
+        describe("all possible") {
+            it("should have valid options") {
+                val msg = CoAPSerializer.fromBytes(DummyData.OptionsAllPossible.read())
+                assertEquals(25, msg.options.size)
+            }
+        }
+
     }
 
 })
