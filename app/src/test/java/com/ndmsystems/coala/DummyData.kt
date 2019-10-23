@@ -6,76 +6,76 @@ import java.io.File
  * Created by Toukhvatullin Marat on 21.10.2019.
  */
 enum class DummyData(private val fileName: String) {
-    coapUrl("coapMessages/CoAPMessageDummyCoapUrl.bin"),
-    coapsUrl("coapMessages/CoAPMessageDummyCoapsUrl.bin"),
+    CoapUrl("coapMessages/CoAPMessageDummyCoapUrl.bin"),
+    CoapsUrl("coapMessages/CoAPMessageDummyCoapsUrl.bin"),
 
-    messageIdRegular("coapMessages/CoAPMessageDummyMessageIdRegular.bin"),
-    messageIdMin("coapMessages/CoAPMessageDummyMessageIdMin.bin"),
-    messageIdMax("coapMessages/CoAPMessageDummyMessageIdMax.bin"),
+    MessageIdRegular("coapMessages/CoAPMessageDummyMessageIdRegular.bin"),
+    MessageIdMin("coapMessages/CoAPMessageDummyMessageIdMin.bin"),
+    MessageIdMax("coapMessages/CoAPMessageDummyMessageIdMax.bin"),
 
-    absentToken("coapMessages/CoAPMessageDummyAbsentToken.bin"),
-    existingToken("coapMessages/CoAPMessageDummyExistingToken.bin"),
+    AbsentToken("coapMessages/CoAPMessageDummyAbsentToken.bin"),
+    ExistingToken("coapMessages/CoAPMessageDummyExistingToken.bin"),
 
-    typeConfirmable("coapMessages/CoAPMessageDummyTypeConfirmable.bin"),
-    typeNonConfirmable("coapMessages/CoAPMessageDummyTypeNonConfirmable.bin"),
-    typeAcknowledgement("coapMessages/CoAPMessageDummyTypeAcknowledgement.bin"),
-    typeReset("coapMessages/CoAPMessageDummyTypeReset.bin"),
+    TypeConfirmable("coapMessages/CoAPMessageDummyTypeConfirmable.bin"),
+    TypeNonConfirmable("coapMessages/CoAPMessageDummyTypeNonConfirmable.bin"),
+    TypeAcknowledgement("coapMessages/CoAPMessageDummyTypeAcknowledgement.bin"),
+    TypeReset("coapMessages/CoAPMessageDummyTypeReset.bin"),
 
-    codeRequestGet("coapMessages/CoAPMessageDummyCodeRequestGet.bin"),
-    codeRequestPost("coapMessages/CoAPMessageDummyCodeRequestPost.bin"),
-    codeRequestPut("coapMessages/CoAPMessageDummyCodeRequestPut.bin"),
-    codeRequestDelete("coapMessages/CoAPMessageDummyCodeRequestDelete.bin"),
+    CodeRequestGet("coapMessages/CoAPMessageDummyCodeRequestGet.bin"),
+    CodeRequestPost("coapMessages/CoAPMessageDummyCodeRequestPost.bin"),
+    CodeRequestPut("coapMessages/CoAPMessageDummyCodeRequestPut.bin"),
+    CodeRequestDelete("coapMessages/CoAPMessageDummyCodeRequestDelete.bin"),
 
-    codeResponseEmpty("coapMessages/CoAPMessageDummyCodeResponseEmpty.bin"),
-    codeResponseCreated("coapMessages/CoAPMessageDummyCodeResponseCreated.bin"),
-    codeResponseDeleted("coapMessages/CoAPMessageDummyCodeResponseDeleted.bin"),
-    codeResponseValid("coapMessages/CoAPMessageDummyCodeResponseValid.bin"),
-    codeResponseChanged("coapMessages/CoAPMessageDummyCodeResponseChanged.bin"),
-    codeResponseContent("coapMessages/CoAPMessageDummyCodeResponseContent.bin"),
-    codeResponseBadRequest("coapMessages/CoAPMessageDummyCodeResponseBadRequest.bin"),
-    codeResponseUnauthorized("coapMessages/CoAPMessageDummyCodeResponseUnauthorized.bin"),
-    codeResponseBadOption("coapMessages/CoAPMessageDummyCodeResponseBadOption.bin"),
-    codeResponseForbidden("coapMessages/CoAPMessageDummyCodeResponseForbidden.bin"),
-    codeResponseNotFound("coapMessages/CoAPMessageDummyCodeResponseNotFound.bin"),
-    codeResponseMethodNotAllowed("coapMessages/CoAPMessageDummyCodeResponseMethodNotAllowed.bin"),
-    codeResponseNotAcceptable("coapMessages/CoAPMessageDummyCodeResponseNotAcceptable.bin"),
-    codeResponsePreconditionFailed("coapMessages/CoAPMessageDummyCodeResponsePreconditionFailed.bin"),
-    codeResponseRequestEntityTooLarge("coapMessages/CoAPMessageDummyCodeResponseRequestEntityTooLarge.bin"),
-    codeResponseUnsupportedContentFormat("coapMessages/CoAPMessageDummyCodeResponseUnsupportedContentFormat.bin"),
-    codeResponseInternalServerError("coapMessages/CoAPMessageDummyCodeResponseInternalServerError.bin"),
-    codeResponseNotImplemented("coapMessages/CoAPMessageDummyCodeResponseNotImplemented.bin"),
-    codeResponseBadGateway("coapMessages/CoAPMessageDummyCodeResponseBadGateway.bin"),
-    codeResponseServiceUnavailable("coapMessages/CoAPMessageDummyCodeResponseServiceUnavailable.bin"),
-    codeResponseGatewayTimeout("coapMessages/CoAPMessageDummyCodeResponseGatewayTimeout.bin"),
-    codeResponseProxyingNotSupported("coapMessages/CoAPMessageDummyCodeResponseProxyingNotSupported.bin"),
-    codeResponseContinued("coapMessages/CoAPMessageDummyCodeResponseContinued.bin"),
-    codeResponseRequestEntityIncomplete("coapMessages/CoAPMessageDummyCodeResponseRequestEntityIncomplete.bin"),
-    codeResponseInvalidCode("coapMessages/CoAPMessageDummyCodeResponseInvalidCode.bin"),
+    CodeResponseEmpty("coapMessages/CoAPMessageDummyCodeResponseEmpty.bin"),
+    CodeResponseCreated("coapMessages/CoAPMessageDummyCodeResponseCreated.bin"),
+    CodeResponseDeleted("coapMessages/CoAPMessageDummyCodeResponseDeleted.bin"),
+    CodeResponseValid("coapMessages/CoAPMessageDummyCodeResponseValid.bin"),
+    CodeResponseChanged("coapMessages/CoAPMessageDummyCodeResponseChanged.bin"),
+    CodeResponseContent("coapMessages/CoAPMessageDummyCodeResponseContent.bin"),
+    CodeResponseBadRequest("coapMessages/CoAPMessageDummyCodeResponseBadRequest.bin"),
+    CodeResponseUnauthorized("coapMessages/CoAPMessageDummyCodeResponseUnauthorized.bin"),
+    CodeResponseBadOption("coapMessages/CoAPMessageDummyCodeResponseBadOption.bin"),
+    CodeResponseForbidden("coapMessages/CoAPMessageDummyCodeResponseForbidden.bin"),
+    CodeResponseNotFound("coapMessages/CoAPMessageDummyCodeResponseNotFound.bin"),
+    CodeResponseMethodNotAllowed("coapMessages/CoAPMessageDummyCodeResponseMethodNotAllowed.bin"),
+    CodeResponseNotAcceptable("coapMessages/CoAPMessageDummyCodeResponseNotAcceptable.bin"),
+    CodeResponsePreconditionFailed("coapMessages/CoAPMessageDummyCodeResponsePreconditionFailed.bin"),
+    CodeResponseRequestEntityTooLarge("coapMessages/CoAPMessageDummyCodeResponseRequestEntityTooLarge.bin"),
+    CodeResponseUnsupportedContentFormat("coapMessages/CoAPMessageDummyCodeResponseUnsupportedContentFormat.bin"),
+    CodeResponseInternalServerError("coapMessages/CoAPMessageDummyCodeResponseInternalServerError.bin"),
+    CodeResponseNotImplemented("coapMessages/CoAPMessageDummyCodeResponseNotImplemented.bin"),
+    CodeResponseBadGateway("coapMessages/CoAPMessageDummyCodeResponseBadGateway.bin"),
+    CodeResponseServiceUnavailable("coapMessages/CoAPMessageDummyCodeResponseServiceUnavailable.bin"),
+    CodeResponseGatewayTimeout("coapMessages/CoAPMessageDummyCodeResponseGatewayTimeout.bin"),
+    CodeResponseProxyingNotSupported("coapMessages/CoAPMessageDummyCodeResponseProxyingNotSupported.bin"),
+    CodeResponseContinued("coapMessages/CoAPMessageDummyCodeResponseContinued.bin"),
+    CodeResponseRequestEntityIncomplete("coapMessages/CoAPMessageDummyCodeResponseRequestEntityIncomplete.bin"),
+    CodeResponseInvalidCode("coapMessages/CoAPMessageDummyCodeResponseInvalidCode.bin"),
 
-    optionsAllPossible("coapMessages/CoAPMessageDummyOptionsAllPossible.bin"),
-    optionsRepeatable("coapMessages/CoAPMessageDummyOptionsRepeatable.bin"),
-    optionsNoneRepeatable("coapMessages/CoAPMessageDummyOptionsNoneRepeatable.bin"),
-    optionsIntValue("coapMessages/CoAPMessageDummyOptionsIntValue.bin"),
-    optionsMaxIntValue("coapMessages/CoAPMessageDummyOptionsMaxIntValue.bin"),
-    optionsMinIntValue("coapMessages/CoAPMessageDummyOptionsMinIntValue.bin"),
-    optionsStringValue("coapMessages/CoAPMessageDummyOptionsStringValue.bin"),
-    optionsDataValue("coapMessages/CoAPMessageDummyOptionsDataValue.bin"),
+    OptionsAllPossible("coapMessages/CoAPMessageDummyOptionsAllPossible.bin"),
+    OptionsRepeatable("coapMessages/CoAPMessageDummyOptionsRepeatable.bin"),
+    OptionsNoneRepeatable("coapMessages/CoAPMessageDummyOptionsNoneRepeatable.bin"),
+    OptionsIntValue("coapMessages/CoAPMessageDummyOptionsIntValue.bin"),
+    OptionsMaxIntValue("coapMessages/CoAPMessageDummyOptionsMaxIntValue.bin"),
+    OptionsMinIntValue("coapMessages/CoAPMessageDummyOptionsMinIntValue.bin"),
+    OptionsStringValue("coapMessages/CoAPMessageDummyOptionsStringValue.bin"),
+    OptionsDataValue("coapMessages/CoAPMessageDummyOptionsDataValue.bin"),
 
-    payloadData("coapMessages/CoAPMessageDummyPayloadData.bin"),
-    payloadString("coapMessages/CoAPMessageDummyPayloadString.bin"),
+    PayloadData("coapMessages/CoAPMessageDummyPayloadData.bin"),
+    PayloadString("coapMessages/CoAPMessageDummyPayloadString.bin"),
 
-    validCoapVersion("coapMessages/CoAPMessageDummyValidCoapVersion.bin"),
-    invalidCoapVersion("coapMessages/CoAPMessageDummyInvalidCoapVersion.bin"),
+    ValidCoapVersion("coapMessages/CoAPMessageDummyValidCoapVersion.bin"),
+    InvalidCoapVersion("coapMessages/CoAPMessageDummyInvalidCoapVersion.bin"),
 
     ;
 
     fun read(): ByteArray {
-        /*val byteArr = File(
+        val byteArr = File(
                 javaClass.classLoader
                         ?.getResource(fileName)
                         ?.file
         ).readBytes()
-        println("1:${byteArr.contentToString()}, byteStr:${String(byteArr)} path:$fileName")*/
+        println("1:${byteArr.contentToString()}, byteStr:${String(byteArr)} path:$fileName")
         return File(
                 javaClass.classLoader
                         ?.getResource(fileName)

@@ -271,7 +271,7 @@ object CoapSerializerSpek : Spek({
 
         describe("all possible") {
             it("should have valid options") {
-                val msg = CoAPSerializer.fromBytes(DummyData.optionsAllPossible.read())
+                val msg = CoAPSerializer.fromBytes(DummyData.OptionsAllPossible.read())
                 assertEquals(25, msg.options.size)
             }
         }
@@ -279,31 +279,31 @@ object CoapSerializerSpek : Spek({
 
         describe("given option value") {
             it("of Int") {
-                val msg = CoAPSerializer.fromBytes(DummyData.optionsIntValue.read())
+                val msg = CoAPSerializer.fromBytes(DummyData.OptionsIntValue.read())
                 val data = msg.getOption(CoAPMessageOptionCode.OptionAccept).value
                 assertEquals(100, data as? Int ?: 0)
             }
 
             it("of string") {
-                val msg = CoAPSerializer.fromBytes(DummyData.optionsStringValue.read())
+                val msg = CoAPSerializer.fromBytes(DummyData.OptionsStringValue.read())
                 val data = msg.getOption(CoAPMessageOptionCode.OptionAccept).toBytes()
                 assertEquals("test", String(data))
             }
 
             it("of data") {
-                val msg = CoAPSerializer.fromBytes(DummyData.optionsDataValue.read())
+                val msg = CoAPSerializer.fromBytes(DummyData.OptionsDataValue.read())
                 val data = msg.getOption(CoAPMessageOptionCode.OptionAccept).toBytes()
                 assertArrayEquals("test".toByteArray(), data)
             }
 
             it("of max Int") {
-                val msg = CoAPSerializer.fromBytes(DummyData.optionsMaxIntValue.read())
+                val msg = CoAPSerializer.fromBytes(DummyData.OptionsMaxIntValue.read())
                 val data = msg.getOption(CoAPMessageOptionCode.OptionAccept).value
                 assertEquals(Int.MAX_VALUE, data as? Int ?: 0)
             }
 
             it("of min Int") {
-                val msg = CoAPSerializer.fromBytes(DummyData.optionsMinIntValue.read())
+                val msg = CoAPSerializer.fromBytes(DummyData.OptionsMinIntValue.read())
                 val data = msg.getOption(CoAPMessageOptionCode.OptionAccept).value
                 assertEquals(Int.MIN_VALUE, data as? Int ?: 0)
             }
