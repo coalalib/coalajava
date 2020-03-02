@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CoAPMessagePool {
 
     public static final Integer MAX_PICK_ATTEMPTS = 6;
-    public static final Integer RESEND_PERIOD = 500;     // period to waitForConnection before resend a command
+    public static final Integer RESEND_PERIOD = 750;     // period to waitForConnection before resend a command
     public static final Integer EXPIRATION_PERIOD = 60000; // period to waitForConnection before deleting unsent command (e.g. too many commands in pool)
     public static final Integer GARBAGE_PERIOD = 25000;    // period to waitForConnection before deleting sent command (before Ack or Error received)
 
