@@ -184,7 +184,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
     }
 
     private void generateProxySessionSecurityIdAndAddToMessageAndSession(SecuredSession session, CoAPMessage message) {
-        Integer securityId = RandomGenerator.getRandomInt();
+        Long securityId = RandomGenerator.getRandomUnsignedIntAsLong();
         session.setPeerProxySecurityId(securityId);
         message.setProxySecurityId(securityId);
     }
@@ -297,7 +297,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
         client.send(responseMessage, null);
     }
 
-    public void sendClientHello(InetSocketAddress proxyAddress, Integer proxySecurityId, InetSocketAddress address, byte[] myPublicKey, CoAPHandler handler) {
+    public void sendClientHello(InetSocketAddress proxyAddress, Long proxySecurityId, InetSocketAddress address, byte[] myPublicKey, CoAPHandler handler) {
         CoAPMessage responseMessage = new CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET);
         responseMessage.setAddress(address);
         responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionHandshakeType, HandshakeType.ClientHello.toInt()));

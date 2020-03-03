@@ -5,6 +5,9 @@ import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+
+import static com.ndmsystems.coala.message.CoAPMessageOptionCode.OptionProxySecurityID;
 
 public class CoAPMessageOption implements Comparable<CoAPMessageOption> {
     public CoAPMessageOptionCode code;
@@ -56,13 +59,20 @@ public class CoAPMessageOption implements Comparable<CoAPMessageOption> {
             case OptionSessionExpired:
             case OptionSelectiveRepeatWindowSize:
             case OptionURIScheme:
-            case OptionProxySecurityID:
                 if (data.length > 4) this.value = ByteBuffer.wrap(data).getInt();
                 else {
                     byte[] bigData = new byte[4];
                     for (int i = 0; i < data.length; i++)
                         bigData[3 - data.length + i + 1] = data[i];
                     this.value = ByteBuffer.wrap(bigData).getInt();
+                }
+                break;
+            case OptionProxySecurityID:
+                if (data.length > 4) this.value = ByteBuffer.wrap(data).getLong();
+                else {
+                    ByteBuffer buffer = ByteBuffer.allocate(8).put(new byte[]{0, 0, 0, 0}).put(data);
+                    buffer.position(0);
+                    this.value = buffer.getLong();
                 }
                 break;
             // string values
@@ -103,6 +113,15 @@ public class CoAPMessageOption implements Comparable<CoAPMessageOption> {
 
     public byte[] toBytes() {
         if (value != null) {
+
+            //is it long
+            if (code == OptionProxySecurityID)
+                try {
+                    byte[] bytes = new byte[8];
+                    ByteBuffer.wrap(bytes).putLong((long) value);
+                    return Arrays.copyOfRange(bytes, 4, 8);
+                } catch (ClassCastException e) {
+                }
 
             // Is it Integer?
             // @hbz

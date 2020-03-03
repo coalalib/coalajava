@@ -1,16 +1,15 @@
 package com.ndmsystems.coala.helpers;
 
-import com.ndmsystems.infrastructure.logging.LogHelper;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Created by bas on 15.11.16.
  */
 
 public class RandomGenerator {
+
+    private static final long MAX_UINT = 4294967296L;
 
     private static Random random = new Random();
 
@@ -20,23 +19,8 @@ public class RandomGenerator {
         return b;
     }
 
-    public static Integer getRandomInt() {
-        return random.nextInt();
+    public static Long getRandomUnsignedIntAsLong() {
+        return ThreadLocalRandom.current().nextLong(0, MAX_UINT);
     }
 
-    private static byte[] sha(final byte[] uri) {
-        MessageDigest digest=null;
-        String hash;
-        try {
-            digest = MessageDigest.getInstance("SHA-256");
-            digest.update(uri);
-
-            return digest.digest();
-
-        } catch (NoSuchAlgorithmException e1) {
-            LogHelper.e("NoSuchAlgorithmException, " + e1.getMessage());
-            e1.printStackTrace();
-            return new byte[]{};
-        }
-    }
 }

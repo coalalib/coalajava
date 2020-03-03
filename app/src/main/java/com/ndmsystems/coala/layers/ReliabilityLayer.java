@@ -33,15 +33,12 @@ public class ReliabilityLayer implements ReceiveLayer {
     public boolean onReceive(CoAPMessage message, Reference<InetSocketAddress> senderAddressReference) {
         //TODO убрать отсюда discovery
         if (!message.isRequest()) {
-            LogHelper.v("getting ack handler for id = " + message.getId());
             if (message.getResponseHandler() == null) {
                 CoAPMessageOption option = message.getOption(CoAPMessageOptionCode.OptionContentFormat);
                 if (option != null)
-                    LogHelper.v("OptionContentFormat value = " + ((int) option.value));
                 if (option != null && ((int) option.value) == 40
                         && !senderAddressReference.get().getAddress().getHostAddress().equals("localhost")
                         && !senderAddressReference.get().getAddress().getHostAddress().equals("127.0.0.1")) {
-                    LogHelper.d("Add resource discovery from: " + senderAddressReference.get().toString());
                     resourceDiscoveryHelper.addResult(new ResourceDiscoveryResult(resourceDiscoveryHelper.getResourcesFromMessage(message.toString()), senderAddressReference.get()));
                 }
             }

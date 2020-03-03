@@ -19,7 +19,7 @@ public class SecuredSession {
 
     private byte[] peerPublicKey;
 
-    private Integer peerProxySecurityId;
+    private Long peerProxySecurityId;
 
     public SecuredSession(boolean incoming) {
     }
@@ -130,11 +130,11 @@ public class SecuredSession {
         this.aead = aead;
     }
 
-    public Integer getPeerProxySecurityId() {
+    public Long getPeerProxySecurityId() {
         return peerProxySecurityId;
     }
 
-    public void setPeerProxySecurityId(Integer peerProxySecurityId) {
+    public void setPeerProxySecurityId(Long peerProxySecurityId) {
         this.peerProxySecurityId = peerProxySecurityId;
     }
 

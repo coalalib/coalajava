@@ -1,7 +1,5 @@
 package com.ndmsystems.coala.message;
 
-import android.util.Log;
-
 import com.ndmsystems.coala.Coala;
 import com.ndmsystems.coala.helpers.Hex;
 import com.ndmsystems.coala.helpers.MessageHelper;
@@ -493,17 +491,17 @@ public class CoAPMessage {
         this.peerPublicKey = peerPublicKey;
     }
 
-    public Integer getProxySecurityId() {
+    public Long getProxySecurityId() {
         CoAPMessageOption option = this.getOption(CoAPMessageOptionCode.OptionProxySecurityID);
 
         if (option == null) {
             return null;
         }
 
-        return (Integer) option.value;
+        return (Long) option.value;
     }
 
-    public CoAPMessage setProxySecurityId(Integer proxyId) {
+    public CoAPMessage setProxySecurityId(Long proxyId) {
         CoAPMessageOption option = this.getOption(CoAPMessageOptionCode.OptionProxySecurityID);
 
         if (option == null) {
