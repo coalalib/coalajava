@@ -54,7 +54,7 @@ public class ObserveTest extends BaseAsyncTest {
     @Test
     public void testObserveSuccessSubscribe() {
         client = new Coala(4538);
-        server = new Coala();
+        server = new Coala(5685);
         w(30);
 
         server.addObservableResource("msg", new CoAPResource.CoAPResourceHandler() {
@@ -99,7 +99,7 @@ public class ObserveTest extends BaseAsyncTest {
     }
 
     @Test
-    @Ignore("disable due error that required deep research")
+//    @Ignore("disable due error that required deep research")
     public void testObserveSuccessBigNotification() {
         client = new Coala(1111);
         server = new Coala(2222);
