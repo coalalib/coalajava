@@ -56,10 +56,10 @@ public class Coala extends CoAPTransport {
     protected ICoalaStorage storage;
 
     /**
-     * Create instance of coala with default port 5685
+     * Create instance of coala with random port
      */
     public Coala() {
-        this(5685);
+        this(0);
     }
 
     /**
