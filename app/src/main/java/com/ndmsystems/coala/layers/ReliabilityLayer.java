@@ -35,11 +35,10 @@ public class ReliabilityLayer implements ReceiveLayer {
         if (!message.isRequest()) {
             if (message.getResponseHandler() == null) {
                 CoAPMessageOption option = message.getOption(CoAPMessageOptionCode.OptionContentFormat);
-                if (option != null)
-                if (option != null && ((int) option.value) == 40
+                if (option != null && ((int) option.value) == 0
                         && !senderAddressReference.get().getAddress().getHostAddress().equals("localhost")
                         && !senderAddressReference.get().getAddress().getHostAddress().equals("127.0.0.1")) {
-                    resourceDiscoveryHelper.addResult(new ResourceDiscoveryResult(resourceDiscoveryHelper.getResourcesFromMessage(message.toString()), senderAddressReference.get()));
+                    resourceDiscoveryHelper.addResult(new ResourceDiscoveryResult(message.toString(), senderAddressReference.get()));
                 }
             }
         }

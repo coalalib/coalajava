@@ -1,22 +1,17 @@
 package com.ndmsystems.coala.resource_discovery;
 
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 
 /**
  * Created by bas on 19.09.16.
  */
 public class ResourceDiscoveryResult {
-    private final String[] resources;
+    private final String resources;
     private final InetSocketAddress host;
 
-    public ResourceDiscoveryResult(String[] resources, InetSocketAddress host) {
-        this.resources = resources;
+    public ResourceDiscoveryResult(String resources, InetSocketAddress host) {
+        this.resources = resources == null ? "" : resources;
         this.host = host;
-    }
-
-    public String[] getResources() {
-        return resources;
     }
 
     public InetSocketAddress getHost() {
@@ -30,15 +25,14 @@ public class ResourceDiscoveryResult {
 
         ResourceDiscoveryResult that = (ResourceDiscoveryResult) o;
 
-        // Probably incorrect - comparing Object[] arrays with Arrays.equals
-        if (!Arrays.equals(resources, that.resources)) return false;
+        if (!resources.equals(that.resources)) return false;
         return host.equals(that.host);
 
     }
 
     @Override
     public int hashCode() {
-        int result = Arrays.hashCode(resources);
+        int result = resources.hashCode();
         result = 31 * result + host.hashCode();
         return result;
     }

@@ -33,7 +33,7 @@ object ReliabilityLayerTest: Spek( {
 
             Given("message with CON type and non request code with specific option") {
                 msg = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.CoapCodeCreated)
-                msg.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionContentFormat, 40))
+                msg.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionContentFormat, 0))
             }
 
             var result = false
@@ -42,7 +42,6 @@ object ReliabilityLayerTest: Spek( {
             }
 
             Then("add result in resourceDiscoveryHelper"){
-                verify { resourceDiscoveryHelper.getResourcesFromMessage(msg.toString()) }
                 verify { mockRefAddress.get() }
                 verify { resourceDiscoveryHelper.addResult(any()) }
             }
