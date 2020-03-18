@@ -68,29 +68,11 @@ public class Coala extends CoAPTransport {
     public Coala(Integer port) {
         dependencyGraph = DaggerCoalaComponent.builder().coalaModule(new CoalaModule(this, port)).build();
         dependencyGraph.inject(this);
-        addWellKnownCore();
         addTestResource();//TODO: Убрать после того как станет ненужен
     }
 
     public static CoalaComponent getDependencyGraph() {
         return dependencyGraph;
-    }
-
-    private void addWellKnownCore() {
-        addResource(".well-known/core", CoAPRequestMethod.GET, new CoAPResource.CoAPResourceHandler() {
-            @Override
-            public CoAPResourceOutput onReceive(CoAPResourceInput inputData) {
-                StringBuffer buffer = new StringBuffer();
-                for (CoAPResourcesGroupForPath resourcesGroupForPath : resourceRegistry.getResources().values()) {
-                    if (resourcesGroupForPath.getPath().equals(".well-known/core")) continue;
-
-                    if (buffer.length() > 0) buffer.append(",");
-                    buffer.append("<").append(resourcesGroupForPath.getPath()).append(">");
-                }
-                LogHelper.d("Received get well known core request, address: " + inputData.address + ", resourceRegistry: " + buffer.toString());
-                return new CoAPResourceOutput(new CoAPMessagePayload(buffer.toString().getBytes()), CoAPMessageCode.CoapCodeContent, CoAPMessage.MediaType.LinkFormat);
-            }
-        });
     }
 
     private void addTestResource() {
