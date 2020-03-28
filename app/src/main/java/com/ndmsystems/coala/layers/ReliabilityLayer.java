@@ -38,7 +38,7 @@ public class ReliabilityLayer implements ReceiveLayer {
                 if (option != null && ((int) option.value) == 0
                         && !senderAddressReference.get().getAddress().getHostAddress().equals("localhost")
                         && !senderAddressReference.get().getAddress().getHostAddress().equals("127.0.0.1")) {
-                    resourceDiscoveryHelper.addResult(new ResourceDiscoveryResult(message.toString(), senderAddressReference.get()));
+                    resourceDiscoveryHelper.addResult(new ResourceDiscoveryResult(message.getPayload() != null ? message.getPayload().toString() : "", senderAddressReference.get()));
                 }
             }
         }
