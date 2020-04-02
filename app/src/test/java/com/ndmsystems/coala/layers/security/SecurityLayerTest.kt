@@ -105,6 +105,7 @@ object SecurityLayerTest: Spek({
 
         val securedSessionPool = mockk<SecuredSessionPool>()
         every { securedSessionPool.get(any()) } returns secSession
+        every { securedSessionPool.getByPeerProxySecurityId(any()) } returns null
 
         val securityLayerTest = SecurityLayer(
                 mockCoAPMessagePool,
@@ -142,6 +143,7 @@ object SecurityLayerTest: Spek({
 
         val securedSessionPool = mockk<SecuredSessionPool>()
         every { securedSessionPool.get(any()) } returns session
+        every { securedSessionPool.getByPeerProxySecurityId(any()) } returns null
 
         val securityLayerTest = SecurityLayer(
                 mockCoAPMessagePool,
