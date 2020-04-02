@@ -73,7 +73,9 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
         }
 
         if (message.getURIScheme() == CoAPMessage.Scheme.SECURE) {
-            SecuredSession session = getSessionForAddress(mainMessage != null ? mainMessage : message);
+            SecuredSession sessionByAddress = getSessionForAddress(mainMessage != null ? mainMessage : message);
+            SecuredSession sessionByPeerProxySecurityId = getSessionByPeerProxySecurityId(message);
+            SecuredSession session = sessionByPeerProxySecurityId != null ? sessionByPeerProxySecurityId : sessionByAddress;
 
             if (session == null || !session.isReady()) {
                 LogHelper.e("Encrypt message error: " + message.getId() + ", token: " + message.getHexToken() + ", sessionAddress: " + senderAddress);
@@ -326,6 +328,12 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
 
     private SecuredSession getSessionForAddress(CoAPMessage mainMessage) {
         return sessionPool.get(getHashAddressString(mainMessage));
+    }
+
+    private SecuredSession getSessionByPeerProxySecurityId(CoAPMessage message) {
+        CoAPMessageOption opt = message.getOption(CoAPMessageOptionCode.OptionProxySecurityID);
+        Object obj = opt != null ? opt.value : null;
+        return sessionPool.getByPeerProxySecurityId(obj != null ? (long) obj : null);
     }
 
     private String getHashAddressString(CoAPMessage mainMessage) {

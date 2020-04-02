@@ -25,6 +25,20 @@ public class SecuredSessionPool {
         return pool.get(hash);
     }
 
+    public SecuredSession getByPeerProxySecurityId(Long peerProxySecurityId) {
+        if (peerProxySecurityId == null) {
+            return null;
+        }
+
+        for (SecuredSession session : pool.values()) {
+            if(session != null && peerProxySecurityId.equals(session.getPeerProxySecurityId())){
+                return session;
+            }
+        }
+
+        return null;
+    }
+
     public void remove(String hash) {
         pool.remove(hash);
     }
