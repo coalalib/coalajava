@@ -118,7 +118,6 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
                 SendState sendState = sendStates.get(token);
                 if (sendState != null && sendState.isCompleted()) {
                     LogHelper.v("ARQ: Sending completed, pushing to message pool original message" + sendState.getOriginalMessage().getId());
-                    logArqTransmission(sendState);
                     incomingMessage = sendState.getOriginalMessage();
                     sendStates.remove(token);
                     return true;
@@ -146,7 +145,6 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
                 ackMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize, windowSize));
 
                 if (receiveState.isTransferCompleted()) {
-                    logArqTransmission(receiveState);
                     receiveStates.remove(token);
 
                     CoAPMessage originalMessage = messagePool.getSourceMessageByToken(incomingMessage.getHexToken());
@@ -332,13 +330,6 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
         return message.getPayload() != null &&
                 message.getPayload().content != null &&
                 message.getPayload().content.length > MAX_PAYLOAD_SIZE;
-    }
-
-    private void logArqTransmission(LoggableState state) {
-        LogHelper.w("ARQ " + (state.isIncoming() ? "rx" : "tx") + " transfer " + Hex.encodeHexString(state.getToken())
-                + " " + StringHelper.getHumanReadableByteString(state.getDataSize())
-                + " at " + StringHelper.getHumanReadableByteString(state.getSpeed()) + "/s"
-                + (state.getPercentOfLoss() != null ? ", " + state.getPercentOfLoss() + "% loss" : ""));
     }
 
 }

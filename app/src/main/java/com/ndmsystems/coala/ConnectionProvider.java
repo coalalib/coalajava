@@ -84,10 +84,6 @@ public class ConnectionProvider {
             connection.joinGroup(Inet4Address.getByName("224.0.0.187"));
             connection.setReceiveBufferSize(409600);
             connection.setTrafficClass(IPTOS_RELIABILITY | IPTOS_THROUGHPUT | IPTOS_LOWDELAY);
-            LogHelper.w("MulticastSocket receiveBufferSize: " + connection.getReceiveBufferSize()
-                    + ", socket isBound = " + connection.isBound()
-                    + ", socket isClosed = " + connection.isClosed()
-                    + ", socket isConnected = " + connection.isConnected());
             saveConnection(connection);
             return connection;
         } catch (SocketException ex) {

@@ -41,6 +41,6 @@ public class AckHandlersPool {
             remove(message.getId());
             handler.onAckError(error + " for id: " + message.getId());
         } else
-            LogHelper.e("Message with null handler error: " + error + " for id: " + message.getId());
+            LogHelper.d("Message with null handler error: " + error + " for id: " + message.getId());
     }
 }

@@ -202,10 +202,6 @@ public class Coala extends CoAPTransport {
                     message.setResponseHandler(responseHandler);
                     send(message, null);
 
-                    if (!sender.isStarted()) {
-                        LogHelper.e("Sender not started");
-                    }
-
                 }
         );
     }

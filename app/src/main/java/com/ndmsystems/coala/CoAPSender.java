@@ -114,7 +114,7 @@ public class CoAPSender {
                         }
                         
                     } catch (IOException e) {
-                        LogHelper.e("IOException: " + e.getMessage());
+                        LogHelper.d("IOException: " + e.getMessage());
                         if (isInterrupted()) {
                             LogHelper.i("SendingAsyncTask stopped");
                             break;
