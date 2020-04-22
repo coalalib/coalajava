@@ -106,7 +106,6 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
             SecuredSession session = getSessionForAddress(message);
 
             if (session == null) {
-                LogHelper.d("Try to start session with: " + receiverAddress.getAddress().getHostAddress() + ":" + receiverAddress.getPort() + " proxy: " + message.getProxy());
                 session = new SecuredSession(false);
                 if (message.getProxy() != null) {
                     generateProxySessionSecurityIdAndAddToMessageAndSession(session, message);
