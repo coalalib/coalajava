@@ -310,7 +310,12 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
 
         client.send(responseMessage, handler);
 
-        LogHelper.d("sendClientHello messageId: " + responseMessage.getId() + " address: " + address.getAddress().getHostAddress() + ":" + address.getPort() + ", publicKey: " + Hex.encodeHexString(myPublicKey) + ", securityId " + responseMessage.getOption(CoAPMessageOptionCode.OptionProxySecurityID));
+        LogHelper.d(
+                "sendClientHello messageId: " + responseMessage.getId()
+                        + (address != null ? " address: " + address.getAddress().getHostAddress() + ":" + address.getPort() : "address is null")
+                        + ", publicKey: " + Hex.encodeHexString(myPublicKey)
+                        + ", securityId " + responseMessage.getOption(CoAPMessageOptionCode.OptionProxySecurityID)
+        );
     }
 
     public void sendPeerHello(InetSocketAddress address, byte[] publicKey, CoAPMessage message) {
