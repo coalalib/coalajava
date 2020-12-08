@@ -1,5 +1,6 @@
 package com.ndmsystems.coala;
 
+import com.ndmsystems.coala.layers.LogLayer;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.utils.Reference;
@@ -101,16 +102,20 @@ public class CoAPSender {
                             continue;
                         }
                         if (destinationAddressReference.get() == null) {
-                            LogHelper.e("Destination is null!! Proxy = " + message.getProxy());
-                        }
-
-                        if (destinationAddressReference.get().toString().contains("local")) {
-                            LogHelper.e("Try to send to localhost!!!");
+                            LogHelper.e("Destination is null!! isNeedToSend = " + isNeedToSend + ", message = " + LogLayer.getStringToPrintSendingMessage(message, null));
+                        } else {
+                            if (destinationAddressReference.get().toString().contains("local")) {
+                                LogHelper.e("Try to send to localhost!!!");
+                            }
                         }
 
                         // send it now!
                         if (isNeedToSend) {
-                            sendMessageToAddress(destinationAddressReference.get(), message);
+                            if (destinationAddressReference.get() == null) {
+                                //TODO Разобраться в чём проблема и когда это вобще происходит
+                            } else {
+                                sendMessageToAddress(destinationAddressReference.get(), message);
+                            }
                         }
                         
                     } catch (IOException e) {
