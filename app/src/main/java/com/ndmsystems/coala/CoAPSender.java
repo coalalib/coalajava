@@ -112,7 +112,7 @@ public class CoAPSender {
                         // send it now!
                         if (isNeedToSend) {
                             if (destinationAddressReference.get() == null) {
-                                //TODO Разобраться в чём проблема и когда это вобще происходит
+                                LogHelper.e("Destination is null, but need to sending, message = " + LogLayer.getStringToPrintSendingMessage(message, null));
                             } else {
                                 sendMessageToAddress(destinationAddressReference.get(), message);
                             }
