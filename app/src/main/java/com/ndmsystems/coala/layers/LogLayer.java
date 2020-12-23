@@ -59,7 +59,7 @@ public class LogLayer implements ReceiveLayer, SendLayer {
     }
 
     public static String getStringToPrintSendingMessage(CoAPMessage message, Reference<InetSocketAddress> receiverAddress) {
-        String stringForPrint = "Send data to Peer, id " + message.getId() + ", payload: '" + (message.getPayload() != null ? message.getPayload().toString() : "") + "', destination host: " + message.getURI() + (receiverAddress.get() == null || receiverAddress.get().equals(message.getAddress()) ? "" : " real destination: " + receiverAddress.get()) + " type " + message.getType() + " code " + message.getCode().name() + " token " + Hex.encodeHexString(message.getToken())
+        String stringForPrint = "Send data to Peer, id " + message.getId() + ", payload: '" + (message.getPayload() != null ? message.getPayload().toString() : "") + "', destination host: " + message.getURI() + (receiverAddress == null || receiverAddress.get() == null || receiverAddress.get().equals(message.getAddress()) ? "" : " real destination: " + receiverAddress.get()) + " type " + message.getType() + " code " + message.getCode().name() + " token " + Hex.encodeHexString(message.getToken())
                 + "\n" + "Options: " + MessageHelper.getMessageOptionsString(message);
         if (message.getProxy() != null) {
             stringForPrint += ", proxy: " + message.getProxy().getAddress().getHostAddress() + ":" + message.getProxy().getPort();
