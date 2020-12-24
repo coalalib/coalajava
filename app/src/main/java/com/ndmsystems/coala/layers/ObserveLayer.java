@@ -182,6 +182,9 @@ public class ObserveLayer implements ReceiveLayer, SendLayer {
         CoAPMessage responseMessage = new CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.CoapCodeEmpty, message.getId());
         if (message.getToken() != null) responseMessage.setToken(message.getToken());
         responseMessage.setAddress(senderAddress);
+        if (responseMessage.getAddress() == null) {
+            LogHelper.e("Message address == null in ObserveLayer sendResetMessage");
+        }
         if (message.getOption(CoAPMessageOptionCode.OptionBlock1) != null) {
             responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionBlock1, message.getOption(CoAPMessageOptionCode.OptionBlock1).value));
         }

@@ -83,6 +83,9 @@ public class RequestLayer implements ReceiveLayer {
 
     private void addOptions(CoAPMessage responseMessage, CoAPMessage message, InetSocketAddress senderAddress) {
         responseMessage.setAddress(senderAddress);
+        if (responseMessage.getAddress() == null) {
+            LogHelper.e("Message address == null in RequestLayer addOptions");
+        }
         if (message.getOption(CoAPMessageOptionCode.OptionBlock1) != null) {
             responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionBlock1, message.getOption(CoAPMessageOptionCode.OptionBlock1).value));
         }

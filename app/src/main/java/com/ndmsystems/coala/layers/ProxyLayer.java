@@ -33,6 +33,9 @@ public class ProxyLayer implements ReceiveLayer, SendLayer {
         if (sourceMessage != null && sourceMessage.getProxy() != null) {
             LogHelper.i("Set destination: " + sourceMessage.getAddress() + ", proxy: " + sourceMessage.getProxy());
             message.setAddress(sourceMessage.getAddress());
+            if (message.getAddress() == null) {
+                LogHelper.e("Message address == null in ProxyLayer onReceive");
+            }
             senderAddressReference.set(sourceMessage.getAddress());
         } else {
             if (sourceMessage == null) {
@@ -77,6 +80,9 @@ public class ProxyLayer implements ReceiveLayer, SendLayer {
         if (message.getToken() != null) responseMessage.setToken(message.getToken());
 
         responseMessage.setAddress(senderAddress);
+        if (responseMessage.getAddress() == null) {
+            LogHelper.e("Message address == null in ProxyLayer respondNotSupported");
+        }
         responseMessage.setURIScheme(message.getURIScheme());
 
         client.send(responseMessage, null);

@@ -104,6 +104,9 @@ public class CoAPReceiver {
                 try {
                     Reference<InetSocketAddress> senderAddressReference = new Reference<>((InetSocketAddress) udpPacket.getSocketAddress());
                     message.setAddress(senderAddressReference.get());
+                    if (message.getAddress() == null) {
+                        LogHelper.e("Message address == null in ReceivingThread");
+                    }
                     receiveLayerStack.onReceive(message, senderAddressReference);
                 } catch (LayersStack.InterruptedException e) {
                     e.printStackTrace();

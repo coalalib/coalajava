@@ -4,6 +4,7 @@ import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageOptionCode
 import com.ndmsystems.coala.message.CoAPMessageType
+import com.ndmsystems.infrastructure.logging.LogHelper
 import org.junit.Assert.assertArrayEquals
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -261,6 +262,10 @@ object CoapSerializerSpek : Spek({
 
                 val result = CoAPSerializer.fromBytes(sourceBytes)
                 result.address = source.address
+
+                if (result.getAddress() == null) {
+                    LogHelper.e("Message address == null in CoapSerializerSpek")
+                }
                 assertNotNull(result)
 
                 assertEquals("coaps://192.168.1.1:8080/test?param=1&param2=value", result.uri)

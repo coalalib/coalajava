@@ -25,6 +25,9 @@ public class CoAPMessage {
         message.setType(CoAPMessageType.ACK);
         message.setCode(CoAPMessageCode.CoapCodeEmpty);
         message.setAddress(from);
+        if (message.getAddress() == null) {
+            LogHelper.e("Message address == null in CoAPMessage convertToEmptyAck");
+        }
         message.setPayload(null);
     }
 
@@ -36,6 +39,10 @@ public class CoAPMessage {
         result.setToken(message.getToken());
         result.setURIScheme(message.getURIScheme());
         result.setAddress(from);
+        if (result.getAddress() == null) {
+            LogHelper.e("Message address == null in CoAPMessage ackTo");
+        }
+
         CoAPMessageOption option = message.getOption(CoAPMessageOptionCode.OptionObserve);
         if (option != null)
             result.addOption(option);
@@ -51,6 +58,9 @@ public class CoAPMessage {
         result.setToken(message.getToken());
         result.setURIScheme(message.getURIScheme());
         result.setAddress(from);
+        if (result.getAddress() == null) {
+            LogHelper.e("Message address == null in CoAPMessage resetTo");
+        }
         return result;
     }
 
@@ -82,6 +92,9 @@ public class CoAPMessage {
 
         if (message.getProxy() != null) this.proxy = message.getProxy();
         if (message.address != null) this.address = message.address;
+        if (message.getAddress() == null) {
+            LogHelper.e("Message address == null in CoAPMessage constructor");
+        }
         if (message.responseHandler != null) this.responseHandler = message.responseHandler;
         if (message.resendHandler != null) this.resendHandler = message.resendHandler;
         if (message.peerPublicKey != null) this.peerPublicKey = message.peerPublicKey;

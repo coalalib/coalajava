@@ -211,11 +211,11 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
         synchronized (pendingMessages) {
             for (Iterator<CoAPMessage> it = pendingMessages.iterator(); it.hasNext(); ) {
                 CoAPMessage message = it.next();
-                if (message.getAddress().equals(address)) {
-                    ackHandlersPool.raiseAckError(message, "Can't create session with: " + address.toString());
+                if (message.getAddress() == null || address == null || message.getAddress().equals(address)) {
+                    String errorText = "Can't create session with: " + (address != null ? address.toString() : "null");
+                    ackHandlersPool.raiseAckError(message, errorText);
                     ResponseHandler responseHandler = message.getResponseHandler();
                     if (responseHandler != null) {
-                        String errorText = "Can't create session with: " + address.toString();
                         LogHelper.w(errorText);
                         responseHandler.onError(new CoAPHandler.AckError(errorText));
                     }
@@ -289,6 +289,9 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
     private void sendSessionError(CoAPMessage message, InetSocketAddress senderAddress, CoAPMessageOptionCode code) {
         CoAPMessage responseMessage = new CoAPMessage(CoAPMessageType.ACK, CoAPMessageCode.CoapCodeUnauthorized, message.getId());
         responseMessage.setAddress(senderAddress);
+        if (responseMessage.getAddress() == null) {
+            LogHelper.e("Message address == null in SecurityLayer sendSessionError");
+        }
         if (message.getProxySecurityId() != null) {
             responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionProxySecurityID, message.getProxySecurityId()));
         }
@@ -301,6 +304,9 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
     public void sendClientHello(InetSocketAddress proxyAddress, Long proxySecurityId, InetSocketAddress address, byte[] myPublicKey, CoAPHandler handler) {
         CoAPMessage responseMessage = new CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET);
         responseMessage.setAddress(address);
+        if (responseMessage.getAddress() == null) {
+            LogHelper.e("Message address == null in SecurityLayer sendClientHello");
+        }
         responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionHandshakeType, HandshakeType.ClientHello.toInt()));
         if (proxySecurityId != null) {
             responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionProxySecurityID, proxySecurityId));
@@ -322,6 +328,9 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
         LogHelper.d("sendPeerHello");
         CoAPMessage responseMessage = new CoAPMessage(CoAPMessageType.ACK, CoAPMessageCode.CoapCodeContent, message.getId());
         responseMessage.setAddress(address);
+        if (responseMessage.getAddress() == null) {
+            LogHelper.e("Message address == null in SecurityLayer sendPeerHello");
+        }
         responseMessage.setURIScheme(message.getURIScheme());
 
         responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionHandshakeType, HandshakeType.PeerHello.toInt()));
