@@ -256,8 +256,8 @@ public class CoAPMessage {
         if (address != null && address.getAddress().getHostAddress() != null)
             host = address.getAddress().getHostAddress();
         else {
-            LogHelper.w("Address is null! return \"localhost\"");
-            host = "localhost";
+            LogHelper.w("Address is null! return \"null\"");
+            host = "null";
         }
 
         if (hasOption(CoAPMessageOptionCode.OptionProxyURI)) {
