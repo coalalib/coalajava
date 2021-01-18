@@ -31,9 +31,9 @@ import static org.mockito.Mockito.verify;
 public class ProxyLayerTest {
     private ProxyLayer proxyLayer;
     private CoAPClient client;
-    private CoAPMessagePool messagePool;
+    //private CoAPMessagePool messagePool;
 
-    @Before
+    /*@Before
     public void setUp() throws Exception {
         client = mock(CoAPClient.class);
         messagePool = mock(CoAPMessagePool.class);
@@ -50,9 +50,9 @@ public class ProxyLayerTest {
 
         assertTrue(shouldContinue);
         verify(client, times(0)).send((CoAPMessage) any(), (CoAPHandler) any());
-    }
+    }*/
 
-    @Test
+    /*@Test
     public void onSend_messageThroughProxy_shouldRemoveRestrictedOptions() {
         CoAPMessage message = new CoAPMessage(CoAPMessageType.NON, CoAPMessageCode.GET);
         message.setURI("coap://123.123.123.124:5556/asd?asd=asd");
@@ -64,10 +64,10 @@ public class ProxyLayerTest {
         boolean shouldContinue = proxyLayer.onSend(message, addressReference);
 
         assertTrue(shouldContinue);
-        /*assertNull(message.getOption(CoAPMessageOptionCode.OptionURIHost));
+        assertNull(message.getOption(CoAPMessageOptionCode.OptionURIHost));
         assertNull(message.getOption(CoAPMessageOptionCode.OptionURIPort));
         assertNull(message.getOption(CoAPMessageOptionCode.OptionURIPath));
-        assertNull(message.getOption(CoAPMessageOptionCode.OptionURIQuery));*/
+        assertNull(message.getOption(CoAPMessageOptionCode.OptionURIQuery));
     }
 
     @Test
@@ -102,5 +102,5 @@ public class ProxyLayerTest {
         assertEquals(CoAPMessageType.NON, response.getType());
         assertEquals(proxyAddress.getAddress().getHostAddress(), response.getAddress().getAddress().getHostAddress());
         assertEquals((long) proxyAddress.getPort(), (long) response.getAddress().getPort());
-    }
+    }*/
 }
