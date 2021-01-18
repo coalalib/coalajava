@@ -6,17 +6,22 @@ import java.net.InetSocketAddress;
  * Created by bas on 19.09.16.
  */
 public class ResourceDiscoveryResult {
-    private final String resources;
+    private final String payload;
     private final InetSocketAddress host;
 
-    public ResourceDiscoveryResult(String resources, InetSocketAddress host) {
-        this.resources = resources == null ? "" : resources;
+    public ResourceDiscoveryResult(String payload, InetSocketAddress host) {
+        this.payload = payload == null ? "" : payload;
         this.host = host;
     }
 
     public InetSocketAddress getHost() {
         return host;
     }
+
+    public String getPayload() {
+        return payload;
+    }
+
 
     @Override
     public boolean equals(Object o) {
@@ -25,14 +30,14 @@ public class ResourceDiscoveryResult {
 
         ResourceDiscoveryResult that = (ResourceDiscoveryResult) o;
 
-        if (!resources.equals(that.resources)) return false;
+        if (!payload.equals(that.payload)) return false;
         return host.equals(that.host);
 
     }
 
     @Override
     public int hashCode() {
-        int result = resources.hashCode();
+        int result = payload.hashCode();
         result = 31 * result + host.hashCode();
         return result;
     }

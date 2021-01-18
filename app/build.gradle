@@ -91,6 +91,7 @@ dependencies {
     api project(':libs:infrastructure')
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
 
     //unit tests
     testImplementation 'org.mockito:mockito-core:2.8.9'
