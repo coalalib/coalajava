@@ -1,46 +1,46 @@
-package com.ndmsystems.coala;
+package com.ndmsystems.coala
 
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap
+import com.ndmsystems.coala.message.CoAPMessage
+import com.ndmsystems.infrastructure.logging.LogHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.launch
 
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
-import com.ndmsystems.coala.message.CoAPMessage;
-import com.ndmsystems.infrastructure.logging.LogHelper;
-
-public class AckHandlersPool {
-    private ConcurrentLinkedHashMap<Integer, CoAPHandler> pool;
-
-    public AckHandlersPool() {
-        pool = new ConcurrentLinkedHashMap.Builder<Integer, CoAPHandler>().maximumWeightedCapacity(500).build();
+class AckHandlersPool {
+    private val pool: ConcurrentLinkedHashMap<Int, CoAPHandler>
+    fun add(id: Int, handler: CoAPHandler) {
+        LogHelper.v("Add handler for message: $id to pool")
+        pool[id] = handler
     }
 
-
-    public void add(int id, CoAPHandler handler) {
-        LogHelper.v("Add handler for message: " + id + " to pool");
-        pool.put(id, handler);
+    operator fun get(id: Int): CoAPHandler? {
+        return pool[id]
     }
 
-    public CoAPHandler get(int id) {
-        return pool.get(id);
+    fun remove(id: Int) {
+        LogHelper.v("Remove handler for message: $id from pool")
+        pool.remove(id)
     }
 
-    public void remove(int id) {
-        LogHelper.v("Remove handler for message: " + id + " from pool");
-        pool.remove(id);
-    }
-
-    public void clear(Exception exception) {
-        LogHelper.v("Clear handlers pool");
-        for (CoAPHandler coAPHandler : pool.values()) {
-            coAPHandler.onAckError(exception.getMessage());
+    fun clear(exception: Exception) {
+        CoroutineScope(IO).launch {
+            LogHelper.v("Clear handlers pool")
+            for (coAPHandler in pool.values) {
+                coAPHandler.onAckError(exception.message)
+            }
         }
     }
 
-    public void raiseAckError(CoAPMessage message, String error) {
-        CoAPHandler handler = get(message.getId());
-
+    fun raiseAckError(message: CoAPMessage, error: String) {
+        val handler = get(message.id)
         if (handler != null) {
-            remove(message.getId());
-            handler.onAckError(error + " for id: " + message.getId());
-        } else
-            LogHelper.d("Message with null handler error: " + error + " for id: " + message.getId());
+            remove(message.id)
+            handler.onAckError(error + " for id: " + message.id)
+        } else LogHelper.d("Message with null handler error: " + error + " for id: " + message.id)
+    }
+
+    init {
+        pool = ConcurrentLinkedHashMap.Builder<Int, CoAPHandler>().maximumWeightedCapacity(500).build()
     }
 }

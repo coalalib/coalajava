@@ -2,9 +2,12 @@ package com.ndmsystems.coala
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap
 import com.ndmsystems.coala.CoAPHandler.AckError
+import com.ndmsystems.coala.exceptions.CoalaStoppedException
 import com.ndmsystems.coala.helpers.TimeHelper
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.infrastructure.logging.LogHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.ConcurrentModificationException
@@ -101,14 +104,16 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
     }
 
     fun clear(exception: Exception?) {
-        LogHelper.v("Clear message pool")
-        for (queueElement in pool.values) {
-            if (queueElement.message != null && queueElement.message!!.responseHandler != null) {
-                queueElement.message!!.responseHandler.onError(exception)
+        CoroutineScope(IO).launch {
+            LogHelper.v("Clear message pool")
+            for (queueElement in pool.values) {
+                if (queueElement.message != null && queueElement.message!!.responseHandler != null) {
+                    queueElement.message!!.responseHandler.onError(exception)
+                }
             }
+            pool.clear()
+            messageIdForToken.clear()
         }
-        pool.clear()
-        messageIdForToken.clear()
     }
 
     private fun markAsUnsent(id: Int) {
@@ -123,9 +128,11 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
      * Triggers message's handler with Error
      */
     private fun raiseAckError(message: CoAPMessage?, error: String) {
-        GlobalScope.launch {
-            ackHandlersPool.raiseAckError(message, error)
-            message?.responseHandler?.onError(AckError("raiseAckError"))
+        message?.let {
+            GlobalScope.launch {
+                ackHandlersPool.raiseAckError(message, error)
+                message.responseHandler?.onError(AckError("raiseAckError"))
+            }
         }
     }
 
