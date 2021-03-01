@@ -77,10 +77,8 @@ public class AesGcm {
         GCMBlockCipher cipher = createAESGCMCipher(key, false, nonce, authData);
         // Join cipher text and authentication tag to produce cipher input
 
-        //byte[] input = new byte[cipherText.length + authTag.length];
         byte[] input = new byte[cipherText.length];
         System.arraycopy(cipherText, 0, input, 0, cipherText.length);
-        //System.arraycopy(authTag, 0, input, cipherText.length, authTag.length);
 
         int outputLength = cipher.getOutputSize(input.length);
         byte[] output = new byte[outputLength];
@@ -89,7 +87,6 @@ public class AesGcm {
         int outputOffset = cipher.processBytes(input, 0, input.length, output, 0);
 
         // Validate authentication tag
-        LogHelper.d("GCM, when decode, length of the data: " + cipherText.length + " key: " + Hex.encodeHexString(key.getEncoded()));
         try {
             outputOffset += cipher.doFinal(output, outputOffset);
         } catch (InvalidCipherTextException e) {
@@ -97,13 +94,6 @@ public class AesGcm {
         }
 
         return output;
-
-
-        /*AEADParameterSpec params = new AEADParameterSpec(nonce, TAG_LENGTH * 8);
-        cipher.init(Cipher.DECRYPT_MODE, key, params);
-        LogHelper.d("additionalAuthenticatedData: " + (additionalAuthenticatedData != null ? Hex.encodeHexString(additionalAuthenticatedData) : null));
-
-        return cipher.doFinal(cipherText);*/
     }
 
     private static AESEngine createAESCipher(final Key secretKey,

@@ -201,8 +201,8 @@ public class CoalaModule {
         return new LayersStack(null,
                 new ReceiveLayer[]{
                         proxyLayer,
-                        logLayer,
                         securityLayer,
+                        logLayer,
                         arqLayer,
                         reliabilityLayer,
                         observeLayer,
