@@ -66,7 +66,7 @@ public class SecurityLayer implements ReceiveLayer, SendLayer {
 
         if (sessionNotFound != null
                 || sessionExpired != null) {
-            LogHelper.w("Session not found or expired for address: " + senderAddress.toString() + ", try to restart.");
+            LogHelper.i("Session not found or expired for address: " + senderAddress.toString() + ", try to restart.");
             removeSessionForAddressIfNotInProgress(mainMessage);
             messagePool.requeue(message.getId());
             return false;

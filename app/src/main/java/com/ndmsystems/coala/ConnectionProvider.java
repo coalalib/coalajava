@@ -1,7 +1,5 @@
 package com.ndmsystems.coala;
 
-import android.util.Log;
-
 import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.io.IOException;
@@ -87,7 +85,7 @@ public class ConnectionProvider {
             saveConnection(connection);
             return connection;
         } catch (SocketException ex) {
-            LogHelper.e("MulticastSocket can't be created, try to reuse: " + ex.getClass() + " " + ex.getLocalizedMessage() + " " + Log.getStackTraceString(ex));
+            LogHelper.e("MulticastSocket can't be created, try to reuse: " + ex.getClass() + " " + ex.getLocalizedMessage());
             return tryToReuseSocket();
         }
     }
@@ -110,7 +108,7 @@ public class ConnectionProvider {
             saveConnection(connection);
             return connection;
         } catch (SocketException ex) {
-            LogHelper.e("MulticastSocket can't be created, and can't be reused: " + ex.getClass() + " " + ex.getLocalizedMessage() + " " + Log.getStackTraceString(ex));
+            LogHelper.e("MulticastSocket can't be created, and can't be reused: " + ex.getClass() + " " + ex.getLocalizedMessage());
 
             if (onPortIsBusyHandler != null) {
                 onPortIsBusyHandler.onPortIsBusy();
