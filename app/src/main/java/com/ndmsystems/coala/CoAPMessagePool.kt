@@ -2,13 +2,11 @@ package com.ndmsystems.coala
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap
 import com.ndmsystems.coala.CoAPHandler.AckError
-import com.ndmsystems.coala.exceptions.CoalaStoppedException
 import com.ndmsystems.coala.helpers.TimeHelper
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.infrastructure.logging.LogHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.ConcurrentModificationException
 import java.util.concurrent.ConcurrentHashMap
@@ -31,8 +29,7 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
         }
         val iterator: Iterator<QueueElement> = pool.values.iterator()
         while (iterator.hasNext()) {
-            var next: QueueElement
-            next = try {
+            val next: QueueElement = try {
                 iterator.next()
             } catch (e: ConcurrentModificationException) {
                 LogHelper.e(if (e.message != null) e.message else "ConcurrentModificationException")
@@ -42,6 +39,7 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
 
             // check if this message is too old to send
             if (next.createTime != null && now - next.createTime!! >= EXPIRATION_PERIOD) {
+                LogHelper.v("Remove message with id " + next.message!!.id + " from pool because expired")
                 remove(next.message)
                 raiseAckError(next.message, "message expired")
                 continue
@@ -49,6 +47,7 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
 
             // check if this message should be already removed from the pool, before ACK
             if (next.isNeededSend && next.sendTime != null && now - next.sendTime!! >= GARBAGE_PERIOD) {
+                LogHelper.v("Remove message with id " + next.message!!.id + " from pool because garbage")
                 remove(next.message)
                 raiseAckError(next.message, "message deleted by garbage")
                 continue
@@ -56,6 +55,7 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
             if (next.isNeededSend) {
                 if (!next.sent) {
                     if (next.sendAttempts >= MAX_PICK_ATTEMPTS) {
+                        LogHelper.v("Remove message with id " + next.message!!.id + " from pool because too many attempts")
                         remove(next.message)
                         raiseAckError(next.message, "Request Canceled, too many attempts ")
                         continue
@@ -128,8 +128,10 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
      * Triggers message's handler with Error
      */
     private fun raiseAckError(message: CoAPMessage?, error: String) {
+        LogHelper.v("raiseAckError: ${message?.id}")
+
         message?.let {
-            GlobalScope.launch {
+            CoroutineScope(IO).launch {
                 ackHandlersPool.raiseAckError(message, error)
                 message.responseHandler?.onError(AckError("raiseAckError"))
             }
