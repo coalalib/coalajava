@@ -8,7 +8,7 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 
 class AckHandlersPool {
-    private val pool: ConcurrentLinkedHashMap<Int, CoAPHandler>
+    private val pool: ConcurrentLinkedHashMap<Int, CoAPHandler> = ConcurrentLinkedHashMap.Builder<Int, CoAPHandler>().maximumWeightedCapacity(500).build()
     fun add(id: Int, handler: CoAPHandler) {
         LogHelper.v("Add handler for message: $id to pool")
         pool[id] = handler
@@ -24,8 +24,8 @@ class AckHandlersPool {
     }
 
     fun clear(exception: Exception) {
+        LogHelper.v("Clear handlers pool")
         CoroutineScope(IO).launch {
-            LogHelper.v("Clear handlers pool")
             for (coAPHandler in pool.values) {
                 coAPHandler.onAckError(exception.message)
             }
@@ -33,6 +33,7 @@ class AckHandlersPool {
     }
 
     fun raiseAckError(message: CoAPMessage, error: String) {
+        LogHelper.v("raiseAckError ${message.id} $error")
         val handler = get(message.id)
         if (handler != null) {
             remove(message.id)
@@ -40,7 +41,11 @@ class AckHandlersPool {
         } else LogHelper.d("Message with null handler error: " + error + " for id: " + message.id)
     }
 
-    init {
-        pool = ConcurrentLinkedHashMap.Builder<Int, CoAPHandler>().maximumWeightedCapacity(500).build()
+    fun print() {
+        LogHelper.w("Printing pool:")
+        for (id in pool.keys) {
+            LogHelper.w("Printing pool, id: $id")
+        }
     }
+
 }

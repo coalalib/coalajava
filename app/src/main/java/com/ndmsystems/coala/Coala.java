@@ -175,6 +175,8 @@ public class Coala extends CoAPTransport {
             // The handler First!
             if (handler != null) {
                 ackHandlersPool.add(message.getId(), handler);
+            } else {
+                LogHelper.v("Handler for message " + message.getId() + " is null");
             }
 
             // Let's get it on!
