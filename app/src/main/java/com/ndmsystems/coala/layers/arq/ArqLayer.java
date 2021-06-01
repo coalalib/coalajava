@@ -5,12 +5,10 @@ import com.ndmsystems.coala.CoAPHandler;
 import com.ndmsystems.coala.CoAPMessagePool;
 import com.ndmsystems.coala.helpers.Hex;
 import com.ndmsystems.coala.helpers.MessageHelper;
-import com.ndmsystems.coala.helpers.StringHelper;
 import com.ndmsystems.coala.layers.ReceiveLayer;
 import com.ndmsystems.coala.layers.SendLayer;
 import com.ndmsystems.coala.layers.arq.data.DataFactory;
 import com.ndmsystems.coala.layers.arq.data.IData;
-import com.ndmsystems.coala.layers.arq.states.LoggableState;
 import com.ndmsystems.coala.layers.arq.states.ReceiveState;
 import com.ndmsystems.coala.layers.arq.states.SendState;
 import com.ndmsystems.coala.message.CoAPMessage;
@@ -168,7 +166,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
 
                     return true;
                 } else {
-                    LogHelper.v("ARQ: Receive in progress, responding with ACK: continued");
+                    LogHelper.v("ARQ: Receive in progress, responding with ACK continued, received: " + receiveState.getDataSize());
                     ackMessage.setCode(CoAPMessageCode.CoapCodeContinue);
 
                     CoAPMessage originalMessage = messagePool.getSourceMessageByToken(incomingMessage.getHexToken());
@@ -234,7 +232,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
             @Override
             public void onMessage(CoAPMessage message, String error) {
                 if (error != null) {
-                    LogHelper.v("Block number = " + block.getNumber() + " failed");
+                    LogHelper.v("Block number = " + block.getNumber() + " failed " + error);
                     fail(token);
                     return;
                 }
