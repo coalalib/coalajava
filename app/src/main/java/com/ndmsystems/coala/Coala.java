@@ -197,8 +197,8 @@ public class Coala extends CoAPTransport {
 
                         @Override
                         public void onError(Throwable error) {
-                            LogHelper.v("sendRequest message: " + message.getId() + ", throwable " + error);
-                            emitter.tryOnError(error);
+                            Boolean isSuccess = emitter.tryOnError(error);
+                            LogHelper.v("sendRequest message: " + message.getId() + ", throwable " + error + ", emitted = " + isSuccess);
                         }
                     };
                     message.setResponseHandler(responseHandler);
