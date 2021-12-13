@@ -10,7 +10,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.2'
+        classpath 'com.android.tools.build:gradle:4.0.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "de.mannodermaus.gradle.plugins:android-junit5:$android_junit5_version"
 
@@ -19,7 +19,7 @@ buildscript {
 
 ext {
     supportLibraryVersion = '27.1.1'
-    buildToolsVersion = '28.0.3'
+    buildToolsVersion = '29.0.2'
     compileSdkVersion = 28
     targetSdkVersion = 27
     minSdkVersion = 21
