@@ -29,6 +29,7 @@ public enum PayloadError {
     CODE_2021(2021),
     CODE_2022(2022),
     CODE_2023(2023),
+    CODE_2030(2030),
     CODE_3000(3000);
 
     private int code;
@@ -96,6 +97,8 @@ public enum PayloadError {
                 return CODE_2022;
             case 2023:
                 return CODE_2023;
+            case 2030:
+                return CODE_2030;
             case 3000:
                 return CODE_3000;
         }
