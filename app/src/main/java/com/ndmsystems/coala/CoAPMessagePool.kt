@@ -38,7 +38,11 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
             val now = TimeHelper.getTimeForMeasurementInMilliseconds()
 
             // check if this message is too old to send
-            if (next.createTime != null && now - next.createTime!! >= EXPIRATION_PERIOD) {
+            if (
+                next.createTime != null && now - next.createTime!!
+                >=
+                (if (next.isNeededSend) EXPIRATION_PERIOD else 10 * EXPIRATION_PERIOD)
+            ) { //10 time longer expiration period for !isNeededSend message, for ARQ original messages
                 LogHelper.v("Remove message with id " + next.message!!.id + " from pool because expired")
                 remove(next.message)
                 raiseAckError(next.message, "message expired")
@@ -66,7 +70,11 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
                     return CoAPMessage(next.message)
                 } else {
                     // check if need to resend this message
-                    if (next.sendTime != null && now - next.sendTime!! >= RESEND_PERIOD) {
+                    if (
+                        next.sendTime != null
+                        && (now - next.sendTime!!
+                                >= if (next.message?.isRequestWithLongTimeNoAnswer == true) RESEND_PERIOD_LONG else RESEND_PERIOD)
+                    ) {
                         next.message!!.resendHandler.onResend()
                         markAsUnsent(next.message!!.id) // Do we need a separate function for this?! O_o
                     }
@@ -173,11 +181,12 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
     companion object {
         const val MAX_PICK_ATTEMPTS = 6
         const val RESEND_PERIOD = 750 // period to waitForConnection before resend a command
+        const val RESEND_PERIOD_LONG = 5000 // period to waitForConnection before resend a command, for message with long answer
         const val EXPIRATION_PERIOD = 60000 // period to waitForConnection before deleting unsent command (e.g. too many commands in pool)
         const val GARBAGE_PERIOD = 25000 // period to waitForConnection before deleting sent command (before Ack or Error received)
     }
 
     init {
-        pool = ConcurrentLinkedHashMap.Builder<Int, QueueElement>().maximumWeightedCapacity(500).build()
+        pool = ConcurrentLinkedHashMap.Builder<Int, QueueElement>().maximumWeightedCapacity(1000).build()
     }
 }

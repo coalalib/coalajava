@@ -193,6 +193,7 @@ public class Coala extends CoAPTransport {
                         public void onResponse(ResponseData responseData) {
                             emitter.onNext(responseData);
                             emitter.onComplete();
+                            LogHelper.v("sendRequest message: " + message.getId() + ", onResponse");
                         }
 
                         @Override
@@ -203,7 +204,6 @@ public class Coala extends CoAPTransport {
                     };
                     message.setResponseHandler(responseHandler);
                     send(message, null);
-
                 }
         );
     }

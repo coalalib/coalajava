@@ -79,6 +79,8 @@ public class CoAPMessage {
     private ResendHandler resendHandler = () -> LogHelper.v("Resend message: " + id);
     private byte[] peerPublicKey = null;
 
+    private boolean isRequestWithLongTimeNoAnswer = false;
+
     public CoAPMessage(CoAPMessage message) {
         this(message.getType(), message.getCode(), message.getId());
         if (message.getPayload() != null) {
@@ -98,6 +100,7 @@ public class CoAPMessage {
         if (message.responseHandler != null) this.responseHandler = message.responseHandler;
         if (message.resendHandler != null) this.resendHandler = message.resendHandler;
         if (message.peerPublicKey != null) this.peerPublicKey = message.peerPublicKey;
+        this.isRequestWithLongTimeNoAnswer = message.isRequestWithLongTimeNoAnswer;
     }
 
     public CoAPMessage(CoAPMessageType messageType, CoAPMessageCode messageCode) {
@@ -161,6 +164,14 @@ public class CoAPMessage {
     public CoAPMessage setToken(byte[] token) {
         this.token = token;
         return this;
+    }
+
+    public void setIsRequestWithLongTimeNoAnswer(boolean isRequestWithLongTimeNoAnswer) {
+        this.isRequestWithLongTimeNoAnswer = isRequestWithLongTimeNoAnswer;
+    }
+
+    public boolean getIsRequestWithLongTimeNoAnswer() {
+        return isRequestWithLongTimeNoAnswer;
     }
 
     public CoAPRequestMethod getMethod() {

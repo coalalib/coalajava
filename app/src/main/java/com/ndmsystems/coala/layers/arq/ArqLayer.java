@@ -147,7 +147,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
 
                     CoAPMessage originalMessage = messagePool.getSourceMessageByToken(incomingMessage.getHexToken());
                     if (originalMessage != null) {
-                        LogHelper.v("ARQ: Receive completed, passing message " + originalMessage.getId() + ", with token: " + Hex.encodeHexString(originalMessage.getToken()) + " along");
+                        LogHelper.v("ARQ: Receive " + incomingMessage.getHexToken() + " completed, passing message " + originalMessage.getId() + ", with token: " + Hex.encodeHexString(originalMessage.getToken()) + " along");
                         if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI))
                             ackMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI));
                         if (originalMessage.getProxy() != null) {
@@ -166,7 +166,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
 
                     return true;
                 } else {
-                    LogHelper.v("ARQ: Receive in progress, responding with ACK continued, received: " + receiveState.getDataSize());
+                    LogHelper.v("ARQ: Receive " + incomingMessage.getHexToken() + " in progress, responding with ACK continued, received: " + receiveState.getDataSize());
                     ackMessage.setCode(CoAPMessageCode.CoapCodeContinue);
 
                     CoAPMessage originalMessage = messagePool.getSourceMessageByToken(incomingMessage.getHexToken());

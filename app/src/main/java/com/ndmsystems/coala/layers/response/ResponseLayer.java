@@ -30,7 +30,7 @@ public class ResponseLayer implements ReceiveLayer, SendLayer {
         requests = Collections.synchronizedMap(
                 ExpiringMap.builder()
                         .expirationPolicy(ExpirationPolicy.ACCESSED)
-                        .expiration(1, TimeUnit.MINUTES)
+                        .expiration(10, TimeUnit.MINUTES)
                         .build()
         );
         errorFactory = new ResponseErrorFactory();
