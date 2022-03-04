@@ -38,7 +38,7 @@ class ResponseErrorFactory {
         switch (message.getCode()){
             case CoapCodeUnauthorized:
                 return new WrongAuthDataException(message.getCode(), CoAPMessageCode.CoapCodeUnauthorized.name());
-                default: return new CoAPException(message.getCode(), message.getPayload() == null ? "Request has been reset!" : message.getPayload().toString());
+            default: return new CoAPException(message.getCode(), message.getPayload() == null ? "Request has been reset!" : message.getPayload().toString());
         }
     }
 
@@ -50,7 +50,7 @@ class ResponseErrorFactory {
             String errorMessage = errorObject.has("message") ? errorObject.getString("message") : "";
             int payloadErrorCode = errorObject.has("code") ? errorObject.getInt("code") : 0;
             coAPException = new CoAPException(errorMessage, message.getCode(), payloadErrorCode);
-        }catch (JSONException e){
+        } catch (JSONException e){
             e.printStackTrace();
         }
         return coAPException;
