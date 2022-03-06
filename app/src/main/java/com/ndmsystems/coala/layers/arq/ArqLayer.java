@@ -252,7 +252,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
         LogHelper.v("ARQ: fail to transfer for token = " + token);
         SendState sendState = sendStates.get(token);
         if (sendState != null) {
-            sendState.onError();
+            sendState.onError(client.getRetransmitMessageCounter(sendState.getOriginalMessage().getId()));
             sendStates.remove(token);
         }
         receiveStates.remove(token);

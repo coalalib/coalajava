@@ -23,7 +23,7 @@ class AckHandlersPool {
         pool.remove(id)
     }
 
-    fun clear(exception: Exception) {
+    fun clear(exception: Throwable) {
         LogHelper.v("Clear handlers pool")
         CoroutineScope(IO).launch {
             for (coAPHandler in pool.values) {

@@ -5,6 +5,7 @@ import com.ndmsystems.coala.CoAPResource;
 import com.ndmsystems.coala.CoAPResourceInput;
 import com.ndmsystems.coala.CoAPResourceOutput;
 import com.ndmsystems.coala.Coala;
+import com.ndmsystems.coala.exceptions.BaseCoalaThrowable;
 import com.ndmsystems.coala.layers.response.ResponseData;
 import com.ndmsystems.coala.layers.response.ResponseHandler;
 import com.ndmsystems.coala.message.CoAPMessage;
@@ -65,7 +66,7 @@ public class RequestTest {
             }
 
             @Override
-            public void onError(Throwable error) {
+            public void onError(BaseCoalaThrowable error) {
                 lock.countDown();
             }
         });

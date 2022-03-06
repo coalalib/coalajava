@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
  * Created by Владимир on 21.07.2017.
  */
 
-public class CoAPException extends Throwable {
+public class CoAPException extends BaseCoalaThrowable {
 
     private CoAPMessageCode code;
     private Integer payloadErrorCode;

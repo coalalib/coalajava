@@ -3,6 +3,7 @@ package com.ndmsystems.coala;
 import com.ndmsystems.coala.di.CoalaComponent;
 import com.ndmsystems.coala.di.CoalaModule;
 import com.ndmsystems.coala.di.DaggerCoalaComponent;
+import com.ndmsystems.coala.exceptions.BaseCoalaThrowable;
 import com.ndmsystems.coala.exceptions.CoAPException;
 import com.ndmsystems.coala.exceptions.CoalaStoppedException;
 import com.ndmsystems.coala.helpers.RandomGenerator;
@@ -15,6 +16,8 @@ import com.ndmsystems.coala.message.CoAPRequestMethod;
 import com.ndmsystems.coala.observer.RegistryOfObservingResources;
 import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult;
 import com.ndmsystems.infrastructure.logging.LogHelper;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Random;
@@ -197,7 +200,7 @@ public class Coala extends CoAPTransport {
                         }
 
                         @Override
-                        public void onError(Throwable error) {
+                        public void onError(BaseCoalaThrowable error) {
                             Boolean isSuccess = emitter.tryOnError(error);
                             LogHelper.v("sendRequest message: " + message.getId() + ", throwable " + error + ", emitted = " + isSuccess);
                         }
@@ -215,7 +218,7 @@ public class Coala extends CoAPTransport {
                     @Override
                     public void onMessage(CoAPMessage response, String error) {
                         if (error != null)
-                            emitter.onError(new CoAPException((response != null ? response.getCode() : CoAPMessageCode.CoapCodeEmpty), error));
+                            emitter.onError(new CoAPException((response != null ? response.getCode() : CoAPMessageCode.CoapCodeEmpty), error).setRetransmitMessageCounter(getRetransmitMessageCounter(message.getId())));
                         else {
                             emitter.onNext(response);
                             emitter.onComplete();
@@ -224,7 +227,7 @@ public class Coala extends CoAPTransport {
 
                     @Override
                     public void onAckError(String error) {
-                        emitter.onError(new AckError(error));
+                        emitter.onError(new AckError(error).setRetransmitMessageCounter(getRetransmitMessageCounter(message.getId())));
                     }
                 })
         );
@@ -307,6 +310,11 @@ public class Coala extends CoAPTransport {
         stop();
         connectionProvider.restartConnection();
         start();
+    }
+
+    @Override
+    public Integer getRetransmitMessageCounter(@NotNull final Integer messageId) {
+        return messagePool.getRetransmitCounter(messageId);
     }
 
     public interface OnPortIsBusyHandler {

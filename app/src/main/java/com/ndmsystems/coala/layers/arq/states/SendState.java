@@ -1,5 +1,6 @@
 package com.ndmsystems.coala.layers.arq.states;
 
+import com.ndmsystems.coala.exceptions.BaseCoalaThrowable;
 import com.ndmsystems.coala.layers.arq.Block;
 import com.ndmsystems.coala.layers.arq.SlidingWindow;
 import com.ndmsystems.coala.layers.arq.data.DataFactory;
@@ -65,8 +66,8 @@ public class SendState extends LoggableState{
         return originalMessage;
     }
 
-    public void onError() {
-        originalMessage.getResponseHandler().onError(new Throwable("ARQ: fail to transfer"));
+    public void onError(final Integer retransmitMessageCounter) {
+        originalMessage.getResponseHandler().onError(new BaseCoalaThrowable("ARQ: fail to transfer").setRetransmitMessageCounter(retransmitMessageCounter));
     }
 
     public void didTransmit(int blockNumber) {

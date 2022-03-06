@@ -13,6 +13,7 @@ public interface CoAPClient {
     Observable<ResponseData> sendRequest(CoAPMessage message);
 
     void cancel(CoAPMessage message);
+    Integer getRetransmitMessageCounter(Integer messageId);
 
     interface ResponseListener {
         void onSuccess(String response);

@@ -2,18 +2,29 @@ package com.ndmsystems.coala
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap
 import com.ndmsystems.coala.CoAPHandler.AckError
+import com.ndmsystems.coala.exceptions.BaseCoalaThrowable
 import com.ndmsystems.coala.helpers.TimeHelper
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.infrastructure.logging.LogHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
+import net.jodah.expiringmap.ExpirationPolicy
+import net.jodah.expiringmap.ExpiringMap
+import java.util.Collections
 import java.util.ConcurrentModificationException
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 
 class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
     private val pool: ConcurrentLinkedHashMap<Int, QueueElement>
     private val messageIdForToken = ConcurrentHashMap<String, Int>()
+    private val retransmitCounters = Collections.synchronizedMap(
+        ExpiringMap.builder()
+            .expirationPolicy(ExpirationPolicy.ACCESSED)
+            .expiration(1, TimeUnit.MINUTES)
+            .build<Int, Int>()
+    )
     fun requeue(id: Int) {
         val element = pool[id] ?: return
         element.sendAttempts = 0
@@ -103,7 +114,8 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
     }
 
     fun remove(message: CoAPMessage?) {
-        LogHelper.v("Remove message with id " + message!!.id + " from pool")
+        retransmitCounters[message!!.id] = (pool[message.id]?.sendAttempts ?: 0) -1
+        LogHelper.v("Remove message with id " + message.id + " from pool, retransmitCounter " + retransmitCounters[message.id])
         pool.remove(message.id)
         val idForToken = messageIdForToken[message.hexToken]
         if (idForToken != null && idForToken == message.id) {
@@ -111,7 +123,7 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
         }
     }
 
-    fun clear(exception: Exception?) {
+    fun clear(exception: BaseCoalaThrowable?) {
         CoroutineScope(IO).launch {
             LogHelper.v("Clear message pool")
             for (queueElement in pool.values) {
@@ -141,7 +153,7 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
         message?.let {
             CoroutineScope(IO).launch {
                 ackHandlersPool.raiseAckError(message, error)
-                message.responseHandler?.onError(AckError("raiseAckError"))
+                message.responseHandler?.onError(AckError("raiseAckError").setRetransmitMessageCounter(getRetransmitCounter(message.id)))
             }
         }
     }
@@ -164,6 +176,10 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
                 pool[id] = element
             } else LogHelper.e("Try to setNoNeededSending, message not contains in pool, id: " + message.id)
         } else LogHelper.e("Try to setNoNeededSending, id not contains in pool, id: " + message.id)
+    }
+
+    fun getRetransmitCounter(messageId: Int): Int? {
+        return retransmitCounters[messageId]
     }
 
     private inner class QueueElement(var message: CoAPMessage?) {

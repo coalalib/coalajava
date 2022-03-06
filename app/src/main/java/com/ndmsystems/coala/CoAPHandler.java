@@ -1,6 +1,7 @@
 package com.ndmsystems.coala;
 
 
+import com.ndmsystems.coala.exceptions.BaseCoalaThrowable;
 import com.ndmsystems.coala.message.CoAPMessage;
 
 public interface CoAPHandler {
@@ -8,7 +9,7 @@ public interface CoAPHandler {
 
     void onAckError(String error);
 
-    class AckError extends Throwable {
+    class AckError extends BaseCoalaThrowable {
         public AckError() {
         }
 
