@@ -62,7 +62,7 @@ public class ResponseLayer implements ReceiveLayer, SendLayer {
 
         CoAPException responseError = errorFactory.proceed(message);
         if (responseError != null) {
-            request.getResponseHandler().onError(responseError.setRetransmitMessageCounter(client.getRetransmitMessageCounter(message.getId())));
+            request.getResponseHandler().onError(responseError.setMessageDeliveryInfo(client.getMessageDeliveryInfo(message)));
         } else {
             ResponseData responseData = new ResponseData(message.getPayload() == null ? null : message.getPayload().content);
             if (message.getPeerPublicKey() != null)

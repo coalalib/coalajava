@@ -14,9 +14,9 @@ import com.ndmsystems.infrastructure.logging.LogHelper;
 
 public class ReceiveState extends LoggableState {
 
-    private IData accumulator = DataFactory.createEmpty();
-    private SlidingWindow<Block> window;
-    private CoAPMessage initiatingMessage;
+    private final IData accumulator = DataFactory.createEmpty();
+    private final SlidingWindow<Block> window;
+    private final CoAPMessage initiatingMessage;
     private int lastBlockNumber = Integer.MIN_VALUE;
     private int numberOfReceivedBlocks = 0;
 

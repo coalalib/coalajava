@@ -218,7 +218,8 @@ public class Coala extends CoAPTransport {
                     @Override
                     public void onMessage(CoAPMessage response, String error) {
                         if (error != null)
-                            emitter.onError(new CoAPException((response != null ? response.getCode() : CoAPMessageCode.CoapCodeEmpty), error).setRetransmitMessageCounter(getRetransmitMessageCounter(message.getId())));
+                            emitter.onError(new CoAPException((response != null ? response.getCode() : CoAPMessageCode.CoapCodeEmpty), error).setMessageDeliveryInfo(
+                                    getMessageDeliveryInfo(message)));
                         else {
                             emitter.onNext(response);
                             emitter.onComplete();
@@ -227,7 +228,7 @@ public class Coala extends CoAPTransport {
 
                     @Override
                     public void onAckError(String error) {
-                        emitter.onError(new AckError(error).setRetransmitMessageCounter(getRetransmitMessageCounter(message.getId())));
+                        emitter.onError(new AckError(error).setMessageDeliveryInfo(getMessageDeliveryInfo(message)));
                     }
                 })
         );
@@ -313,8 +314,8 @@ public class Coala extends CoAPTransport {
     }
 
     @Override
-    public Integer getRetransmitMessageCounter(@NotNull final Integer messageId) {
-        return messagePool.getRetransmitCounter(messageId);
+    public MessageDeliveryInfo getMessageDeliveryInfo(@NotNull final CoAPMessage message) {
+        return messagePool.getMessageDeliveryInfo(message.getHexToken());
     }
 
     public interface OnPortIsBusyHandler {

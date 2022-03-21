@@ -161,7 +161,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         if (responseHandler != null) {
             val errorText = "Can't create session with $receiverAddress: peer public key mismatch"
             LogHelper.w(errorText)
-            responseHandler.onError(PeerPublicKeyMismatchException(errorText).setRetransmitMessageCounter(client.getRetransmitMessageCounter(message.id)))
+            responseHandler.onError(PeerPublicKeyMismatchException(errorText).setMessageDeliveryInfo(client.getMessageDeliveryInfo(message)))
         }
     }
 
@@ -184,7 +184,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                         val responseHandler = message.responseHandler
                         if (responseHandler != null) {
                             LogHelper.w(errorText)
-                            responseHandler.onError(AckError(errorText).setRetransmitMessageCounter(client.getRetransmitMessageCounter(message.id)))
+                            responseHandler.onError(AckError(errorText).setMessageDeliveryInfo(client.getMessageDeliveryInfo(message)))
                         }
                     }
                     it.remove()

@@ -1,18 +1,20 @@
 package com.ndmsystems.coala.exceptions
 
+import com.ndmsystems.coala.MessageDeliveryInfo
+
 open class BaseCoalaThrowable: Throwable {
     constructor(message: String): super(message)
 
     constructor(): super()
 
-    private var retransmitMessageCounter: Int? = null
+    private var retransmitMessageCounter: MessageDeliveryInfo? = null
 
-    fun setRetransmitMessageCounter(retransmitMessageCounter: Int?): BaseCoalaThrowable {
-        this.retransmitMessageCounter = retransmitMessageCounter
+    fun setMessageDeliveryInfo(messageDeliveryInfo: MessageDeliveryInfo?): BaseCoalaThrowable {
+        this.retransmitMessageCounter = messageDeliveryInfo
         return this
     }
 
-    fun getRetransmitMessageCounter(): Int? {
+    fun getMessageDeliveryInfo(): MessageDeliveryInfo? {
         return retransmitMessageCounter
     }
 }

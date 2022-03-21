@@ -11,7 +11,6 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import net.jodah.expiringmap.ExpirationPolicy
 import net.jodah.expiringmap.ExpiringMap
-import java.util.Collections
 import java.util.ConcurrentModificationException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -19,12 +18,11 @@ import java.util.concurrent.TimeUnit
 class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
     private val pool: ConcurrentLinkedHashMap<Int, QueueElement>
     private val messageIdForToken = ConcurrentHashMap<String, Int>()
-    private val retransmitCounters = Collections.synchronizedMap(
+    private val messageDeliveryInfo =
         ExpiringMap.builder()
             .expirationPolicy(ExpirationPolicy.ACCESSED)
-            .expiration(1, TimeUnit.MINUTES)
-            .build<Int, Int>()
-    )
+            .expiration(5, TimeUnit.MINUTES)
+            .build<String, MessageDeliveryInfo>()
     fun requeue(id: Int) {
         val element = pool[id] ?: return
         element.sendAttempts = 0
@@ -75,6 +73,23 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
                         raiseAckError(next.message, "Request Canceled, too many attempts ")
                         continue
                     }
+
+                    val hexToken = next.message?.hexToken
+
+                    var currentMessageDeliveryInfo = messageDeliveryInfo[hexToken]
+                    if (currentMessageDeliveryInfo == null) {
+                        currentMessageDeliveryInfo = MessageDeliveryInfo(0, 0, 0)
+                    }
+                    if (next.message?.proxy != null) {
+                        currentMessageDeliveryInfo.viaProxyAttempts += 1
+                    } else {
+                        currentMessageDeliveryInfo.directAttempts += 1
+                    }
+                    if (next.sendAttempts > 0) {
+                        currentMessageDeliveryInfo.retransmitCount += 1
+                    }
+                    messageDeliveryInfo[hexToken] = currentMessageDeliveryInfo
+
                     next.sent = true
                     next.sendTime = TimeHelper.getTimeForMeasurementInMilliseconds()
                     next.sendAttempts++
@@ -114,8 +129,7 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
     }
 
     fun remove(message: CoAPMessage?) {
-        retransmitCounters[message!!.id] = (pool[message.id]?.sendAttempts ?: 0) -1
-        LogHelper.v("Remove message with id " + message.id + " from pool, retransmitCounter " + retransmitCounters[message.id])
+        LogHelper.v("Remove message with id " + message!!.id + " from pool, retransmitCounter " + messageDeliveryInfo[message.hexToken])
         pool.remove(message.id)
         val idForToken = messageIdForToken[message.hexToken]
         if (idForToken != null && idForToken == message.id) {
@@ -153,7 +167,7 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
         message?.let {
             CoroutineScope(IO).launch {
                 ackHandlersPool.raiseAckError(message, error)
-                message.responseHandler?.onError(AckError("raiseAckError").setRetransmitMessageCounter(getRetransmitCounter(message.id)))
+                message.responseHandler?.onError(AckError("raiseAckError").setMessageDeliveryInfo(getMessageDeliveryInfo(message.hexToken)))
             }
         }
     }
@@ -178,8 +192,8 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
         } else LogHelper.e("Try to setNoNeededSending, id not contains in pool, id: " + message.id)
     }
 
-    fun getRetransmitCounter(messageId: Int): Int? {
-        return retransmitCounters[messageId]
+    fun getMessageDeliveryInfo(messageToken: String): MessageDeliveryInfo? {
+        return messageDeliveryInfo[messageToken]
     }
 
     private inner class QueueElement(var message: CoAPMessage?) {
