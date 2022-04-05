@@ -211,7 +211,7 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
     companion object {
         const val MAX_PICK_ATTEMPTS = 6
         const val RESEND_PERIOD = 750 // period to waitForConnection before resend a command
-        const val RESEND_PERIOD_LONG = 5000 // period to waitForConnection before resend a command, for message with long answer
+        const val RESEND_PERIOD_LONG = 10000 // period to waitForConnection before resend a command, for message with long answer
         const val EXPIRATION_PERIOD = 60000 // period to waitForConnection before deleting unsent command (e.g. too many commands in pool)
         const val GARBAGE_PERIOD = 25000 // period to waitForConnection before deleting sent command (before Ack or Error received)
     }
