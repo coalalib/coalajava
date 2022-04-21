@@ -15,28 +15,36 @@ class AckHandlersPool {
         .expiration(5, TimeUnit.MINUTES)
         .build()
 
-    @Synchronized
     fun add(id: Int, handler: CoAPHandler) {
         LogHelper.v("Add handler for message: $id to pool")
-        pool[id] = handler
+        synchronized(pool) {
+            pool[id] = handler
+        }
     }
 
-    @Synchronized
     operator fun get(id: Int): CoAPHandler? {
         return pool[id]
     }
 
-    @Synchronized
     fun remove(id: Int) {
         LogHelper.v("Remove handler for message: $id from pool")
-        pool.remove(id)
+        synchronized(pool) {
+            pool.remove(id)
+        }
     }
 
     fun clear(exception: Throwable) {
         LogHelper.v("Clear handlers pool")
         CoroutineScope(IO).launch {
-            for (coAPHandler in pool.values) {
-                coAPHandler.onAckError(exception.message)
+            var poolCopy: List<CoAPHandler?>
+            synchronized(pool) {
+                poolCopy = pool.values.toList()
+                pool.clear()
+            }
+            val iter = poolCopy.iterator()
+            while (iter.hasNext()) {
+                val handler = iter.next()
+                handler?.onAckError(exception.message)
             }
         }
     }
@@ -50,7 +58,6 @@ class AckHandlersPool {
         } else LogHelper.d("Message with null handler error: " + error + " for id: " + message.id)
     }
 
-    @Synchronized
     fun print() {
         LogHelper.w("Printing pool:")
         for (id in pool.keys) {
