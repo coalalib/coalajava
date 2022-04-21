@@ -14,12 +14,10 @@ import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessagePayload;
 import com.ndmsystems.coala.message.CoAPRequestMethod;
 import com.ndmsystems.coala.observer.RegistryOfObservingResources;
-import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult;
 import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
 import java.util.Random;
 
 import javax.inject.Inject;
@@ -150,10 +148,6 @@ public class Coala extends CoAPTransport {
     @Override
     public void runResourceDiscovery(OnResourcesDiscovered onResourcesDiscovered) {
         localPeerDiscoverer.runResourceDiscovery(onResourcesDiscovered);
-    }
-
-    public Observable<List<ResourceDiscoveryResult>> discoverLocalResources() {
-        return Observable.create(emitter -> localPeerDiscoverer.runResourceDiscovery(emitter::onNext));
     }
 
     public void cancel(CoAPMessage message) {

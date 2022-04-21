@@ -3,15 +3,12 @@ package com.ndmsystems.coala.layers;
 import com.ndmsystems.coala.AckHandlersPool;
 import com.ndmsystems.coala.CoAPHandler;
 import com.ndmsystems.coala.CoAPMessagePool;
-import com.ndmsystems.coala.message.CoAPMessageCode;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
-import com.ndmsystems.coala.message.CoAPMessageOption;
-import com.ndmsystems.coala.message.CoAPMessageOptionCode;
+import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryHelper;
-import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult;
 import com.ndmsystems.coala.utils.Reference;
+import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.net.InetSocketAddress;
 
@@ -22,27 +19,13 @@ public class ReliabilityLayer implements ReceiveLayer {
     private AckHandlersPool ackHandlersPool;
 
     public ReliabilityLayer(CoAPMessagePool messagePool,
-                            ResourceDiscoveryHelper resourceDiscoveryHelper,
                             AckHandlersPool ackHandlersPool) {
         this.messagePool = messagePool;
-        this.resourceDiscoveryHelper = resourceDiscoveryHelper;
         this.ackHandlersPool = ackHandlersPool;
     }
 
     @Override
     public boolean onReceive(CoAPMessage message, Reference<InetSocketAddress> senderAddressReference) {
-        //TODO убрать отсюда discovery
-        if (!message.isRequest()) {
-            if (message.getResponseHandler() == null) {
-                CoAPMessageOption option = message.getOption(CoAPMessageOptionCode.OptionContentFormat);
-                if (option != null && ((int) option.value) == 0
-                        && !senderAddressReference.get().getAddress().getHostAddress().equals("localhost")
-                        && !senderAddressReference.get().getAddress().getHostAddress().equals("127.0.0.1")) {
-                    resourceDiscoveryHelper.addResult(new ResourceDiscoveryResult(message.getPayload() != null ? message.getPayload().toString() : "", senderAddressReference.get()));
-                }
-            }
-        }
-
         if (message.isRequest())
             return true;
 
@@ -67,7 +50,11 @@ public class ReliabilityLayer implements ReceiveLayer {
             // @TODO: error handling
             handler.onMessage(message, responseError);
 
-            ackHandlersPool.remove(message.getId());
+            if (message.getHexToken().equals("eb21926ad2e765a7")) { // Simple random token, some in LocalPeerDiscoverer. For recognize broadcast
+                LogHelper.v("Broadcast message, no need delete handler");
+            } else {
+                ackHandlersPool.remove(message.getId());
+            }
         }
 
         return true;

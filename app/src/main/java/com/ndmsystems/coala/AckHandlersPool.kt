@@ -1,14 +1,19 @@
 package com.ndmsystems.coala
 
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.infrastructure.logging.LogHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
+import net.jodah.expiringmap.ExpirationPolicy
+import net.jodah.expiringmap.ExpiringMap
+import java.util.concurrent.TimeUnit
 
 class AckHandlersPool {
-    private val pool: ConcurrentLinkedHashMap<Int, CoAPHandler> = ConcurrentLinkedHashMap.Builder<Int, CoAPHandler>().maximumWeightedCapacity(500).build()
+    private val pool: ExpiringMap<Int, CoAPHandler> = ExpiringMap.builder()
+        .expirationPolicy(ExpirationPolicy.ACCESSED)
+        .expiration(5, TimeUnit.MINUTES)
+        .build()
     fun add(id: Int, handler: CoAPHandler) {
         LogHelper.v("Add handler for message: $id to pool")
         pool[id] = handler

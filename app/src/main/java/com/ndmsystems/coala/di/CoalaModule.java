@@ -132,10 +132,8 @@ public class CoalaModule {
     @Provides
     @Singleton
     public ReliabilityLayer provideReliabilityLayer(CoAPMessagePool messagePool,
-                                                    ResourceDiscoveryHelper resourceDiscoveryHelper,
                                                     AckHandlersPool ackHandlersPool) {
         return new ReliabilityLayer(messagePool,
-                resourceDiscoveryHelper,
                 ackHandlersPool);
     }
 

@@ -5,7 +5,7 @@ import java.util.List;
 
 
 public class ResourceDiscoveryHelper {
-    private List<ResourceDiscoveryResult> resultsList = new ArrayList<>();
+    private final List<ResourceDiscoveryResult> resultsList = new ArrayList<>();
 
     public void clear() {
         resultsList.clear();
@@ -19,9 +19,5 @@ public class ResourceDiscoveryHelper {
         if(!resultsList.contains(oneResource)) {
             resultsList.add(oneResource);
         }
-    }
-
-    public String[] getResourcesFromMessage(String message) {
-        return message.split(",");
     }
 }

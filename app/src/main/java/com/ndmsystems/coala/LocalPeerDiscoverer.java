@@ -1,10 +1,12 @@
 package com.ndmsystems.coala;
 
+import com.ndmsystems.coala.helpers.Hex;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryHelper;
 import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult;
+import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +46,19 @@ public class LocalPeerDiscoverer {
     private void sendDiscoveryMulticast() {
         CoAPMessage message = new CoAPMessage(CoAPMessageType.NON, CoAPMessageCode.GET); // ID will be auto-generated
         message.setURI("coap://224.0.0.187:" + port + "/info");
-        client.send(message, null);
+        message.setToken(Hex.decodeHex("eb21926ad2e765a7".toCharArray()));// Simple random token, some in ReliabilityLayer. For recognize broadcast
+        client.send(message, new CoAPHandler() {
+            @Override
+            public void onMessage(CoAPMessage message, String error) {
+                LogHelper.d("sendDiscoveryMulticast response: " + message.getAddress() + ", payload " + message.toString());
+                resourceDiscoveryHelper.addResult(new ResourceDiscoveryResult(message.getPayload() != null ? message.getPayload().toString() : "", message.getAddress()));
+            }
+
+            @Override
+            public void onAckError(String error) {
+                LogHelper.d("sendDiscoveryMulticast onAckError: " + error);
+            }
+        });
     }
 
 }
