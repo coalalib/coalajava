@@ -14,15 +14,19 @@ class AckHandlersPool {
         .expirationPolicy(ExpirationPolicy.ACCESSED)
         .expiration(5, TimeUnit.MINUTES)
         .build()
+
+    @Synchronized
     fun add(id: Int, handler: CoAPHandler) {
         LogHelper.v("Add handler for message: $id to pool")
         pool[id] = handler
     }
 
+    @Synchronized
     operator fun get(id: Int): CoAPHandler? {
         return pool[id]
     }
 
+    @Synchronized
     fun remove(id: Int) {
         LogHelper.v("Remove handler for message: $id from pool")
         pool.remove(id)
@@ -46,6 +50,7 @@ class AckHandlersPool {
         } else LogHelper.d("Message with null handler error: " + error + " for id: " + message.id)
     }
 
+    @Synchronized
     fun print() {
         LogHelper.w("Printing pool:")
         for (id in pool.keys) {

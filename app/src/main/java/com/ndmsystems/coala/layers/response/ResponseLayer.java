@@ -21,9 +21,9 @@ import java.util.concurrent.TimeUnit;
 
 public class ResponseLayer implements ReceiveLayer, SendLayer {
 
-    private Map<String, CoAPMessage> requests;
-    private CoAPClient client;
-    private ResponseErrorFactory errorFactory;
+    private final Map<String, CoAPMessage> requests;
+    private final CoAPClient client;
+    private final ResponseErrorFactory errorFactory;
 
     public ResponseLayer(CoAPClient client) {
         this.client = client;
