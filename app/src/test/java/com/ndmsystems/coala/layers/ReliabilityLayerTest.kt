@@ -1,7 +1,14 @@
 package com.ndmsystems.coala.layers
 
-import com.ndmsystems.coala.*
-import com.ndmsystems.coala.message.*
+import com.ndmsystems.coala.AckHandlersPool
+import com.ndmsystems.coala.CoAPHandler
+import com.ndmsystems.coala.CoAPMessagePool
+import com.ndmsystems.coala.helpers.Hex
+import com.ndmsystems.coala.message.CoAPMessage
+import com.ndmsystems.coala.message.CoAPMessageCode
+import com.ndmsystems.coala.message.CoAPMessageOption
+import com.ndmsystems.coala.message.CoAPMessageOptionCode
+import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryHelper
 import com.ndmsystems.coala.utils.Reference
 import io.mockk.every
@@ -22,18 +29,19 @@ object ReliabilityLayerTest: Spek( {
         val coAPMessagePool by memoized { mockk<CoAPMessagePool>(relaxed = true) }
         val resourceDiscoveryHelper by memoized { mockk<ResourceDiscoveryHelper>(relaxed = true) }
         val ackHandlersPool by memoized { mockk<AckHandlersPool>(relaxed = true) }
-        val reliabilityLayer by memoized { ReliabilityLayer(coAPMessagePool, resourceDiscoveryHelper, ackHandlersPool) }
+        val reliabilityLayer by memoized { ReliabilityLayer(coAPMessagePool, ackHandlersPool) }
         val mockRefAddress by memoized { mockk<Reference<InetSocketAddress>> {
             every { get() } returns InetSocketAddress("123.123.123.123", 12345)
         } }
 
-        Scenario("Msg with non request code and with non ACK or RST type should return true and add result in resourceDiscoveryHelper") {
+        Scenario("Msg with token eb21926ad2e765a7 don't delete handler") {
 
             lateinit var msg: CoAPMessage
 
-            Given("message with CON type and non request code with specific option") {
+            Given("message with specific hex token") {
                 msg = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.CoapCodeCreated)
                 msg.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionContentFormat, 0))
+                msg.token = Hex.decodeHex("eb21926ad2e765a7".toCharArray())
             }
 
             var result = false
@@ -41,14 +49,8 @@ object ReliabilityLayerTest: Spek( {
                 result = reliabilityLayer.onReceive(msg, mockRefAddress)
             }
 
-            Then("add result in resourceDiscoveryHelper"){
-                verify { mockRefAddress.get() }
-                verify { resourceDiscoveryHelper.addResult(any()) }
-            }
-
-            And("shouldn't call other methods") {
-                verify(inverse=true) { coAPMessagePool.remove(any()) }
-                verify(inverse=true) { ackHandlersPool.get(any()) }
+            Then("handler not deleted"){
+                verify(inverse=true) { ackHandlersPool.remove(any()) }
             }
 
             And("result should be true") {
