@@ -47,10 +47,8 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
             val now = TimeHelper.getTimeForMeasurementInMilliseconds()
 
             // check if this message is too old to send
-            if (
-                next.createTime != null && now - next.createTime!!
-                >=
-                (if (next.isNeededSend) EXPIRATION_PERIOD else 10 * EXPIRATION_PERIOD)
+            if (next.createTime != null && now - next.createTime!!
+                >= (if (next.isNeededSend) EXPIRATION_PERIOD else 10 * EXPIRATION_PERIOD)
             ) { //10 time longer expiration period for !isNeededSend message, for ARQ original messages
                 LogHelper.v("Remove message with id " + next.message!!.id + " from pool because expired")
                 remove(next.message)
@@ -59,7 +57,7 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
             }
 
             // check if this message should be already removed from the pool, before ACK
-            if (next.isNeededSend && next.sendTime != null && now - next.sendTime!! >= GARBAGE_PERIOD) {
+            if (next.isNeededSend && next.sendTime != null && now - next.sendTime!! >= if (next.message?.isRequestWithLongTimeNoAnswer == true) GARBAGE_PERIOD * 5 else GARBAGE_PERIOD) {
                 LogHelper.v("Remove message with id " + next.message!!.id + " from pool because garbage")
                 remove(next.message)
                 raiseAckError(next.message, "message deleted by garbage")
@@ -211,7 +209,7 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
     companion object {
         const val MAX_PICK_ATTEMPTS = 6
         const val RESEND_PERIOD = 750 // period to waitForConnection before resend a command
-        const val RESEND_PERIOD_LONG = 10000 // period to waitForConnection before resend a command, for message with long answer
+        const val RESEND_PERIOD_LONG = 30000 // period to waitForConnection before resend a command, for message with long answer
         const val EXPIRATION_PERIOD = 60000 // period to waitForConnection before deleting unsent command (e.g. too many commands in pool)
         const val GARBAGE_PERIOD = 25000 // period to waitForConnection before deleting sent command (before Ack or Error received)
     }
