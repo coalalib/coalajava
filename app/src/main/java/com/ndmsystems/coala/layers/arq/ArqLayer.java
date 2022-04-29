@@ -9,6 +9,7 @@ import com.ndmsystems.coala.layers.ReceiveLayer;
 import com.ndmsystems.coala.layers.SendLayer;
 import com.ndmsystems.coala.layers.arq.data.DataFactory;
 import com.ndmsystems.coala.layers.arq.data.IData;
+import com.ndmsystems.coala.layers.arq.states.LoggableState;
 import com.ndmsystems.coala.layers.arq.states.ReceiveState;
 import com.ndmsystems.coala.layers.arq.states.SendState;
 import com.ndmsystems.coala.message.CoAPMessage;
@@ -330,6 +331,10 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
         return message.getPayload() != null &&
                 message.getPayload().content != null &&
                 message.getPayload().content.length > MAX_PAYLOAD_SIZE;
+    }
+
+    public LoggableState getArqReceivingStateForToken(final byte[] token) {
+        return receiveStates.get(Hex.encodeHexString(token));
     }
 
 }

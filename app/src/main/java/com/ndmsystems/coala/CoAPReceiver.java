@@ -1,5 +1,6 @@
 package com.ndmsystems.coala;
 
+import com.ndmsystems.coala.layers.arq.states.LoggableState;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.utils.Reference;
 import com.ndmsystems.infrastructure.logging.LogHelper;
@@ -60,6 +61,10 @@ public class CoAPReceiver {
         }
 
         connection = null;
+    }
+
+    public LoggableState getReceivedStateForToken(final byte[] token) {
+        return receiveLayerStack.getArqReceivedStateForToken(token);
     }
 
     //это не окончательный вариант, но NPE баг закрывает
@@ -145,4 +150,5 @@ public class CoAPReceiver {
         }
         return message;
     }
+
 }

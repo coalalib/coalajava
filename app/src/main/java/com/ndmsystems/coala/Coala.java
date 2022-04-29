@@ -7,6 +7,7 @@ import com.ndmsystems.coala.exceptions.BaseCoalaThrowable;
 import com.ndmsystems.coala.exceptions.CoAPException;
 import com.ndmsystems.coala.exceptions.CoalaStoppedException;
 import com.ndmsystems.coala.helpers.RandomGenerator;
+import com.ndmsystems.coala.layers.arq.states.LoggableState;
 import com.ndmsystems.coala.layers.response.ResponseData;
 import com.ndmsystems.coala.layers.response.ResponseHandler;
 import com.ndmsystems.coala.message.CoAPMessage;
@@ -310,6 +311,10 @@ public class Coala extends CoAPTransport {
     @Override
     public MessageDeliveryInfo getMessageDeliveryInfo(@NotNull final CoAPMessage message) {
         return messagePool.getMessageDeliveryInfo(message.getHexToken());
+    }
+
+    public LoggableState getReceivedStateForToken(@NotNull final byte[] tokenForDownload) {
+        return receiver.getReceivedStateForToken(tokenForDownload);
     }
 
     public interface OnPortIsBusyHandler {
