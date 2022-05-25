@@ -48,13 +48,5 @@ public class EncryptionHelper {
                 message.removeOption(CoAPMessageOptionCode.OptionCoapsURI);
             } else LogHelper.w("OptionCoapsURI empty after decrypt");
         }
-        if (message.hasOption(CoAPMessageOptionCode.OptionCookie)) {
-            //todo узнать что делать с этими куки
-//            byte[] cookieBytes = aead.decrypt(message.getOption(CoAPMessageOptionCode.OptionCookie).toBytes(), message.getId(), null);
-//            if (cookieBytes != null) {
-//                LogHelper.i("Message has Cookie: " + new String(cookieBytes));
-//            } else
-//                LogHelper.i("OptionCookie empty after decrypt");
-        }
     }
 }
