@@ -186,8 +186,8 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
             if (element != null) {
                 element.isNeededSend = false
                 pool[id] = element
-            } else LogHelper.e("Try to setNoNeededSending, message not contains in pool, id: " + message.id)
-        } else LogHelper.e("Try to setNoNeededSending, id not contains in pool, id: " + message.id)
+            } else LogHelper.i("Try to setNoNeededSending, message not contains in pool, id: " + message.id)
+        } else LogHelper.i("Try to setNoNeededSending, id not contains in pool, id: " + message.id)
     }
 
     fun getMessageDeliveryInfo(messageToken: String): MessageDeliveryInfo? {
