@@ -3,6 +3,7 @@ buildscript {
         android_junit5_version = '1.5.1.0'
         spek_version = '2.0.6'
         mockk_version = '1.9.3'
+        kotlinVersion = '1.4.21'
     }
     repositories {
         google()
@@ -10,7 +11,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:4.0.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$rootProject.ext.kotlinVersion"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
         classpath "de.mannodermaus.gradle.plugins:android-junit5:$android_junit5_version"
 
     }
@@ -92,7 +93,7 @@ dependencies {
     implementation 'net.jodah:expiringmap:0.5.8'
     api project(':libs:infrastructure')
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$rootProject.ext.kotlinVersion"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
 
     //unit tests
@@ -102,8 +103,8 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api:5.5.1"
     testImplementation "org.junit.jupiter:junit-jupiter-engine:5.5.1"
 
-    testImplementation "org.jetbrains.kotlin:kotlin-reflect:$rootProject.ext.kotlinVersion"
-    testImplementation "org.jetbrains.kotlin:kotlin-test:$rootProject.ext.kotlinVersion"
+    testImplementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
     testImplementation "org.spekframework.spek2:spek-dsl-jvm:$spek_version"
     testImplementation "org.spekframework.spek2:spek-runner-junit5:$spek_version"
     testImplementation "io.mockk:mockk:$mockk_version"
