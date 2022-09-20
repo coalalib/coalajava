@@ -39,12 +39,16 @@ import dagger.Provides;
 @Module
 public class CoalaModule {
 
-    private Coala coala;
-    private int port;
+    private final Coala coala;
+    private final int port;
+    private final int coalaResendMsgTime;
+    private final int coalaMaxPickAttempts;
 
-    public CoalaModule(Coala coala, int port) {
+    public CoalaModule(Coala coala, int port, int coalaResendMsgTime, int coalaMaxPickAttempts) {
         this.coala = coala;
         this.port = port;
+        this.coalaResendMsgTime = coalaResendMsgTime;
+        this.coalaMaxPickAttempts = coalaMaxPickAttempts;
     }
 
     @Provides
@@ -233,7 +237,11 @@ public class CoalaModule {
     @Provides
     @Singleton
     public CoAPMessagePool provideMessagePool(AckHandlersPool ackHandlersPool) {
-        return new CoAPMessagePool(ackHandlersPool);
+        return new CoAPMessagePool(
+                ackHandlersPool,
+                coalaResendMsgTime,
+                coalaMaxPickAttempts
+        );
     }
 
     @Provides

@@ -11,11 +11,14 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import net.jodah.expiringmap.ExpirationPolicy
 import net.jodah.expiringmap.ExpiringMap
-import java.util.ConcurrentModificationException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
-class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
+class CoAPMessagePool(
+    private val ackHandlersPool: AckHandlersPool,
+    private val resendPeriod: Int,
+    private val maxPickAttempts: Int,
+) {
     private val pool: ConcurrentLinkedHashMap<Int, QueueElement>
     private val messageIdForToken = ConcurrentHashMap<String, Int>()
     private val messageDeliveryInfo =
@@ -65,7 +68,7 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
             }
             if (next.isNeededSend) {
                 if (!next.sent) {
-                    if (next.sendAttempts >= MAX_PICK_ATTEMPTS) {
+                    if (next.sendAttempts >= maxPickAttempts) {
                         LogHelper.v("Remove message with id " + next.message!!.id + " from pool because too many attempts")
                         remove(next.message)
                         raiseAckError(next.message, "Request Canceled, too many attempts ")
@@ -97,7 +100,7 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
                     if (
                         next.sendTime != null
                         && (now - next.sendTime!!
-                                >= if (next.message?.isRequestWithLongTimeNoAnswer == true) RESEND_PERIOD_LONG else RESEND_PERIOD)
+                                >= if (next.message?.isRequestWithLongTimeNoAnswer == true) RESEND_PERIOD_LONG else resendPeriod)
                     ) {
                         next.message!!.resendHandler.onResend()
                         markAsUnsent(next.message!!.id) // Do we need a separate function for this?! O_o
@@ -207,8 +210,6 @@ class CoAPMessagePool(private val ackHandlersPool: AckHandlersPool) {
     }
 
     companion object {
-        const val MAX_PICK_ATTEMPTS = 6
-        const val RESEND_PERIOD = 750 // period to waitForConnection before resend a command
         const val RESEND_PERIOD_LONG = 30000 // period to waitForConnection before resend a command, for message with long answer
         const val EXPIRATION_PERIOD = 60000 // period to waitForConnection before deleting unsent command (e.g. too many commands in pool)
         const val GARBAGE_PERIOD = 25000 // period to waitForConnection before deleting sent command (before Ack or Error received)
