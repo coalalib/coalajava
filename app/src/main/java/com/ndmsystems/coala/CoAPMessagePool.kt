@@ -16,16 +16,42 @@ import java.util.concurrent.TimeUnit
 
 class CoAPMessagePool(
     private val ackHandlersPool: AckHandlersPool,
-    private val resendPeriod: Int,
-    private val maxPickAttempts: Int,
+    private val params: Params,
 ) {
     private val pool: ConcurrentLinkedHashMap<Int, QueueElement>
     private val messageIdForToken = ConcurrentHashMap<String, Int>()
-    private val messageDeliveryInfo =
-        ExpiringMap.builder()
-            .expirationPolicy(ExpirationPolicy.ACCESSED)
-            .expiration(5, TimeUnit.MINUTES)
-            .build<String, MessageDeliveryInfo>()
+    private val messageDeliveryInfo = ExpiringMap.builder()
+        .expirationPolicy(ExpirationPolicy.ACCESSED)
+        .expiration(5, TimeUnit.MINUTES)
+        .build<String, MessageDeliveryInfo>()
+
+    init {
+        pool = ConcurrentLinkedHashMap.Builder<Int, QueueElement>().maximumWeightedCapacity(1000)
+            .build()
+    }
+
+    companion object {
+        data class Params(
+            val resendPeriod: Int = 2002, // period to waitForConnection before resend a command
+            val resendLongPeriod: Int = 30002, // period to waitForConnection before resend a command, for message with long answer
+            val expirationPeriod: Int = 60002, // period to waitForConnection before deleting unsent command (e.g. too many commands in pool)
+            val garbagePeriod: Int = 25002, // period to waitForConnection before deleting sent command (before Ack or Error received)
+            val maxPickAttempts: Int = 6,
+        )
+    }
+
+    private inner class QueueElement(var message: CoAPMessage?) {
+        var sendAttempts = 0
+        var sendTime: Long? = null
+        var createTime: Long? = null
+        var sent = false
+        var isNeededSend = true
+
+        init {
+            createTime = TimeHelper.getTimeForMeasurementInMilliseconds()
+        }
+    }
+
     fun requeue(id: Int) {
         val element = pool[id] ?: return
         element.sendAttempts = 0
@@ -51,7 +77,7 @@ class CoAPMessagePool(
 
             // check if this message is too old to send
             if (next.createTime != null && now - next.createTime!!
-                >= (if (next.isNeededSend) EXPIRATION_PERIOD else 10 * EXPIRATION_PERIOD)
+                >= (if (next.isNeededSend) params.expirationPeriod else 10 * params.expirationPeriod)
             ) { //10 time longer expiration period for !isNeededSend message, for ARQ original messages
                 LogHelper.v("Remove message with id " + next.message!!.id + " from pool because expired")
                 remove(next.message)
@@ -60,7 +86,10 @@ class CoAPMessagePool(
             }
 
             // check if this message should be already removed from the pool, before ACK
-            if (next.isNeededSend && next.sendTime != null && now - next.sendTime!! >= if (next.message?.isRequestWithLongTimeNoAnswer == true) GARBAGE_PERIOD * 5 else GARBAGE_PERIOD) {
+            if (next.isNeededSend && next.sendTime != null
+                && now - next.sendTime!! >= if (next.message?.isRequestWithLongTimeNoAnswer == true) params.garbagePeriod * 5
+                else params.garbagePeriod
+            ) {
                 LogHelper.v("Remove message with id " + next.message!!.id + " from pool because garbage")
                 remove(next.message)
                 raiseAckError(next.message, "message deleted by garbage")
@@ -68,7 +97,7 @@ class CoAPMessagePool(
             }
             if (next.isNeededSend) {
                 if (!next.sent) {
-                    if (next.sendAttempts >= maxPickAttempts) {
+                    if (next.sendAttempts >= params.maxPickAttempts) {
                         LogHelper.v("Remove message with id " + next.message!!.id + " from pool because too many attempts")
                         remove(next.message)
                         raiseAckError(next.message, "Request Canceled, too many attempts ")
@@ -100,7 +129,7 @@ class CoAPMessagePool(
                     if (
                         next.sendTime != null
                         && (now - next.sendTime!!
-                                >= if (next.message?.isRequestWithLongTimeNoAnswer == true) RESEND_PERIOD_LONG else resendPeriod)
+                                >= if (next.message?.isRequestWithLongTimeNoAnswer == true) params.resendLongPeriod else params.resendPeriod)
                     ) {
                         next.message!!.resendHandler.onResend()
                         markAsUnsent(next.message!!.id) // Do we need a separate function for this?! O_o
@@ -168,7 +197,11 @@ class CoAPMessagePool(
         message?.let {
             CoroutineScope(IO).launch {
                 ackHandlersPool.raiseAckError(message, error)
-                message.responseHandler?.onError(AckError("raiseAckError").setMessageDeliveryInfo(getMessageDeliveryInfo(message.hexToken)))
+                message.responseHandler?.onError(
+                    AckError("raiseAckError").setMessageDeliveryInfo(
+                        getMessageDeliveryInfo(message.hexToken)
+                    )
+                )
             }
         }
     }
@@ -195,27 +228,5 @@ class CoAPMessagePool(
 
     fun getMessageDeliveryInfo(messageToken: String): MessageDeliveryInfo? {
         return messageDeliveryInfo[messageToken]
-    }
-
-    private inner class QueueElement(var message: CoAPMessage?) {
-        var sendAttempts = 0
-        var sendTime: Long? = null
-        var createTime: Long? = null
-        var sent = false
-        var isNeededSend = true
-
-        init {
-            createTime = TimeHelper.getTimeForMeasurementInMilliseconds()
-        }
-    }
-
-    companion object {
-        const val RESEND_PERIOD_LONG = 30000 // period to waitForConnection before resend a command, for message with long answer
-        const val EXPIRATION_PERIOD = 60000 // period to waitForConnection before deleting unsent command (e.g. too many commands in pool)
-        const val GARBAGE_PERIOD = 25000 // period to waitForConnection before deleting sent command (before Ack or Error received)
-    }
-
-    init {
-        pool = ConcurrentLinkedHashMap.Builder<Int, QueueElement>().maximumWeightedCapacity(1000).build()
     }
 }

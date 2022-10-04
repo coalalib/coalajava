@@ -65,19 +65,18 @@ public class Coala extends CoAPTransport {
     }
 
     public Coala(Integer port) {
-        this(port, 2000, 6);
+        this(port, new CoAPMessagePool.Companion.Params());
     }
 
     /**
      * Create instance of coala with given port and resend message time
      */
-    public Coala(Integer port, int coalaResendMsgTime, int coalaMaxPickAttempts) {
+    public Coala(Integer port, CoAPMessagePool.Companion.Params params) {
         dependencyGraph = DaggerCoalaComponent.builder().coalaModule(
                 new CoalaModule(
                         this,
                         port,
-                        coalaResendMsgTime,
-                        coalaMaxPickAttempts
+                        params
                 )
         ).build();
         dependencyGraph.inject(this);

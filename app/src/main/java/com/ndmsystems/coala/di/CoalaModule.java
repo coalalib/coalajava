@@ -41,14 +41,12 @@ public class CoalaModule {
 
     private final Coala coala;
     private final int port;
-    private final int coalaResendMsgTime;
-    private final int coalaMaxPickAttempts;
+    private final CoAPMessagePool.Companion.Params params;
 
-    public CoalaModule(Coala coala, int port, int coalaResendMsgTime, int coalaMaxPickAttempts) {
+    public CoalaModule(Coala coala, int port, CoAPMessagePool.Companion.Params params) {
         this.coala = coala;
         this.port = port;
-        this.coalaResendMsgTime = coalaResendMsgTime;
-        this.coalaMaxPickAttempts = coalaMaxPickAttempts;
+        this.params = params;
     }
 
     @Provides
@@ -237,11 +235,7 @@ public class CoalaModule {
     @Provides
     @Singleton
     public CoAPMessagePool provideMessagePool(AckHandlersPool ackHandlersPool) {
-        return new CoAPMessagePool(
-                ackHandlersPool,
-                coalaResendMsgTime,
-                coalaMaxPickAttempts
-        );
+        return new CoAPMessagePool(ackHandlersPool, params);
     }
 
     @Provides
