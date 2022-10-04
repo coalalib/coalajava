@@ -98,7 +98,7 @@ public class ConnectionProvider {
             connection.setReuseAddress(true);
             connection.setTrafficClass(IPTOS_RELIABILITY | IPTOS_THROUGHPUT | IPTOS_LOWDELAY);
             connection.joinGroup(Inet4Address.getByName("224.0.0.187"));
-            connection.setReceiveBufferSize(409600);
+            connection.setReceiveBufferSize(1048576);
             connection.bind(srcAddress);
 
             LogHelper.w("MulticastSocket receiveBufferSize: " + connection.getReceiveBufferSize()
