@@ -2,7 +2,7 @@
     package="com.ndmsystems.coala">
 
     <application
-        android:allowBackup="false">
+        android:allowBackup="true">
 
     </application>
 
