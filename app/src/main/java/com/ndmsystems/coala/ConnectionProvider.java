@@ -85,7 +85,7 @@ public class ConnectionProvider {
             saveConnection(connection);
             return connection;
         } catch (SocketException ex) {
-            LogHelper.e("MulticastSocket can't be created, try to reuse: " + ex.getClass() + " " + ex.getLocalizedMessage());
+            LogHelper.i("MulticastSocket can't be created, try to reuse: " + ex.getClass() + " " + ex.getLocalizedMessage());
             return tryToReuseSocket();
         }
     }

@@ -28,7 +28,6 @@ import kotlinx.coroutines.launch
 import java.net.InetSocketAddress
 import java.util.Arrays
 import java.util.Collections
-import java.util.HashSet
 
 class SecurityLayer(private val messagePool: CoAPMessagePool,
                     private val ackHandlersPool: AckHandlersPool,
@@ -100,7 +99,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                                     setSessionForAddress(securedSession, message)
                                     sendPendingMessage(message.address)
                                 } else {
-                                    LogHelper.e("Error then try to client hello, session removed: $error")
+                                    LogHelper.i("Error then try to client hello, session removed: $error")
                                     removeSessionForAddress(message)
                                     removePendingMessagesByAddress(receiverAddress)
                                 }
@@ -111,14 +110,14 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                                 removePendingMessagesByAddress(receiverAddress)
                             }
                         } else {
-                            LogHelper.e("Error then try to client hello: $error")
+                            LogHelper.i("Error then try to client hello: $error")
                             removeSessionForAddress(message)
                             removePendingMessagesByAddress(receiverAddress)
                         }
                     }
 
                     override fun onAckError(error: String) {
-                        LogHelper.e("Error then try to client hello: $error")
+                        LogHelper.i("Error then try to client hello: $error")
                         removeSessionForAddress(message)
                         removePendingMessagesByAddress(receiverAddress)
                     }
@@ -296,6 +295,9 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
     }
 
     private fun getSessionForAddress(mainMessage: CoAPMessage?): SecuredSession? {
+        if (mainMessage == null) {
+            LogHelper.e("getSessionForAddress, try to get hash for null message!")
+        }
         return sessionPool[getHashAddressString(mainMessage)]
     }
 
@@ -307,7 +309,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
 
     private fun getHashAddressString(mainMessage: CoAPMessage?): String? {
         if (mainMessage == null) {
-            LogHelper.e("Try to get hash for null message!")
+            LogHelper.e("getHashAddressString, try to get hash for null message!")
             return null
         }
         return (if (mainMessage.address != null) mainMessage.address.address.hostAddress + ":" + mainMessage.address.port else mainMessage.uri) + if (mainMessage.proxy == null) "" else mainMessage.proxy.toString()
@@ -327,6 +329,9 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
     }
 
     private fun removeSessionForAddress(mainMessage: CoAPMessage?) {
+        if (mainMessage == null) {
+            LogHelper.e("removeSessionForAddress, try to get hash for null message!")
+        }
         LogHelper.v("removeSessionForAddress " + getHashAddressString(mainMessage))
         sessionPool.remove(getHashAddressString(mainMessage))
     }
