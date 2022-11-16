@@ -2,7 +2,6 @@ package com.ndmsystems.coala.helpers;
 
 
 import com.ndmsystems.coala.layers.arq.Block;
-import com.ndmsystems.coala.layers.arq.data.DataFactory;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageOption;
 
@@ -35,8 +34,8 @@ public class MessageHelper {
                                     new Block(
                                             (Integer) option.value,
                                             message.getPayload() == null
-                                                    ? DataFactory.createEmpty()
-                                                    : DataFactory.create(message.getPayload().content)) + "'(" + option.value + ") ");
+                                                    ? null
+                                                    : message.getPayload().content) + "'(" + option.value + ") ");
                     break;
                 default:
                     buf

@@ -1,12 +1,11 @@
 package com.ndmsystems.coala.layers.arq.states;
 
 import com.ndmsystems.coala.layers.arq.Block;
-import com.ndmsystems.coala.layers.arq.SlidingWindow;
-import com.ndmsystems.coala.layers.arq.data.DataFactory;
-import com.ndmsystems.coala.layers.arq.data.IData;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.infrastructure.logging.LogHelper;
+
+import java.util.HashMap;
 
 /**
  * Created by Владимир on 16.08.2017.
@@ -14,14 +13,12 @@ import com.ndmsystems.infrastructure.logging.LogHelper;
 
 public class ReceiveState extends LoggableState {
 
-    private final IData accumulator = DataFactory.createEmpty();
-    private final SlidingWindow<Block> window;
+    private final HashMap<Integer, byte[]> accumulator = new HashMap<>();
     private final CoAPMessage initiatingMessage;
-    private int lastBlockNumber = Integer.MIN_VALUE;
+    private int lastBlockNumber = Integer.MAX_VALUE;
     private int numberOfReceivedBlocks = 0;
 
-    public ReceiveState(int windowSize, CoAPMessage initiatingMessage) {
-        window = new SlidingWindow<>(windowSize);
+    public ReceiveState(CoAPMessage initiatingMessage) {
         this.initiatingMessage = initiatingMessage;
     }
 
@@ -29,40 +26,55 @@ public class ReceiveState extends LoggableState {
         return initiatingMessage;
     }
 
-    public IData getData() {
-        return accumulator;
+    public byte[] getData() {
+        if (lastBlockNumber == Integer.MAX_VALUE) {
+            return null;
+        }
+        byte[] result = new byte[getDataSize()];
+        int currentPosInResult = 0;
+        for (int i = 0; i <= lastBlockNumber; i++) {
+            if (accumulator.containsKey(i) && accumulator.get(i) != null) {
+                byte[] forCopy = accumulator.get(i);
+                System.arraycopy(forCopy, 0, result, currentPosInResult, forCopy.length);
+                currentPosInResult += forCopy.length;
+            } else {
+                LogHelper.v("Accumulator don't contain block number " + i + " or it's null");
+            }
+        }
+        return result;
     }
 
     public boolean isTransferCompleted() {
-        return window.getOffset() - 1 == lastBlockNumber && numberOfReceivedBlocks >= lastBlockNumber;
+        return numberOfReceivedBlocks > lastBlockNumber;
     }
 
-    public void didReceiveBlock(Block block, int windowSize, CoAPMessageCode code) {
+    public void didReceiveBlock(Block block, CoAPMessageCode code) {
         if (code != CoAPMessageCode.CoapCodeContinue)
             initiatingMessage.setCode(code);
-        numberOfReceivedBlocks++;
+        if (accumulator.containsKey(block.getNumber())) {
+            LogHelper.v("Already received block with number " + block.getNumber());
+            onResend();
+        } else {
+            numberOfReceivedBlocks++;
 
-        if (window.getSize() != windowSize) {
-            LogHelper.d("ARQ: sending side trying to change window size");
-            window.setSize(windowSize);
+            accumulator.put(block.getNumber(), block.getData());
+
+            if (!block.isMoreComing()) {
+                lastBlockNumber = block.getNumber();
+                LogHelper.v("Received last block, lastBlockNumber = " + lastBlockNumber);
+            }
+
+            if (isTransferCompleted()) onTransferCompleted();
         }
-
-        window.set(block.getNumber(), block);
-
-        if (!block.isMoreComing()) {
-            lastBlockNumber = block.getNumber();
-        }
-
-        Block firstBlock;
-        while ((firstBlock = window.advance()) != null)
-            accumulator.append(firstBlock.getData());
-
-        if (isTransferCompleted()) onTransferCompleted();
     }
 
     @Override
-    public long getDataSize() {
-        return getData().size();
+    public int getDataSize() {
+        int sumSize = 0;
+        for (byte[] bytes : accumulator.values()) {
+            sumSize += bytes.length;
+        }
+        return sumSize;
     }
 
     @Override

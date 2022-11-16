@@ -1,7 +1,5 @@
 package com.ndmsystems.coala.layers.arq;
 
-import com.ndmsystems.coala.layers.arq.data.IData;
-
 /**
  * Created by bas on 04.08.17.
  */
@@ -11,20 +9,20 @@ public class Block {
     private final int number;
     private final boolean isMoreComing;
     public final BlockSize szx;
-    private final IData data;
+    private final byte[] data;
 
-    private Block(int number, boolean isMoreComing, BlockSize szx, IData data) {
+    private Block(int number, boolean isMoreComing, BlockSize szx, byte[] data) {
         this.number = number;
         this.data = data;
         this.szx = szx;
         this.isMoreComing = isMoreComing;
     }
 
-    public Block(int number, IData data, boolean isMoreComing) {
-        this(number, isMoreComing, BlockSize.getBlockSizeByDataBlock(data.size()), data);
+    public Block(int number, byte[] data, boolean isMoreComing) {
+        this(number, isMoreComing, BlockSize.getBlockSizeByDataBlock(data.length), data);
     }
 
-    public Block(int value, IData data) {
+    public Block(int value, byte[] data) {
         this(value >> 0x4, (value >> 0x3 & 0x1) == 1, BlockSize.values()[(value & 7)], data);
     }
 
@@ -51,7 +49,7 @@ public class Block {
         return szx.ordinal();
     }
 
-    public IData getData() {
+    public byte[] getData() {
         return data;
     }
 

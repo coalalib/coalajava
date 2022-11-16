@@ -91,7 +91,8 @@ public class Coala extends CoAPTransport {
         addResource("tests/mirror", CoAPRequestMethod.POST, new CoAPResource.CoAPResourceHandler() {
             @Override
             public CoAPResourceOutput onReceive(CoAPResourceInput inputData) {
-                return new CoAPResourceOutput(new CoAPMessagePayload(inputData.message.getPayload().toString()), CoAPMessageCode.CoapCodeContent, CoAPMessage.MediaType.TextPlain);
+                return new CoAPResourceOutput(new CoAPMessagePayload(inputData.message.getPayload().toString()), CoAPMessageCode.CoapCodeContent,
+                        CoAPMessage.MediaType.TextPlain);
             }
         });
 
@@ -107,7 +108,9 @@ public class Coala extends CoAPTransport {
             public CoAPResourceOutput onReceive(CoAPResourceInput inputData) {
                 String size = inputData.message.getURIQuery("size");
                 Integer sizeInBytes = 1024;
-                if (size != null && size.length() > 0) sizeInBytes = Integer.valueOf(size);
+                if (size != null && size.length() > 0) {
+                    sizeInBytes = Integer.valueOf(size);
+                }
 
                 byte[] payload = new byte[sizeInBytes];
                 new Random().nextBytes(payload);
@@ -222,10 +225,11 @@ public class Coala extends CoAPTransport {
                 emitter -> send(message, new CoAPHandler() {
                     @Override
                     public void onMessage(CoAPMessage response, String error) {
-                        if (error != null)
-                            emitter.onError(new CoAPException((response != null ? response.getCode() : CoAPMessageCode.CoapCodeEmpty), error).setMessageDeliveryInfo(
+                        if (error != null) {
+                            emitter.onError(new CoAPException((response != null ? response.getCode() : CoAPMessageCode.CoapCodeEmpty),
+                                    error).setMessageDeliveryInfo(
                                     getMessageDeliveryInfo(message)));
-                        else {
+                        } else {
                             emitter.onNext(response);
                             emitter.onComplete();
                         }
@@ -264,10 +268,11 @@ public class Coala extends CoAPTransport {
                         if (error != null) {
                             emitter.onError(new Throwable(error));
                         } else {
-                            if (message.getPayload() != null)
+                            if (message.getPayload() != null) {
                                 emitter.onNext(message.getPayload().toString());
-                            else
+                            } else {
                                 emitter.onError(new Throwable());
+                            }
                         }
                     }
 
@@ -320,7 +325,11 @@ public class Coala extends CoAPTransport {
 
     @Override
     public MessageDeliveryInfo getMessageDeliveryInfo(@NotNull final CoAPMessage message) {
-        return messagePool.getMessageDeliveryInfo(message.getHexToken());
+        MessageDeliveryInfo infoForReturn = messagePool.getMessageDeliveryInfo(message.getHexToken());
+        if (infoForReturn != null) {
+            infoForReturn.addARQReceiveInfoIfNeeded(getReceivedStateForToken(message.getToken()));
+        }
+        return infoForReturn;
     }
 
     public LoggableState getReceivedStateForToken(@NotNull final byte[] tokenForDownload) {

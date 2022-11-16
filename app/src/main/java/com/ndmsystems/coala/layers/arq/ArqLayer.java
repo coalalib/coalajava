@@ -1,5 +1,6 @@
 package com.ndmsystems.coala.layers.arq;
 
+import com.ndmsystems.coala.BuildConfig;
 import com.ndmsystems.coala.CoAPClient;
 import com.ndmsystems.coala.CoAPHandler;
 import com.ndmsystems.coala.CoAPMessagePool;
@@ -8,7 +9,6 @@ import com.ndmsystems.coala.helpers.MessageHelper;
 import com.ndmsystems.coala.layers.ReceiveLayer;
 import com.ndmsystems.coala.layers.SendLayer;
 import com.ndmsystems.coala.layers.arq.data.DataFactory;
-import com.ndmsystems.coala.layers.arq.data.IData;
 import com.ndmsystems.coala.layers.arq.states.LoggableState;
 import com.ndmsystems.coala.layers.arq.states.ReceiveState;
 import com.ndmsystems.coala.layers.arq.states.SendState;
@@ -21,9 +21,13 @@ import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.utils.Reference;
 import com.ndmsystems.infrastructure.logging.LogHelper;
 
+import net.jodah.expiringmap.ExpirationPolicy;
+import net.jodah.expiringmap.ExpiringMap;
+
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by bas on 02.08.17.
@@ -37,7 +41,10 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
     private final CoAPClient client;
     private final CoAPMessagePool messagePool;
 
-    private Map<String, ReceiveState> receiveStates = new ConcurrentHashMap<>();
+    private Map<String, ReceiveState> receiveStates = ExpiringMap.builder()
+            .expirationPolicy(ExpirationPolicy.ACCESSED)
+            .expiration(10, TimeUnit.SECONDS)
+        .build();
     private Map<String, SendState> sendStates = new ConcurrentHashMap<>();
 
     public ArqLayer(CoAPClient client,
@@ -57,14 +64,14 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
 
     private Block getBlock1(CoAPMessage message) {
         CoAPMessagePayload payload = message.getPayload();
-        IData data = payload == null ? null : DataFactory.create(message.getPayload().content);
+        byte[] data = payload == null ? null : message.getPayload().content;
         return new Block((int) message.getOption(CoAPMessageOptionCode.OptionBlock1).value,
                 data);
     }
 
     private Block getBlock2(CoAPMessage message) {
         CoAPMessagePayload payload = message.getPayload();
-        IData data = payload == null ? null : DataFactory.create(message.getPayload().content);
+        byte[] data = payload == null ? null : message.getPayload().content;
         return new Block((int) message.getOption(CoAPMessageOptionCode.OptionBlock2).value,
                 data);
     }
@@ -134,17 +141,17 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
 
                 if (receiveState == null) {
                     LogHelper.v("ARQ: creating ReceiveState for token = " + token);
-                    receiveState = new ReceiveState(windowSize, incomingMessage);
+                    receiveState = new ReceiveState(incomingMessage);
                     receiveStates.put(token, receiveState);
                 }
 
-                receiveState.didReceiveBlock(block, windowSize, incomingMessage.getCode());
+                receiveState.didReceiveBlock(block, incomingMessage.getCode());
 
                 ackMessage.addOption(new CoAPMessageOption(blockOptionCode, block.toInt()));
                 ackMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize, windowSize));
 
                 if (receiveState.isTransferCompleted()) {
-                    receiveStates.remove(token);
+                    //receiveStates.remove(token);
 
                     CoAPMessage originalMessage = messagePool.getSourceMessageByToken(incomingMessage.getHexToken());
                     if (originalMessage != null) {
@@ -163,13 +170,16 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
                     client.send(ackMessage, null);
 
                     //incomingMessage = messagePool.getSourceMessageByToken(incomingMessage.getHexToken());
-                    incomingMessage.setPayload(new CoAPMessagePayload(receiveState.getData().get()));
+                    incomingMessage.setPayload(new CoAPMessagePayload(receiveState.getData()));
                     incomingMessage.setCode(CoAPMessageCode.CoapCodeContent);
                     incomingMessage.setType(CoAPMessageType.ACK);
 
                     return true;
                 } else {
-                    LogHelper.v("ARQ: Receive " + incomingMessage.getHexToken() + " in progress, responding with ACK continued, received: " + receiveState.getDataSize());
+                    if (BuildConfig.DEBUG) { //For no slowing prod version, so many logs, what don't showing anymore
+                        LogHelper.v("ARQ: Receive " + incomingMessage.getHexToken() + " in progress, responding with ACK continued, received: "
+                                + receiveState.getDataSize());
+                    }
                     ackMessage.setCode(CoAPMessageCode.CoapCodeContinue);
 
                     CoAPMessage originalMessage = messagePool.getSourceMessageByToken(incomingMessage.getHexToken());
@@ -224,7 +234,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
         blockMessage.addOption(srOption);
 
         blockMessage.setToken(Hex.decodeHex(token.toCharArray()));
-        blockMessage.setPayload(new CoAPMessagePayload(block.getData().get()));
+        blockMessage.setPayload(new CoAPMessagePayload(block.getData()));
         blockMessage.setURI(originalMessage.getURI());
         if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI))
             blockMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI));
