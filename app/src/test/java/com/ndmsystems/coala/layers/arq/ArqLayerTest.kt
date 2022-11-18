@@ -4,18 +4,26 @@ import com.ndmsystems.coala.CoAPHandler
 import com.ndmsystems.coala.CoAPMessagePool
 import com.ndmsystems.coala.Coala
 import com.ndmsystems.coala.TestHelper
-import com.ndmsystems.coala.layers.arq.data.DataFactory
-import com.ndmsystems.coala.layers.arq.data.IData
-import com.ndmsystems.coala.message.*
+import com.ndmsystems.coala.message.CoAPMessage
+import com.ndmsystems.coala.message.CoAPMessageCode
+import com.ndmsystems.coala.message.CoAPMessageOption
+import com.ndmsystems.coala.message.CoAPMessageOptionCode
+import com.ndmsystems.coala.message.CoAPMessagePayload
+import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.utils.Reference
 import com.ndmsystems.infrastructure.logging.LogHelper
-import io.mockk.*
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.runs
+import io.mockk.slot
+import io.mockk.verify
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.gherkin.Feature
 import java.net.InetSocketAddress
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-
 
 /*
  * Created by Evgenii Stepanov on 05.09.19
@@ -40,8 +48,8 @@ object ArqLayerTest : Spek({
             Given("CoAP messages with divided payload") {
                 senderReference = Reference(InetSocketAddress("8.8.8.8", 5008))
                 val bytes = data.toByteArray()
-                firstMessage = ArqLayerTest.arqMessageOfRequest(0, false, DataFactory.create(bytes.copyOfRange(0, 512)))
-                secondMessage = ArqLayerTest.arqMessageOfRequest(1, true, DataFactory.create(bytes.copyOfRange(512, 660)))
+                firstMessage = ArqLayerTest.arqMessageOfRequest(0, false, bytes.copyOfRange(0, 512))
+                secondMessage = ArqLayerTest.arqMessageOfRequest(1, true, bytes.copyOfRange(512, 660))
                 every { messagePool.getSourceMessageByToken(any()) } returnsMany listOf(firstMessage, secondMessage)
             }
 
@@ -51,7 +59,7 @@ object ArqLayerTest : Spek({
             }
 
             Then("result should be equal") {
-                val result = secondMessage.getPayload().toString()
+                val result = secondMessage.payload.toString()
                 assertEquals(data, result)
             }
         }
@@ -218,13 +226,13 @@ object ArqLayerTest : Spek({
         LogHelper.addLogger(TestHelper())
     }
 
-    private fun arqMessageOfRequest(blockNumber: Int, last: Boolean, data: IData?): CoAPMessage {
+    private fun arqMessageOfRequest(blockNumber: Int, last: Boolean, data: ByteArray?): CoAPMessage {
         val request = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.POST)
         request.token = byteArrayOf(1, 2, 3)
         request.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize, 10))
         request.uri = "coap://8.8.8.8:5050/coap?test=true"
-        val block = Block(blockNumber, data ?: DataFactory.create(ByteArray(512)), !last)
-        request.payload = CoAPMessagePayload(block.data.get())
+        val block = Block(blockNumber, data ?: ByteArray(512), !last)
+        request.payload = CoAPMessagePayload(block.data)
         val block1Option = CoAPMessageOption(CoAPMessageOptionCode.OptionBlock1, block.toInt())
         request.addOption(block1Option)
         return request
@@ -235,7 +243,7 @@ object ArqLayerTest : Spek({
         assertEquals(senderAddress.port.toLong(), ackMessage.address.port.toLong())
         assertEquals(senderAddress.address.hostAddress, ackMessage.address.address.hostAddress)
 
-        val block = Block(requestBlock1Option.value as Int, DataFactory.create(request.payload.content))
+        val block = Block(requestBlock1Option.value as Int, request.payload.content)
         val ackBlockOption = ackMessage.getOption(CoAPMessageOptionCode.OptionBlock1)
 
         if (block.isMoreComing)

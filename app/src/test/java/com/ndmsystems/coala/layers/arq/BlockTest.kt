@@ -1,12 +1,10 @@
 package com.ndmsystems.coala.layers.arq
 
-import com.ndmsystems.coala.layers.arq.data.DataFactory
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.gherkin.Feature
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-
 
 /*
  * Created by Evgenii Stepanov on 05.09.19
@@ -20,7 +18,7 @@ object BlockTest : Spek({
             lateinit var block: Block
 
             Given("block value = 51, empty data") {
-                block = Block(51, DataFactory.createEmpty())
+                block = Block(51, byteArrayOf())
             }
 
             Then("getNumber() should be equals 3") {
@@ -36,7 +34,7 @@ object BlockTest : Spek({
             lateinit var block: Block
 
             Given("block value = 553, empty data") {
-                block = Block(553, DataFactory.createEmpty())
+                block = Block(553, byteArrayOf())
             }
 
             Then("getNumber() should be 34") {
@@ -72,7 +70,7 @@ object BlockTest : Spek({
             testCases.forEach { value ->
 
                 Given("create block by value: $value ") {
-                    block = Block(value, DataFactory.createEmpty())
+                    block = Block(value, byteArrayOf())
                 }
 
                 Then("toInt() should return $value back") {
