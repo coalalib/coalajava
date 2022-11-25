@@ -38,7 +38,7 @@ public abstract class LoggableState implements CoAPMessage.ResendHandler  {
         return ((double) numberOfResend * 100) / (numberOfResend + numberOfMessages);
     }
 
-    public int getDiffTime() {
+    public Integer getDiffTime() {
         return diffTime;
     }
 

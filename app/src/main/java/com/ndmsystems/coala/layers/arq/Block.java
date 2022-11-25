@@ -53,6 +53,11 @@ public class Block {
         return data;
     }
 
+    @Override
+    public String toString() {
+        return number + "|" + (isMoreComing ? 1 : 0) + "|" + szx.getValue();
+    }
+
 
     public enum BlockSize {
 

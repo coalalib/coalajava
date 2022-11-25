@@ -79,17 +79,25 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
     @Override
     public boolean onReceive(CoAPMessage message, Reference<InetSocketAddress> senderAddressReference) {
 
-        if (!isAboutArq(message)) return true;
+        if (!isAboutArq(message)) {
+            return true;
+        }
 
-        if (message.getCode() == CoAPMessageCode.CoapCodeEmpty && message.getType() == CoAPMessageType.ACK) {
+        if (message.getCode() == CoAPMessageCode.CoapCodeEmpty
+                && message.getType() == CoAPMessageType.ACK && !message.hasOption(CoAPMessageOptionCode.OptionBlock1)) {//For block1 block2 mixed mode, message ending block1 start block2, like Received data from Peer, id 51486, payload:'', address: 138.197.191.160:5683 type: ACK code: CoapCodeEmpty path: null schema: coap token 951e67cdc72af162
+            //Options: OptionBlock1 : 'com.ndmsystems.coala.layers.arq.Block@a046fab'(8174) OptionSelectiveRepeatWindowSize : '70', address: 138.197.191.160:5683 type: CON code: CoapCodeContent path: null schema: coap token 951e67cdc72af162
+            //Options: OptionBlock2 : 'com.ndmsystems.coala.layers.arq.Block@72bd608'(30) OptionSelectiveRepeatWindowSize : '300'
             messagePool.setNoNeededSending(message);
             return false;
         }
 
-        if (!isBlockedMessage(message)) return true;
+        if (!isBlockedMessage(message)) {
+            return true;
+        }
 
-        if (message.getToken() == null)
+        if (message.getToken() == null) {
             sendResetMessage(message, senderAddressReference.get());
+        }
 
         int windowSize = (int) message.getOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize).value;
 
@@ -124,9 +132,19 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
                 SendState sendState = sendStates.get(token);
                 if (sendState != null && sendState.isCompleted()) {
                     LogHelper.v("ARQ: Sending completed, pushing to message pool original message" + sendState.getOriginalMessage().getId());
-                    incomingMessage = sendState.getOriginalMessage();
-                    sendStates.remove(token);
-                    return true;
+                    CoAPMessage originalMessage = sendState.getOriginalMessage();
+                    if (incomingMessage.getCode() == CoAPMessageCode.CoapCodeEmpty
+                            && incomingMessage.getType() == CoAPMessageType.ACK) {
+                        messagePool.add(originalMessage);
+                        messagePool.setNoNeededSending(originalMessage);
+                        sendStates.remove(token);
+                        return false;
+
+                    } else {
+                        incomingMessage = originalMessage;
+                        sendStates.remove(token);
+                        return true;
+                    }
                 }
                 break;
             case CON:
@@ -155,16 +173,20 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
 
                     CoAPMessage originalMessage = messagePool.getSourceMessageByToken(incomingMessage.getHexToken());
                     if (originalMessage != null) {
-                        LogHelper.v("ARQ: Receive " + incomingMessage.getHexToken() + " completed, size " + receiveState.getDataSize() + ", passing message " + originalMessage.getId() + ", with token: " + Hex.encodeHexString(originalMessage.getToken()) + " along");
-                        if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI))
+                        LogHelper.v("ARQ: Receive " + incomingMessage.getHexToken() + " completed, size " + receiveState.getDataSize()
+                                + ", passing message " + originalMessage.getId() + ", with token: " + Hex.encodeHexString(originalMessage.getToken())
+                                + " along");
+                        if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI)) {
                             ackMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI));
+                        }
                         if (originalMessage.getProxy() != null) {
                             ackMessage.setProxy(originalMessage.getProxy());
                             ackMessage.setProxySecurityId(originalMessage.getProxySecurityId());
                         }
                         incomingMessage.setId(originalMessage.getId());
                     } else {
-                        LogHelper.v("ARQ: Receive with originalMessage = null, token " + incomingMessage.getHexToken() + " completed, size " + receiveState.getDataSize());
+                        LogHelper.v("ARQ: Receive with originalMessage = null, token " + incomingMessage.getHexToken() + " completed, size "
+                                + receiveState.getDataSize());
                     }
                     ackMessage.setCode(CoAPMessageCode.CoapCodeEmpty);
                     client.send(ackMessage, null);
@@ -185,10 +207,12 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
                     CoAPMessage originalMessage = messagePool.getSourceMessageByToken(incomingMessage.getHexToken());
 
                     if (originalMessage != null) {
-                        if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI))
+                        if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI)) {
                             ackMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI));
-                        if (originalMessage.getProxy() != null)
+                        }
+                        if (originalMessage.getProxy() != null) {
                             ackMessage.setProxy(originalMessage.getProxy());
+                        }
                     }
 
                     client.send(ackMessage, null);
@@ -236,10 +260,12 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
         blockMessage.setToken(Hex.decodeHex(token.toCharArray()));
         blockMessage.setPayload(new CoAPMessagePayload(block.getData()));
         blockMessage.setURI(originalMessage.getURI());
-        if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI))
+        if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI)) {
             blockMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI));
-        if (originalMessage.getProxy() != null)
+        }
+        if (originalMessage.getProxy() != null) {
             blockMessage.setProxy(originalMessage.getProxy());
+        }
         blockMessage.setResendHandler(state);
         client.send(blockMessage, new CoAPHandler() {
             @Override
@@ -273,11 +299,13 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
 
     @Override
     public boolean onSend(CoAPMessage message, Reference<InetSocketAddress> receiverAddressReference) {
-        if (hasWindowSizeOption(message) && !isStartMixingModeMessage(message))
+        if (hasWindowSizeOption(message) && !isStartMixingModeMessage(message)) {
             return true;
+        }
 
-        if (!isBiggerThenCanBeTransferedBySingleBlock(message) || message.getToken() == null)
+        if (!isBiggerThenCanBeTransferedBySingleBlock(message) || message.getToken() == null) {
             return true;
+        }
 
 
         String token = Hex.encodeHexString(message.getToken());
@@ -320,8 +348,9 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
 
         LogHelper.v("ARQ: split message " + message.getId() + " to values. Sending payload = " + payload.content.length);
 
-        if (ackMessage != null)
+        if (ackMessage != null) {
             return true;
+        }
 
         return false;
     }
