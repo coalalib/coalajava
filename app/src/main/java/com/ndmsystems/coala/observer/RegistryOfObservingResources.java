@@ -23,10 +23,10 @@ public class RegistryOfObservingResources {
 
     private static final long PERIOD_OF_CHECKING = 10000;
 
-    private HashMap<String, ObservingResource> observingResources = new HashMap<>();
+    private final HashMap<String, ObservingResource> observingResources = new HashMap<>();
     private Timer timer;
     private TimerTask checkResourcesTask;
-    private CoAPClient client;
+    private final CoAPClient client;
 
     public RegistryOfObservingResources(CoAPClient client) {
         this.client = client;

@@ -1,8 +1,8 @@
 package com.ndmsystems.coala.observer;
 
 import com.ndmsystems.coala.CoAPHandler;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
+import com.ndmsystems.infrastructure.logging.LogHelper;
 
 /**
  * Created by bas on 14.11.16.
@@ -12,8 +12,8 @@ public class ObservingResource {
     private Long validUntil = System.currentTimeMillis() + 30000;
     private Integer sequenceNumber = -1;
 
-    private CoAPHandler handler;
-    private CoAPMessage initiatingMessage;
+    private final CoAPHandler handler;
+    private final CoAPMessage initiatingMessage;
 
     public ObservingResource(CoAPMessage initiatingMessage, CoAPHandler handler) {
         this.handler = handler;

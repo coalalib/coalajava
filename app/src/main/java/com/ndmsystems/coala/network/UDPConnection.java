@@ -8,8 +8,8 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 
 public class UDPConnection {
-    private DatagramSocket connection;
-    private boolean isClosed = false;
+    private final DatagramSocket connection;
+    private final boolean isClosed = false;
 
     public UDPConnection(Integer port) throws SocketException {
         this.connection = new DatagramSocket(null);

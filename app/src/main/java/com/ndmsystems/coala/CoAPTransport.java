@@ -6,5 +6,5 @@ package com.ndmsystems.coala;
 
 public abstract class CoAPTransport implements CoAPServer, CoAPClient{
 
-};
+}
 

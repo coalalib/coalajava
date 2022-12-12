@@ -4,7 +4,7 @@ package com.ndmsystems.coala.layers.security.session;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 
 public class SecuredSessionPool {
-    private ConcurrentLinkedHashMap<String, SecuredSession> pool;
+    private final ConcurrentLinkedHashMap<String, SecuredSession> pool;
 
     public SecuredSessionPool() {
         pool = new ConcurrentLinkedHashMap.Builder<String, SecuredSession>().maximumWeightedCapacity(500).build();

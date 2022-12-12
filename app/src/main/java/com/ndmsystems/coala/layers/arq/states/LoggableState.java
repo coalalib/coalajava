@@ -31,7 +31,7 @@ public abstract class LoggableState implements CoAPMessage.ResendHandler  {
     public long getSpeed() {
         if (diffTime == null) return -1;
         return (long) (((double)getDataSize()) / (diffTime / 1000.0));
-    };
+    }
 
     public Double getPercentOfLoss() {
         if (numberOfMessages == 0) return null;

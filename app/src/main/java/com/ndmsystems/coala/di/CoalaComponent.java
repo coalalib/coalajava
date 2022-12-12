@@ -6,7 +6,6 @@ import com.ndmsystems.coala.crypto.CurveRepository;
 import javax.inject.Singleton;
 
 import dagger.Component;
-import dagger.Provides;
 
 /**
  * Created by Владимир on 06.07.2017.
@@ -16,7 +15,7 @@ import dagger.Provides;
 @Singleton
 public interface CoalaComponent {
 
-    public CurveRepository provideCurveRepository();
+    CurveRepository provideCurveRepository();
 
     void inject(Coala coala);
 }

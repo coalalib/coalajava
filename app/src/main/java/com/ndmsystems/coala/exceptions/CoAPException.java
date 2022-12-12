@@ -11,8 +11,8 @@ import org.jetbrains.annotations.Nullable;
 
 public class CoAPException extends BaseCoalaThrowable {
 
-    private CoAPMessageCode code;
-    private Integer payloadErrorCode;
+    private final CoAPMessageCode code;
+    private final Integer payloadErrorCode;
 
     public CoAPException(CoAPMessageCode code, String message) {
         super(message);

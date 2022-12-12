@@ -46,7 +46,7 @@ public enum CoAPMessageCode {
      *
      * @param value the integer value of the code
      */
-    private CoAPMessageCode(final int value) {
+    CoAPMessageCode(final int value) {
         this.value = value;
     }
 

@@ -26,9 +26,9 @@ public class ConnectionProvider {
     private static final int IPTOS_LOWDELAY = 0x10;
 
     private Coala.OnPortIsBusyHandler onPortIsBusyHandler;
-    private int port;
+    private final int port;
     private MulticastSocket connection;
-    private Subject<MulticastSocket> subject = PublishSubject.create();
+    private final Subject<MulticastSocket> subject = PublishSubject.create();
     private Disposable timerSubscription;
 
     public ConnectionProvider(int port) {

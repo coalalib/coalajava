@@ -229,8 +229,8 @@ public class CoAPMessage {
      */
     public CoAPMessage setURI(String uri) {
         try {
-            if (!uri.startsWith(Scheme.NORMAL.toString() + "://") && !uri.startsWith(Scheme.SECURE.toString() + "://")) {
-                uri = Scheme.NORMAL.toString() + "://" + uri;
+            if (!uri.startsWith(Scheme.NORMAL + "://") && !uri.startsWith(Scheme.SECURE + "://")) {
+                uri = Scheme.NORMAL + "://" + uri;
             }
             return setURI(new URI(uri));
         } catch (URISyntaxException e) {
@@ -617,7 +617,7 @@ public class CoAPMessage {
         }
     }
 
-    public static interface ResendHandler {
-        public void onResend();
+    public interface ResendHandler {
+        void onResend();
     }
 }

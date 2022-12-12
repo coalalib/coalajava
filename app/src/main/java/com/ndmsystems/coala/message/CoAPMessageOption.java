@@ -3,8 +3,8 @@ package com.ndmsystems.coala.message;
 
 import com.ndmsystems.infrastructure.logging.LogHelper;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import static com.ndmsystems.coala.message.CoAPMessageOptionCode.OptionProxySecurityID;
@@ -133,9 +133,8 @@ public class CoAPMessageOption implements Comparable<CoAPMessageOption> {
             // Is it String?
             try {
                 String stringValue = (String) value;
-                return stringValue.getBytes("utf-8");
+                return stringValue.getBytes(StandardCharsets.UTF_8);
             } catch (ClassCastException e) {
-            } catch (UnsupportedEncodingException e) {
             }
 
 

@@ -18,8 +18,8 @@ import java.util.List;
 public class LocalPeerDiscoverer {
 
     private final Integer port;
-    private ResourceDiscoveryHelper resourceDiscoveryHelper;
-    private CoAPClient client;
+    private final ResourceDiscoveryHelper resourceDiscoveryHelper;
+    private final CoAPClient client;
 
     public LocalPeerDiscoverer(ResourceDiscoveryHelper resourceDiscoveryHelper,
                                CoAPClient client, Integer port) {
@@ -50,7 +50,7 @@ public class LocalPeerDiscoverer {
         client.send(message, new CoAPHandler() {
             @Override
             public void onMessage(CoAPMessage message, String error) {
-                LogHelper.d("sendDiscoveryMulticast response: " + message.getAddress() + ", payload " + message.toString());
+                LogHelper.d("sendDiscoveryMulticast response: " + message.getAddress() + ", payload " + message);
                 resourceDiscoveryHelper.addResult(new ResourceDiscoveryResult(message.getPayload() != null ? message.getPayload().toString() : "", message.getAddress()));
             }
 

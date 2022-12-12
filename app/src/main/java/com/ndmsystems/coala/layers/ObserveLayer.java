@@ -6,7 +6,6 @@ import com.ndmsystems.coala.CoAPObservableResource;
 import com.ndmsystems.coala.CoAPResourceInput;
 import com.ndmsystems.coala.CoAPResourceOutput;
 import com.ndmsystems.coala.CoAPServer;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessageOption;
@@ -17,6 +16,7 @@ import com.ndmsystems.coala.observer.Observer;
 import com.ndmsystems.coala.observer.ObservingResource;
 import com.ndmsystems.coala.observer.RegistryOfObservingResources;
 import com.ndmsystems.coala.utils.Reference;
+import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.net.InetSocketAddress;
 
@@ -26,10 +26,10 @@ public class ObserveLayer implements ReceiveLayer, SendLayer {
     private static final int DEREGISTER = 1;
     protected static final int DEFAULT_MAX_AGE = 30;
 
-    private RegistryOfObservingResources registryOfObservingResources;
-    private CoAPClient client;
-    private CoAPServer server;
-    private AckHandlersPool ackHandlers;
+    private final RegistryOfObservingResources registryOfObservingResources;
+    private final CoAPClient client;
+    private final CoAPServer server;
+    private final AckHandlersPool ackHandlers;
 
     public ObserveLayer(RegistryOfObservingResources registryOfObservingResources,
                         CoAPClient client,

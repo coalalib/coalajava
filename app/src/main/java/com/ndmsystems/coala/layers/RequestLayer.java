@@ -18,8 +18,8 @@ import java.net.InetSocketAddress;
 
 public class RequestLayer implements ReceiveLayer {
 
-    private CoAPClient client;
-    private ResourceRegistry resourceRegistry;
+    private final CoAPClient client;
+    private final ResourceRegistry resourceRegistry;
 
     public RequestLayer(ResourceRegistry resourceRegistry, CoAPClient client) {
         this.client = client;

@@ -14,11 +14,11 @@ import com.ndmsystems.infrastructure.logging.LogHelper;
 
 public class SendState extends LoggableState{
 
-    private int blockSize;
-    private IData data;
-    private SlidingWindow<Boolean> window;
+    private final int blockSize;
+    private final IData data;
+    private final SlidingWindow<Boolean> window;
 
-    private CoAPMessage originalMessage;
+    private final CoAPMessage originalMessage;
 
     public SendState(IData data, int windowSize, int blockSize, CoAPMessage originalMessage) {
         this.data = data;

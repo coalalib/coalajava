@@ -32,7 +32,7 @@ public enum PayloadError {
     CODE_2030(2030),
     CODE_3000(3000);
 
-    private int code;
+    private final int code;
 
     PayloadError(int code) {
         this.code = code;

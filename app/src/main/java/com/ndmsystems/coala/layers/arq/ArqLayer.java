@@ -41,11 +41,11 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
     private final CoAPClient client;
     private final CoAPMessagePool messagePool;
 
-    private Map<String, ReceiveState> receiveStates = ExpiringMap.builder()
+    private final Map<String, ReceiveState> receiveStates = ExpiringMap.builder()
             .expirationPolicy(ExpirationPolicy.ACCESSED)
             .expiration(10, TimeUnit.SECONDS)
         .build();
-    private Map<String, SendState> sendStates = new ConcurrentHashMap<>();
+    private final Map<String, SendState> sendStates = new ConcurrentHashMap<>();
 
     public ArqLayer(CoAPClient client,
                     CoAPMessagePool messagePool) {
@@ -326,7 +326,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
                 ackMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize, WINDOW_SIZE));
                 LogHelper.d(
                         "ARQ: Send empty ack, id " + ackMessage.getId() + " " +
-                                "payload: '" + ackMessage.toString() + " " +
+                                "payload: '" + ackMessage + " " +
                                 "destination host: " + ackMessage.getURI() + " " +
                                 "type: " + ackMessage.getType() + " " +
                                 "code: " + ackMessage.getCode().name() + " " +
@@ -348,11 +348,7 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
 
         LogHelper.v("ARQ: split message " + message.getId() + " to values. Sending payload = " + payload.content.length);
 
-        if (ackMessage != null) {
-            return true;
-        }
-
-        return false;
+        return ackMessage != null;
     }
 
     private boolean isStartMixingModeMessage(CoAPMessage message) {

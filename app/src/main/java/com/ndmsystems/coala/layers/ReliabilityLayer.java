@@ -14,9 +14,9 @@ import java.net.InetSocketAddress;
 
 public class ReliabilityLayer implements ReceiveLayer {
 
-    private CoAPMessagePool messagePool;
+    private final CoAPMessagePool messagePool;
     private ResourceDiscoveryHelper resourceDiscoveryHelper;
-    private AckHandlersPool ackHandlersPool;
+    private final AckHandlersPool ackHandlersPool;
 
     public ReliabilityLayer(CoAPMessagePool messagePool,
                             AckHandlersPool ackHandlersPool) {

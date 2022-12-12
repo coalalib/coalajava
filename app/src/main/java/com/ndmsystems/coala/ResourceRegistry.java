@@ -1,12 +1,10 @@
 package com.ndmsystems.coala;
 
-import com.ndmsystems.infrastructure.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPRequestMethod;
+import com.ndmsystems.infrastructure.logging.LogHelper;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,8 +13,8 @@ import java.util.Map;
 
 public class ResourceRegistry {
 
-    private Map<String, CoAPResourcesGroupForPath> resources = Collections.synchronizedMap(new HashMap<String, CoAPResourcesGroupForPath>());
-    private CoAPClient client;
+    private final Map<String, CoAPResourcesGroupForPath> resources = Collections.synchronizedMap(new HashMap<String, CoAPResourcesGroupForPath>());
+    private final CoAPClient client;
 
     public ResourceRegistry(CoAPClient client) {
         this.client = client;

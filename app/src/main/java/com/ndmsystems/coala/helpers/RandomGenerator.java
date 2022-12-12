@@ -11,7 +11,7 @@ public class RandomGenerator {
 
     private static final long MAX_UINT = 4294967296L;
 
-    private static Random random = new Random();
+    private static final Random random = new Random();
 
     public static byte[] getRandom(int size) {
         byte[] b = new byte[size];

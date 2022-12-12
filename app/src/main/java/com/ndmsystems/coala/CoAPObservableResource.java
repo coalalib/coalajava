@@ -17,9 +17,9 @@ import java.util.HashMap;
 
 public class CoAPObservableResource extends CoAPResource {
 
-    private HashMap<String, Observer> observers;
+    private final HashMap<String, Observer> observers;
     private int sequenceNumber = 2;
-    private CoAPClient client;
+    private final CoAPClient client;
 
     public CoAPObservableResource(CoAPRequestMethod method,
                                   String path,

@@ -15,10 +15,10 @@ public class CoAPSender {
 
     private Boolean isRunning = false;
     private SendingThread sendingThread = null;
-    private LayersStack layersStack;
+    private final LayersStack layersStack;
     private MulticastSocket connection;
-    private CoAPMessagePool messagePool;
-    private ConnectionProvider connectionProvider;
+    private final CoAPMessagePool messagePool;
+    private final ConnectionProvider connectionProvider;
 
     public CoAPSender(ConnectionProvider connectionProvider,
                       CoAPMessagePool messagePool,

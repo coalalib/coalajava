@@ -29,13 +29,13 @@ import javax.crypto.spec.SecretKeySpec;
  * Created by bas on 01.11.16.
  */
 public class AesGcm {
-    private static BouncyCastleProvider bouncyCastleProvider;
+    private static final BouncyCastleProvider bouncyCastleProvider;
     static {
         bouncyCastleProvider = new BouncyCastleProvider();
         Security.insertProviderAt(bouncyCastleProvider, 1);
     }
 
-    private Key key;
+    private final Key key;
     private static final int TAG_LENGTH = 12;
     Cipher cipher;
 

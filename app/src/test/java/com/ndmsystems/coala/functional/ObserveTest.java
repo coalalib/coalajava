@@ -17,7 +17,6 @@ import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -174,8 +173,7 @@ public class ObserveTest extends BaseAsyncTest {
         client.send(message, new CoAPHandler() {
             @Override
             public void onMessage(CoAPMessage message, String error) {
-                if (message != null && message.getType() == CoAPMessageType.RST) onDataReceived(true);
-                else onDataReceived(false);
+                onDataReceived(message != null && message.getType() == CoAPMessageType.RST);
             }
 
             @Override

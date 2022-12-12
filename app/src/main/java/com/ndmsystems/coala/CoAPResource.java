@@ -6,7 +6,7 @@ public class CoAPResource {
 
     public CoAPRequestMethod method;
     public String path;
-    private CoAPResourceHandler handler;
+    private final CoAPResourceHandler handler;
 
     public CoAPResource(CoAPRequestMethod method, String path, CoAPResourceHandler handler) {
         this.method = method;

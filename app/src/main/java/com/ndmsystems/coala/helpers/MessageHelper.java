@@ -9,7 +9,7 @@ import java.util.Random;
 
 public class MessageHelper {
 
-    private static int MAX_ID = 65535;
+    private static final int MAX_ID = 65535;
     private static int currentMessageID = new Random().nextInt(MAX_ID);
 
     public static synchronized int generateId() {
@@ -29,7 +29,7 @@ public class MessageHelper {
                 case OptionBlock1:
                 case OptionBlock2:
                     buf
-                            .append(option.code.toString()).append(" : '")
+                            .append(option.code).append(" : '")
                             .append(option.value == null ? "null" :
                                     new Block(
                                             (Integer) option.value,
@@ -39,7 +39,7 @@ public class MessageHelper {
                     break;
                 default:
                     buf
-                            .append(option.code.toString())
+                            .append(option.code)
                             .append(" : '")
                             .append(option.value == null ? "null" : option.value.toString()).append("' ");
             }
