@@ -99,7 +99,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                                     setSessionForAddress(securedSession, message)
                                     sendPendingMessage(message.address)
                                 } else {
-                                    LogHelper.i("Error then try to client hello, session removed: $error")
+                                    LogHelper.i("Error then try to client hello, session removed, error is nul, securedSession is null")
                                     removeSessionForAddress(message)
                                     removePendingMessagesByAddress(receiverAddress)
                                 }

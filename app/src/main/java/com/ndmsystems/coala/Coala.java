@@ -107,9 +107,9 @@ public class Coala extends CoAPTransport {
             @Override
             public CoAPResourceOutput onReceive(CoAPResourceInput inputData) {
                 String size = inputData.message.getURIQuery("size");
-                Integer sizeInBytes = 1024;
+                int sizeInBytes = 1024;
                 if (size != null && size.length() > 0) {
-                    sizeInBytes = Integer.valueOf(size);
+                    sizeInBytes = Integer.parseInt(size);
                 }
 
                 byte[] payload = new byte[sizeInBytes];
@@ -157,7 +157,6 @@ public class Coala extends CoAPTransport {
      * Find all available to discovery coap resourceRegistry in local network.
      * Warning! Synchronous method. Do not use from main thread.
      *
-     * @return list of discovered resourceRegistry
      */
     @Override
     public void runResourceDiscovery(OnResourcesDiscovered onResourcesDiscovered) {
@@ -209,7 +208,7 @@ public class Coala extends CoAPTransport {
 
                         @Override
                         public void onError(BaseCoalaThrowable error) {
-                            Boolean isSuccess = emitter.tryOnError(error);
+                            boolean isSuccess = emitter.tryOnError(error);
                             LogHelper.v("sendRequest message: " + message.getId() + ", throwable " + error + ", emitted = " + isSuccess);
                         }
                     };

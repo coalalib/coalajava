@@ -238,11 +238,13 @@ public class ArqLayer implements ReceiveLayer, SendLayer {
     private void sendMoreData(String token) {
         SendState state = sendStates.get(token);
         Block block;
-        while ((block = state.popBlock()) != null) {
-            LogHelper.v("ARQ: did pop block number = " + block.getNumber());
-            send(block, state.getOriginalMessage(), token, state);
-            state.incrementNumberOfMessage();
-            sendStates.put(token, state);
+        if (state != null) {
+            while ((block = state.popBlock()) != null) {
+                LogHelper.v("ARQ: did pop block number = " + block.getNumber());
+                send(block, state.getOriginalMessage(), token, state);
+                state.incrementNumberOfMessage();
+                sendStates.put(token, state);
+            }
         }
     }
 

@@ -13,7 +13,7 @@ public class CoAPResourcesGroupForPath {
 
     public CoAPResourcesGroupForPath(String path) {
         this.path = path;
-        coAPResourceHashMap = Collections.synchronizedMap(new HashMap<CoAPRequestMethod, CoAPResource>());
+        coAPResourceHashMap = Collections.synchronizedMap(new HashMap<>());
     }
 
     public Collection<CoAPResource> getResources() {

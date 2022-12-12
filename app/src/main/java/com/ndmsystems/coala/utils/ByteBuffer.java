@@ -1,8 +1,5 @@
 package com.ndmsystems.coala.utils;
 
-/**
- * Created by bas on 11.10.16.
- */
 /*
  * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -28,7 +25,9 @@ package com.ndmsystems.coala.utils;
  * questions.
  */
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 /** A byte buffer is a flexible array which grows when elements are
  *  appended. There are also methods to append names to byte buffers

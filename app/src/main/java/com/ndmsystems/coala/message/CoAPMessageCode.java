@@ -1,10 +1,6 @@
 package com.ndmsystems.coala.message;
 
 /**
- * Created by Владимир on 26.06.2017.
- */
-
-/**
  * The enumeration of request codes: GET, POST, PUT and DELETE.
  */
 public enum CoAPMessageCode {
@@ -58,11 +54,6 @@ public enum CoAPMessageCode {
      * @throws IllegalArgumentException if the integer value does not represent a valid request code.
      */
     public static CoAPMessageCode valueOf(final int value) {
-            /*int classCode  = getCodeClass(value);
-            int detailCode = getCodeDetail(value);
-            if (classCode > 0) {
-                return null;
-            }*/
         switch (value) {
             case 1:
                 return GET;

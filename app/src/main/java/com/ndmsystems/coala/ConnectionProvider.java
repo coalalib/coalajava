@@ -62,9 +62,7 @@ public class ConnectionProvider {
         if (timerSubscription == null)
             timerSubscription = Observable.interval(10, 1000, TimeUnit.MILLISECONDS)
                     .map(ignore -> createConnection())
-                    .filter(connection -> {
-                        return connection != null;
-                    })
+                    .filter(connection -> connection != null)
                     .retry()
                     .subscribe();
     }

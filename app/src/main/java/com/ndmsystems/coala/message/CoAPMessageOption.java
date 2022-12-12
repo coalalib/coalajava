@@ -10,7 +10,7 @@ import java.util.Arrays;
 import static com.ndmsystems.coala.message.CoAPMessageOptionCode.OptionProxySecurityID;
 
 public class CoAPMessageOption implements Comparable<CoAPMessageOption> {
-    public CoAPMessageOptionCode code;
+    public final CoAPMessageOptionCode code;
     public Object value;
 
     public CoAPMessageOption(CoAPMessageOptionCode code, Object value) {
@@ -39,7 +39,7 @@ public class CoAPMessageOption implements Comparable<CoAPMessageOption> {
 
     @Override
     public int compareTo(CoAPMessageOption option) {
-        return Integer.valueOf(code.value).compareTo(option.code.value);
+        return Integer.compare(code.value, option.code.value);
     }
 
     public void fromBytes(byte[] data) {

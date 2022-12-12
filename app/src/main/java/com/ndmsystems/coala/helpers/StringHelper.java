@@ -1,6 +1,5 @@
 package com.ndmsystems.coala.helpers;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**

@@ -178,7 +178,10 @@ public class CoAPSender {
 
     private void sendMessageToAddress(InetSocketAddress address, CoAPMessage message) throws IOException {
         byte[] messageData = CoAPSerializer.toBytes(message);
-        DatagramPacket udpPacket = new DatagramPacket(messageData, messageData.length, address);
+        DatagramPacket udpPacket = null;
+        if (messageData != null) {
+            udpPacket = new DatagramPacket(messageData, messageData.length, address);
+        }
 
         // Send data!
         if (connection != null) {

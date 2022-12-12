@@ -62,8 +62,8 @@ public class ProxyLayer implements ReceiveLayer, SendLayer {
 
         LogHelper.v("ProxyLayer onSend:" +
                 " message: " + message.getId() +
-                " destination: " + (message == null ? null : message.getAddress()) +
-                " proxy: " + (message == null || message.getProxy() == null ? "null" : message.getProxy()));
+                " destination: " + message.getAddress() +
+                " proxy: " + (message.getProxy() == null ? "null" : message.getProxy()));
 
         receiverAddressReference.set(message.getProxy());
 

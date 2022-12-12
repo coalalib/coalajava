@@ -1,7 +1,7 @@
 package com.ndmsystems.coala.observer;
 
-import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.helpers.Hex;
+import com.ndmsystems.coala.message.CoAPMessage;
 
 import java.net.InetSocketAddress;
 
@@ -37,7 +37,7 @@ public class Observer {
     @Override
     public String toString() {
         return "Uri: " + registerMessage.getURI()
-                + " token: " + registerMessage.getToken()
+                + " token: " + registerMessage.getHexToken()
                 + " address: " + (address != null ? address.toString() : null);
     }
 }

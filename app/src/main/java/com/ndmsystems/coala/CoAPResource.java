@@ -4,8 +4,8 @@ import com.ndmsystems.coala.message.CoAPRequestMethod;
 
 public class CoAPResource {
 
-    public CoAPRequestMethod method;
-    public String path;
+    public final CoAPRequestMethod method;
+    public final String path;
     private final CoAPResourceHandler handler;
 
     public CoAPResource(CoAPRequestMethod method, String path, CoAPResourceHandler handler) {

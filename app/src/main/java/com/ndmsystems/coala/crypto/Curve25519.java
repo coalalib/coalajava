@@ -48,8 +48,8 @@ public class Curve25519 {
             (byte)0,   (byte)0,   (byte)0,   (byte)16
     };
 
-    protected byte[]privateKey;
-    protected byte[]publicKey;
+    protected final byte[]privateKey;
+    protected final byte[]publicKey;
 
     public Curve25519() {
         this.privateKey = Curve25519.generatePrivateKey();
@@ -107,31 +107,18 @@ public class Curve25519 {
 	 *   k [out] your private key for key agreement
 	 *   k  [in]  32 random bytes
 	 */
-    public static final void clamp(byte[] k) {
+    public static void clamp(byte[] k) {
         k[31] &= 0x7F;
         k[31] |= 0x40;
         k[ 0] &= 0xF8;
     }
-
-    /* Key-pair generation
-     *   P  [out] your public key
-     *   s  [out] your private key for signing
-     *   k  [out] your private key for key agreement
-     *   k  [in]  32 random bytes
-     * s may be NULL if you don't care
-     *
-     * WARNING: if s is not NULL, this function has data-dependent timing */
-    /*public static final void keygen(byte[] P, byte[] s, byte[] k) {
-        clamp(k);
-        core(P, s, k, null);
-    }*/
 
     /* Key agreement
      *   Z  [out] shared secret (needs hashing before use)
      *   k  [in]  your private key for key agreement
      *   P  [in]  peer's public key
      */
-    public static final void curve(byte[] Z, byte[] k, byte[] P) {
+    public static void curve(byte[] Z, byte[] k, byte[] P) {
         core(Z, null, k, P);
     }
 
@@ -179,7 +166,7 @@ public class Curve25519 {
 	 *   s  [in]  private key for signing
 	 * returns true on success, false on failure (use different x or h)
 	 */
-    public static final boolean sign(byte[] v, byte[] h, byte[] x, byte[] s) {
+    public static boolean sign(byte[] v, byte[] h, byte[] x, byte[] s) {
 		/* v = (x - h) s  mod q  */
         byte[] tmp1=new byte[65];
         byte[] tmp2=new byte[33];
@@ -202,7 +189,7 @@ public class Curve25519 {
      *   h  [in]  signature hash
      *   P  [in]  public key
      */
-    public static final void verify(byte[] Y, byte[] v, byte[] h, byte[] P) {
+    public static void verify(byte[] Y, byte[] v, byte[] h, byte[] P) {
 		/* Y = v abs(P) + h G  */
         byte[] d=new byte[32];
         long10[]
@@ -332,7 +319,7 @@ public class Curve25519 {
 
     /********************* radix 2^8 math *********************/
 
-    private static final void cpy32(byte[] d, byte[] s) {
+    private static void cpy32(byte[] d, byte[] s) {
         int i;
         for (i = 0; i < 32; i++)
             d[i] = s[i];
@@ -341,7 +328,7 @@ public class Curve25519 {
     /* p[m..n+m-1] = q[m..n+m-1] + z * x */
 	/* n is the size of x */
 	/* n+m is the size of p and q */
-    private static final int mula_small(byte[] p,byte[] q,int m,byte[] x,int n,int z) {
+    private static int mula_small(byte[] p, byte[] q, int m, byte[] x, int n, int z) {
         int v=0;
         for (int i=0;i<n;++i) {
             v+=(q[i+m] & 0xFF)+z*(x[i] & 0xFF);
@@ -354,7 +341,7 @@ public class Curve25519 {
     /* p += x * y * z  where z is a small integer
      * x is size 32, y is size t, p is size 32+t
      * y is allowed to overlap with p+32 if you don't care about the upper half  */
-    private static final int mula32(byte[] p, byte[] x, byte[] y, int t, int z) {
+    private static int mula32(byte[] p, byte[] x, byte[] y, int t, int z) {
         final int n = 31;
         int w = 0;
         int i = 0;
@@ -374,7 +361,7 @@ public class Curve25519 {
      * requires t > 0 && d[t-1] != 0
      * requires that r[-1] and d[-1] are valid memory locations
      * q may overlap with r+t */
-    private static final void divmod(byte[] q, byte[] r, int n, byte[] d, int t) {
+    private static void divmod(byte[] q, byte[] r, int n, byte[] d, int t) {
         int rn = 0;
         int dt = ((d[t-1] & 0xFF) << 8);
         if (t>1) {
@@ -395,7 +382,7 @@ public class Curve25519 {
         r[t-1] = (byte)rn;
     }
 
-    private static final int numsize(byte[] x,int n) {
+    private static int numsize(byte[] x, int n) {
         while (n--!=0 && x[n]==0)
             ;
         return n+1;
@@ -406,7 +393,7 @@ public class Curve25519 {
      * as 32-byte signed.
      * x and y must have 64 bytes space for temporary use.
      * requires that a[-1] and b[-1] are valid memory locations  */
-    private static final byte[] egcd32(byte[] x,byte[] y,byte[] a,byte[] b) {
+    private static byte[] egcd32(byte[] x, byte[] y, byte[] a, byte[] b) {
         int an, bn = 32, qn, i;
         for (i = 0; i < 32; i++)
             x[i] = y[i] = 0;
@@ -438,7 +425,7 @@ public class Curve25519 {
     private static final int P26=67108863;	/* (1 << 26) - 1 */
 
     /* Convert to internal format from little-endian byte format */
-    private static final void unpack(long10 x,byte[] m) {
+    private static void unpack(long10 x, byte[] m) {
         x._0 = ((m[0] & 0xFF))         | ((m[1] & 0xFF))<<8 |
                 (m[2] & 0xFF)<<16      | ((m[3] & 0xFF)& 3)<<24;
         x._1 = ((m[3] & 0xFF)&~ 3)>>2  | (m[4] & 0xFF)<<6 |
@@ -462,7 +449,7 @@ public class Curve25519 {
     }
 
     /* Check if reduced-form input >= 2^255-19 */
-    private static final boolean is_overflow(long10 x) {
+    private static boolean is_overflow(long10 x) {
         return (
                 ((x._0 > P26-19)) &&
                         ((x._1 & x._3 & x._5 & x._7 & x._9) == P25) &&
@@ -475,7 +462,7 @@ public class Curve25519 {
      *     unpack, mul, sqr
      *     set --  if input in range 0 .. P25
      * If you're unsure if the number is reduced, first multiply it by 1.  */
-    private static final void pack(long10 x,byte[] m) {
+    private static void pack(long10 x, byte[] m) {
         int ld = 0, ud = 0;
         long t;
         ld = (is_overflow(x)?1:0) - ((x._9 < 0)?1:0);
@@ -524,7 +511,7 @@ public class Curve25519 {
     }
 
     /* Copy a number */
-    private static final void cpy(long10 out, long10 in) {
+    private static void cpy(long10 out, long10 in) {
         out._0=in._0;	out._1=in._1;
         out._2=in._2;	out._3=in._3;
         out._4=in._4;	out._5=in._5;
@@ -533,7 +520,7 @@ public class Curve25519 {
     }
 
     /* Set a number to value, which must be in range -185861411 .. 185861411 */
-    private static final void set(long10 out, int in) {
+    private static void set(long10 out, int in) {
         out._0=in;	out._1=0;
         out._2=0;	out._3=0;
         out._4=0;	out._5=0;
@@ -544,14 +531,14 @@ public class Curve25519 {
     /* Add/subtract two numbers.  The inputs must be in reduced form, and the
      * output isn't, so to do another addition or subtraction on the output,
      * first multiply it by one to reduce it. */
-    private static final void add(long10 xy, long10 x, long10 y) {
+    private static void add(long10 xy, long10 x, long10 y) {
         xy._0 = x._0 + y._0;	xy._1 = x._1 + y._1;
         xy._2 = x._2 + y._2;	xy._3 = x._3 + y._3;
         xy._4 = x._4 + y._4;	xy._5 = x._5 + y._5;
         xy._6 = x._6 + y._6;	xy._7 = x._7 + y._7;
         xy._8 = x._8 + y._8;	xy._9 = x._9 + y._9;
     }
-    private static final void sub(long10 xy, long10 x, long10 y) {
+    private static void sub(long10 xy, long10 x, long10 y) {
         xy._0 = x._0 - y._0;	xy._1 = x._1 - y._1;
         xy._2 = x._2 - y._2;	xy._3 = x._3 - y._3;
         xy._4 = x._4 - y._4;	xy._5 = x._5 - y._5;
@@ -562,7 +549,7 @@ public class Curve25519 {
     /* Multiply a number by a small integer in range -185861411 .. 185861411.
      * The output is in reduced form, the input x need not be.  x and xy may point
      * to the same buffer. */
-    private static final long10 mul_small(long10 xy, long10 x, long y) {
+    private static long10 mul_small(long10 xy, long10 x, long y) {
         long t;
         t = (x._8*y);
         xy._8 = (t & ((1 << 26) - 1));
@@ -592,7 +579,7 @@ public class Curve25519 {
 
     /* Multiply two numbers.  The output is in reduced form, the inputs need not
      * be. */
-    private static final long10 mul(long10 xy, long10 x, long10 y) {
+    private static long10 mul(long10 xy, long10 x, long10 y) {
 		/* sahn0:
 		 * Using local variables to avoid class access.
 		 * This seem to improve performance a bit...
@@ -661,7 +648,7 @@ public class Curve25519 {
     }
 
     /* Square a number.  Optimization of  mul25519(x2, x, x)  */
-    private static final long10 sqr(long10 x2, long10 x) {
+    private static long10 sqr(long10 x2, long10 x) {
         long
                 x_0=x._0,x_1=x._1,x_2=x._2,x_3=x._3,x_4=x._4,
                 x_5=x._5,x_6=x._6,x_7=x._7,x_8=x._8,x_9=x._9;
@@ -709,7 +696,7 @@ public class Curve25519 {
     /* Calculates a reciprocal.  The output is in reduced form, the inputs need not
      * be.  Simply calculates  y = x^(p-2)  so it's not too fast. */
 	/* When sqrtassist is true, it instead calculates y = x^((p-5)/8) */
-    private static final void recip(long10 y, long10 x, int sqrtassist) {
+    private static void recip(long10 y, long10 x, int sqrtassist) {
         long10
                 t0=new long10(),
                 t1=new long10(),
@@ -783,12 +770,12 @@ public class Curve25519 {
     }
 
     /* checks if x is "negative", requires reduced input */
-    private static final int is_negative(long10 x) {
+    private static int is_negative(long10 x) {
         return (int)(((is_overflow(x) || (x._9 < 0))?1:0) ^ (x._0 & 1));
     }
 
     /* a square root */
-    private static final void sqrt(long10 x, long10 u) {
+    private static void sqrt(long10 x, long10 u) {
         long10 v=new long10(), t1=new long10(), t2=new long10();
         add(t1, u, u);	/* t1 = 2u		*/
         recip(v, t1, 1);	/* v = (2u)^((p-5)/8)	*/
@@ -805,7 +792,7 @@ public class Curve25519 {
 
 	/* t1 = ax + az
 	 * t2 = ax - az  */
-    private static final void mont_prep(long10 t1, long10 t2, long10 ax, long10 az) {
+    private static void mont_prep(long10 t1, long10 t2, long10 ax, long10 az) {
         add(t1, ax, az);
         sub(t2, ax, az);
     }
@@ -816,7 +803,7 @@ public class Curve25519 {
      *  X(Q) = (t3+t4)/(t3-t4)
      *  X(P-Q) = dx
      * clobbers t1 and t2, preserves t3 and t4  */
-    private static final void mont_add(long10 t1, long10 t2, long10 t3, long10 t4,long10 ax, long10 az, long10 dx) {
+    private static void mont_add(long10 t1, long10 t2, long10 t3, long10 t4, long10 ax, long10 az, long10 dx) {
         mul(ax, t2, t3);
         mul(az, t1, t4);
         add(t1, ax, az);
@@ -830,7 +817,7 @@ public class Curve25519 {
      *  X(B) = bx/bz
      *  X(Q) = (t3+t4)/(t3-t4)
      * clobbers t1 and t2, preserves t3 and t4  */
-    private static final void mont_dbl(long10 t1, long10 t2, long10 t3, long10 t4,long10 bx, long10 bz) {
+    private static void mont_dbl(long10 t1, long10 t2, long10 t3, long10 t4, long10 bx, long10 bz) {
         sqr(t1, t3);
         sqr(t2, t4);
         mul(bx, t1, t2);
@@ -842,7 +829,7 @@ public class Curve25519 {
 
     /* Y^2 = X^3 + 486662 X^2 + X
      * t is a temporary  */
-    private static final void x_to_y2(long10 t, long10 y2, long10 x) {
+    private static void x_to_y2(long10 t, long10 y2, long10 x) {
         sqr(t, x);
         mul_small(y2, x, 486662);
         add(t, t, y2);
@@ -851,7 +838,7 @@ public class Curve25519 {
     }
 
     /* P = kG   and  s = sign(P)/k  */
-    private static final void core(byte[] Px, byte[] s, byte[] k, byte[] Gx) {
+    private static void core(byte[] Px, byte[] s, byte[] k, byte[] Gx) {
         long10
                 dx=new long10(),
                 t1=new long10(),
@@ -878,9 +865,6 @@ public class Curve25519 {
         set(z[1], 1);
 
         for (i = 32; i--!=0; ) {
-            if (i==0) {
-                i=0;
-            }
             for (j = 8; j--!=0; ) {
 				/* swap arguments depending on bit */
                 int bit1 = (k[i] & 0xFF) >> j & 1;

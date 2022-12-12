@@ -1,13 +1,10 @@
 package com.ndmsystems.coala.helpers;
 
 
-import java.nio.charset.Charset;
-
 /**
  * Created by bas on 25.10.16.
  */
 public class Hex {
-    public static final String DEFAULT_CHARSET_NAME = "UTF-8";
     private static final char[] DIGITS_LOWER;
     private static final char[] DIGITS_UPPER;
 

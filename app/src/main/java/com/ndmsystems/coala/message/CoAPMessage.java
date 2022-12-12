@@ -225,7 +225,6 @@ public class CoAPMessage {
      * Example: <code>[scheme]://[host]:[port]{/resource}*?{&amp;query}*</code>
      *
      * @return CoAPMessage
-     * @throws IllegalArgumentException
      */
     public CoAPMessage setURI(String uri) {
         try {
@@ -279,7 +278,7 @@ public class CoAPMessage {
 
         String uriPath = getURIPathString();
         if (uriPath != null) {
-            builder.append("/" + uriPath);
+            builder.append("/").append(uriPath);
         }
 
         List<CoAPMessageOption> queryOptions = this.getOptions(CoAPMessageOptionCode.OptionURIQuery);
@@ -295,7 +294,7 @@ public class CoAPMessage {
                 } catch (UnsupportedEncodingException ignore) {
                     LogHelper.e("Can't encode query parameter: " + value);
                 }
-                builder.append(key + "=" + value + "&");
+                builder.append(key).append("=").append(value).append("&");
             }
             builder.setLength(builder.length() - 1);
         }
@@ -310,7 +309,7 @@ public class CoAPMessage {
             return null;
         }
 
-        List<String> pathParts = new ArrayList<String>();
+        List<String> pathParts = new ArrayList<>();
         for (CoAPMessageOption pathElem : pathOptions) {
             pathParts.add((String) pathElem.value);
         }
@@ -325,7 +324,7 @@ public class CoAPMessage {
             return null;
         }
 
-        List<String> queryParts = new ArrayList<String>();
+        List<String> queryParts = new ArrayList<>();
 
         for (CoAPMessageOption queryElem : queryOptions) {
             queryParts.add((String) queryElem.value);
@@ -412,7 +411,7 @@ public class CoAPMessage {
      * @return List<CoAPMessageOption>
      */
     public List<CoAPMessageOption> getOptions(CoAPMessageOptionCode optionCode) {
-        List<CoAPMessageOption> options = new ArrayList<CoAPMessageOption>();
+        List<CoAPMessageOption> options = new ArrayList<>();
 
         for (CoAPMessageOption option : this.options) {
             if (option.code == optionCode) {
@@ -580,30 +579,24 @@ public class CoAPMessage {
         NORMAL, SECURE;
 
         public Integer toInt() {
-            switch (this) {
-                case SECURE:
-                    return 1;
-                default:
-                    return 0;
+            if (this == Scheme.SECURE) {
+                return 1;
             }
+            return 0;
         }
 
         public String toString() {
-            switch (this) {
-                case SECURE:
-                    return "coaps";
-                default:
-                    return "coap";
+            if (this == Scheme.SECURE) {
+                return "coaps";
             }
+            return "coap";
         }
 
         public static Scheme fromInt(Integer value) {
-            switch (value) {
-                case 1:
-                    return SECURE;
-                default:
-                    return NORMAL;
+            if (value == 1) {
+                return SECURE;
             }
+            return NORMAL;
         }
 
         public static Scheme fromString(String value) {

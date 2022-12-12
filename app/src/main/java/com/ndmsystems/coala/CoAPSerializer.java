@@ -12,7 +12,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -213,10 +212,7 @@ public class CoAPSerializer {
                 CoAPMessageOptionCode optionCode = CoAPMessageOptionCode.valueOf(actualOptionNumber);
                 message.addOption(new CoAPMessageOption(optionCode, optionValue));
 
-            } catch (IOException e) {
-                LogHelper.e(e.getMessage());
-                continue;
-            } catch (IllegalArgumentException e) {
+            } catch (IOException | IllegalArgumentException e) {
                 LogHelper.e(e.getMessage());
                 continue;
             }
@@ -295,12 +291,7 @@ public class CoAPSerializer {
         }
 
         // sort options by Option Number first
-        Collections.sort(options, new Comparator<CoAPMessageOption>() {
-            @Override
-            public int compare(CoAPMessageOption o1, CoAPMessageOption o2) {
-                return o1.compareTo(o2);
-            }
-        });
+        Collections.sort(options, CoAPMessageOption::compareTo);
 
         //Encode options one after the other and append buf option to the buf
         int previousOptionNumber = 0;
@@ -326,7 +317,7 @@ public class CoAPSerializer {
         if (rawOptionValue.length == 0) LogHelper.w("Option with null length: " + optionNumber);
 
         int optionDelta = optionNumber - previousNumber;
-        int optionLength = rawOptionValue.length > option.getMaxSizeInBytes() ? option.getMaxSizeInBytes() : rawOptionValue.length;
+        int optionLength = Math.min(rawOptionValue.length, option.getMaxSizeInBytes());
 
         if (optionLength > MAX_OPTION_LENGTH) {
             throw new Exception("Option no. " + optionNumber + " exceeds maximum option length: " + optionLength + " vs " + MAX_OPTION_LENGTH);

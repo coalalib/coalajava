@@ -54,10 +54,8 @@ public class RequestLayer implements ReceiveLayer {
                         responseMessage.setToken(message.getToken());
 
                         client.send(responseMessage, null, false);
-                        return false;
-                    } else {
-                        return false;
                     }
+                    return false;
                 }
 
                 LogHelper.e("Resource for path '" + message.getURIPathString() + "' with method: " + message.getMethod() + ", code: " + message.getCode() + " does not exists");

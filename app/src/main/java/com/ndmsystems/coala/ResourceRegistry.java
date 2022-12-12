@@ -13,7 +13,7 @@ import java.util.Map;
 
 public class ResourceRegistry {
 
-    private final Map<String, CoAPResourcesGroupForPath> resources = Collections.synchronizedMap(new HashMap<String, CoAPResourcesGroupForPath>());
+    private final Map<String, CoAPResourcesGroupForPath> resources = Collections.synchronizedMap(new HashMap<>());
     private final CoAPClient client;
 
     public ResourceRegistry(CoAPClient client) {

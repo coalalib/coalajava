@@ -137,22 +137,4 @@ public class SecuredSession {
     public void setPeerProxySecurityId(Long peerProxySecurityId) {
         this.peerProxySecurityId = peerProxySecurityId;
     }
-
-    // ASSIGN KEYS IN REVERS ORDER!!!!
-    /*private Aead parseHKDFKeysForPeer(byte[] hkdfKeys) {
-        int keyLength = 16;
-
-        byte[] out = new byte[2*keyLength+2*4];
-        System.arraycopy(hkdfKeys, 0, out, 0, hkdfKeys.length);
-
-        Aead aead = new Aead();
-
-        // ASSIGN KEYS IN REVERS ORDER!!!!
-        System.arraycopy(out, 0, aead.myKey, 0, keyLength);
-        System.arraycopy(out, 0, aead.peerKey, keyLength, 2*keyLength);
-        System.arraycopy(out, 0, aead.myIV, 2*keyLength, 2*keyLength+4);
-        System.arraycopy(out, 0, aead.peerIV, 2*keyLength+4, out.length);
-
-        return aead;
-    }*/
 }

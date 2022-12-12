@@ -35,8 +35,10 @@ public class ReceiveState extends LoggableState {
         for (int i = 0; i <= lastBlockNumber; i++) {
             if (accumulator.containsKey(i) && accumulator.get(i) != null) {
                 byte[] forCopy = accumulator.get(i);
-                System.arraycopy(forCopy, 0, result, currentPosInResult, forCopy.length);
-                currentPosInResult += forCopy.length;
+                if (forCopy != null) {
+                    System.arraycopy(forCopy, 0, result, currentPosInResult, forCopy.length);
+                    currentPosInResult += forCopy.length;
+                }
             } else {
                 LogHelper.v("Accumulator don't contain block number " + i + " or it's null");
             }
