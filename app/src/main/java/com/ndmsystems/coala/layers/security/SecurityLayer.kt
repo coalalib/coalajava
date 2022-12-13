@@ -260,7 +260,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         client.send(responseMessage, null)
     }
 
-    fun sendClientHello(proxyAddress: InetSocketAddress?, proxySecurityId: Long?, address: InetSocketAddress?, myPublicKey: ByteArray?, handler: CoAPHandler?) {
+    private fun sendClientHello(proxyAddress: InetSocketAddress?, proxySecurityId: Long?, address: InetSocketAddress?, myPublicKey: ByteArray?, handler: CoAPHandler?) {
         val responseMessage = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
         responseMessage.address = address
         if (responseMessage.address == null) {
