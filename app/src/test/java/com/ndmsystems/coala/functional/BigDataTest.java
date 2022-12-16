@@ -4,13 +4,13 @@ import com.ndmsystems.coala.CoAPResource;
 import com.ndmsystems.coala.CoAPResourceInput;
 import com.ndmsystems.coala.CoAPResourceOutput;
 import com.ndmsystems.coala.Coala;
-import com.ndmsystems.infrastructure.logging.LogHelper;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
+import com.ndmsystems.coala.helpers.logging.SystemOutLogger;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessagePayload;
 import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.message.CoAPRequestMethod;
-import com.ndmsystems.infrastructure.logging.SystemOutLogger;
 
 import org.junit.Test;
 

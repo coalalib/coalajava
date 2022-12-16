@@ -1,8 +1,8 @@
 package com.ndmsystems.coala.observer;
 
 import com.ndmsystems.coala.CoAPHandler;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 /**
  * Created by bas on 14.11.16.

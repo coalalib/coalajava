@@ -2,11 +2,11 @@ package com.ndmsystems.coala.layers.arq.states;
 
 import com.ndmsystems.coala.MessageDeliveryInfo;
 import com.ndmsystems.coala.exceptions.BaseCoalaThrowable;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.layers.arq.Block;
 import com.ndmsystems.coala.layers.arq.SlidingWindow;
 import com.ndmsystems.coala.layers.arq.data.IData;
 import com.ndmsystems.coala.message.CoAPMessage;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 /**
  * Created by Владимир on 16.08.2017.

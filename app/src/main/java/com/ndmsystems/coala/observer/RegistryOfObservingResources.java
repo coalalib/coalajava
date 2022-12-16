@@ -4,12 +4,12 @@ import com.ndmsystems.coala.CoAPClient;
 import com.ndmsystems.coala.CoAPHandler;
 import com.ndmsystems.coala.helpers.Hex;
 import com.ndmsystems.coala.helpers.RandomGenerator;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessageOption;
 import com.ndmsystems.coala.message.CoAPMessageOptionCode;
 import com.ndmsystems.coala.message.CoAPMessageType;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.util.HashMap;
 import java.util.Timer;

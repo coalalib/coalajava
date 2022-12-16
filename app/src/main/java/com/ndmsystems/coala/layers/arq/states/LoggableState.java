@@ -1,8 +1,8 @@
 package com.ndmsystems.coala.layers.arq.states;
 
 import com.ndmsystems.coala.helpers.TimeHelper;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 /**
  * Created by bas on 25.08.17.

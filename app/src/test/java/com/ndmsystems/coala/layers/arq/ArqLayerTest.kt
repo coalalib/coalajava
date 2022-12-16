@@ -4,6 +4,7 @@ import com.ndmsystems.coala.CoAPHandler
 import com.ndmsystems.coala.CoAPMessagePool
 import com.ndmsystems.coala.Coala
 import com.ndmsystems.coala.TestHelper
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageOption
@@ -11,7 +12,6 @@ import com.ndmsystems.coala.message.CoAPMessageOptionCode
 import com.ndmsystems.coala.message.CoAPMessagePayload
 import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.utils.Reference
-import com.ndmsystems.infrastructure.logging.LogHelper
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -223,7 +223,7 @@ object ArqLayerTest : Spek({
 }) {
 
     init {
-        LogHelper.addLogger(TestHelper())
+        com.ndmsystems.coala.helpers.logging.LogHelper.addLogger(TestHelper())
     }
 
     private fun arqMessageOfRequest(blockNumber: Int, last: Boolean, data: ByteArray?): CoAPMessage {

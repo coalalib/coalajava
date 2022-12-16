@@ -3,7 +3,7 @@ package com.ndmsystems.coala.crypto;
 import android.os.Build;
 
 import com.ndmsystems.coala.helpers.Hex;
-import com.ndmsystems.infrastructure.logging.LogHelper;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 
 import org.spongycastle.crypto.BlockCipher;
 import org.spongycastle.crypto.CipherParameters;

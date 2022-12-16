@@ -1,6 +1,6 @@
 package com.ndmsystems.coala.layers.arq;
 
-import com.ndmsystems.infrastructure.logging.LogHelper;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 
 /**
  * Created by Владимир on 16.08.2017.

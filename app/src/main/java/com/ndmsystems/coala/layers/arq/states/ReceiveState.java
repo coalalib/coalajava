@@ -1,9 +1,9 @@
 package com.ndmsystems.coala.layers.arq.states;
 
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.layers.arq.Block;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.util.HashMap;
 

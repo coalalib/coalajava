@@ -7,7 +7,7 @@ import com.ndmsystems.coala.crypto.Curve25519;
 import com.ndmsystems.coala.crypto.Hkdf;
 import com.ndmsystems.coala.helpers.Hex;
 import com.ndmsystems.coala.helpers.RBGHelper;
-import com.ndmsystems.infrastructure.logging.LogHelper;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -45,7 +45,7 @@ public class SecuredSession {
         try {
             md = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            // @TODO: Error Handling here
+            LogHelper.e("SecuredSession getSignature NoSuchAlgorithmException " + e.getMessage());
             return new byte[0];
         }
 

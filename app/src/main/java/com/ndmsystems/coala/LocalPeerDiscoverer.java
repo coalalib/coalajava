@@ -1,12 +1,12 @@
 package com.ndmsystems.coala;
 
 import com.ndmsystems.coala.helpers.Hex;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryHelper;
 import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.List;

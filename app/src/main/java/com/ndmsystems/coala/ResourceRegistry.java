@@ -1,7 +1,7 @@
 package com.ndmsystems.coala;
 
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPRequestMethod;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.util.Collections;
 import java.util.HashMap;

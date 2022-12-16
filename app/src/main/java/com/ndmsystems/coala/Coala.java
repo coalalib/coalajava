@@ -7,6 +7,7 @@ import com.ndmsystems.coala.exceptions.BaseCoalaThrowable;
 import com.ndmsystems.coala.exceptions.CoAPException;
 import com.ndmsystems.coala.exceptions.CoalaStoppedException;
 import com.ndmsystems.coala.helpers.RandomGenerator;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.layers.arq.states.LoggableState;
 import com.ndmsystems.coala.layers.response.ResponseData;
 import com.ndmsystems.coala.layers.response.ResponseHandler;
@@ -15,7 +16,6 @@ import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessagePayload;
 import com.ndmsystems.coala.message.CoAPRequestMethod;
 import com.ndmsystems.coala.observer.RegistryOfObservingResources;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import org.jetbrains.annotations.NotNull;
 

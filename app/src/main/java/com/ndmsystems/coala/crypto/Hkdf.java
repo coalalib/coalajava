@@ -7,7 +7,7 @@
 package com.ndmsystems.coala.crypto;
 
 import com.ndmsystems.coala.helpers.Hex;
-import com.ndmsystems.infrastructure.logging.LogHelper;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 
 import java.io.ByteArrayOutputStream;
 import java.security.InvalidKeyException;

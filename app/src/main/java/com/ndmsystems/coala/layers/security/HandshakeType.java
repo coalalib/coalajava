@@ -1,6 +1,6 @@
 package com.ndmsystems.coala.layers.security;
 
-import com.ndmsystems.infrastructure.logging.LogHelper;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 
 /**
  * Created by Владимир on 26.06.2017.

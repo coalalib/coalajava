@@ -9,6 +9,7 @@ import com.ndmsystems.coala.exceptions.PeerPublicKeyMismatchException
 import com.ndmsystems.coala.helpers.EncryptionHelper
 import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.helpers.RandomGenerator
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.layers.LogLayer
 import com.ndmsystems.coala.layers.ReceiveLayer
 import com.ndmsystems.coala.layers.SendLayer
@@ -21,7 +22,6 @@ import com.ndmsystems.coala.message.CoAPMessageOptionCode
 import com.ndmsystems.coala.message.CoAPMessagePayload
 import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.utils.Reference
-import com.ndmsystems.infrastructure.logging.LogHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch

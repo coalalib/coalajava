@@ -45,31 +45,6 @@ object ReceiveStateTest : Spek({
             }
         }
 
-
-        //todo different behavior in compare with IOS
-        /*Scenario("Window size changed") {
-            val dummyData = "hello world!"
-            val initialWindowSize = 2
-            val newWindowSize = 3
-            lateinit var receiveState: ReceiveState
-
-            Given("receive state with initial size = $initialWindowSize") {
-                val originalMessage = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.POST)
-                receiveState = ReceiveState(originalMessage)
-            }
-
-            When("pop block and transmit") {
-                receiveState.didReceiveBlock(Block(0, dummyData.toByteArray(), true), CoAPMessageCode.CoapCodeContinue)
-            }
-
-            Then("successfully completed") {
-                assertEquals(dummyData.length, receiveState.data.size)
-                assertEquals(dummyData, String(receiveState.data))
-            }
-
-
-        }*/
-
     }
 
 

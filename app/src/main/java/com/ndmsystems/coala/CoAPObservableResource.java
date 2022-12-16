@@ -1,12 +1,12 @@
 package com.ndmsystems.coala;
 
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageOption;
 import com.ndmsystems.coala.message.CoAPMessageOptionCode;
 import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.message.CoAPRequestMethod;
 import com.ndmsystems.coala.observer.Observer;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;

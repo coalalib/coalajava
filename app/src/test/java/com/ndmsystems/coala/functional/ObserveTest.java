@@ -7,13 +7,13 @@ import com.ndmsystems.coala.CoAPResourceInput;
 import com.ndmsystems.coala.CoAPResourceOutput;
 import com.ndmsystems.coala.Coala;
 import com.ndmsystems.coala.helpers.Hex;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessageOption;
 import com.ndmsystems.coala.message.CoAPMessageOptionCode;
 import com.ndmsystems.coala.message.CoAPMessagePayload;
 import com.ndmsystems.coala.message.CoAPMessageType;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import org.junit.After;
 import org.junit.Before;

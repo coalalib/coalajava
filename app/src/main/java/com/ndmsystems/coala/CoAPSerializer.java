@@ -1,12 +1,12 @@
 package com.ndmsystems.coala;
 
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessageOption;
 import com.ndmsystems.coala.message.CoAPMessageOptionCode;
 import com.ndmsystems.coala.message.CoAPMessagePayload;
 import com.ndmsystems.coala.message.CoAPMessageType;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

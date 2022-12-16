@@ -1,6 +1,6 @@
 package com.ndmsystems.coala;
 
-import com.ndmsystems.infrastructure.logging.LogHelper;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 
 import org.junit.BeforeClass;
 

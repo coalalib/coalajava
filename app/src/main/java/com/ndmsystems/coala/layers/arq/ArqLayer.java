@@ -6,6 +6,7 @@ import com.ndmsystems.coala.CoAPHandler;
 import com.ndmsystems.coala.CoAPMessagePool;
 import com.ndmsystems.coala.helpers.Hex;
 import com.ndmsystems.coala.helpers.MessageHelper;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.layers.ReceiveLayer;
 import com.ndmsystems.coala.layers.SendLayer;
 import com.ndmsystems.coala.layers.arq.data.DataFactory;
@@ -19,7 +20,6 @@ import com.ndmsystems.coala.message.CoAPMessageOptionCode;
 import com.ndmsystems.coala.message.CoAPMessagePayload;
 import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.utils.Reference;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import net.jodah.expiringmap.ExpirationPolicy;
 import net.jodah.expiringmap.ExpiringMap;

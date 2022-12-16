@@ -6,6 +6,7 @@ import com.ndmsystems.coala.CoAPObservableResource;
 import com.ndmsystems.coala.CoAPResourceInput;
 import com.ndmsystems.coala.CoAPResourceOutput;
 import com.ndmsystems.coala.CoAPServer;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessageOption;
@@ -16,7 +17,6 @@ import com.ndmsystems.coala.observer.Observer;
 import com.ndmsystems.coala.observer.ObservingResource;
 import com.ndmsystems.coala.observer.RegistryOfObservingResources;
 import com.ndmsystems.coala.utils.Reference;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.net.InetSocketAddress;
 

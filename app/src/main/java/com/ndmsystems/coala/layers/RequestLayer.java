@@ -6,13 +6,13 @@ import com.ndmsystems.coala.CoAPResourceInput;
 import com.ndmsystems.coala.CoAPResourceOutput;
 import com.ndmsystems.coala.CoAPResourcesGroupForPath;
 import com.ndmsystems.coala.ResourceRegistry;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessageOption;
 import com.ndmsystems.coala.message.CoAPMessageOptionCode;
 import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.utils.Reference;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.net.InetSocketAddress;
 

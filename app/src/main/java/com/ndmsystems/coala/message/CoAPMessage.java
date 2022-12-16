@@ -4,8 +4,8 @@ import com.ndmsystems.coala.Coala;
 import com.ndmsystems.coala.helpers.Hex;
 import com.ndmsystems.coala.helpers.MessageHelper;
 import com.ndmsystems.coala.helpers.StringHelper;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.layers.response.ResponseHandler;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;

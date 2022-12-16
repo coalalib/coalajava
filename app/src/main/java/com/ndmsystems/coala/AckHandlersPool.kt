@@ -1,7 +1,7 @@
 package com.ndmsystems.coala
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.message.CoAPMessage
-import com.ndmsystems.infrastructure.logging.LogHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch

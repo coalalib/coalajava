@@ -3,13 +3,13 @@ package com.ndmsystems.coala.layers.response;
 import com.ndmsystems.coala.CoAPClient;
 import com.ndmsystems.coala.exceptions.CoAPException;
 import com.ndmsystems.coala.helpers.Hex;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 import com.ndmsystems.coala.layers.ReceiveLayer;
 import com.ndmsystems.coala.layers.SendLayer;
 import com.ndmsystems.coala.message.CoAPMessage;
 import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessageType;
 import com.ndmsystems.coala.utils.Reference;
-import com.ndmsystems.infrastructure.logging.LogHelper;
 
 import net.jodah.expiringmap.ExpirationPolicy;
 import net.jodah.expiringmap.ExpiringMap;

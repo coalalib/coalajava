@@ -1,7 +1,7 @@
 package com.ndmsystems.coala.message;
 
 
-import com.ndmsystems.infrastructure.logging.LogHelper;
+import com.ndmsystems.coala.helpers.logging.LogHelper;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -94,7 +94,6 @@ public class CoAPMessageOption implements Comparable<CoAPMessageOption> {
             default:
                 LogHelper.e("Try from byte unknown option: " + this.code);
                 this.value = data;
-                // @TODO: Error handling here
                 break;
         }
     }

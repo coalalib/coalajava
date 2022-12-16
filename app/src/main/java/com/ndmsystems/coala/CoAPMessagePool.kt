@@ -4,8 +4,8 @@ import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap
 import com.ndmsystems.coala.CoAPHandler.AckError
 import com.ndmsystems.coala.exceptions.BaseCoalaThrowable
 import com.ndmsystems.coala.helpers.TimeHelper
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.message.CoAPMessage
-import com.ndmsystems.infrastructure.logging.LogHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch

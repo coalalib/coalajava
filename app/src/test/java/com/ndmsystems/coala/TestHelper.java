@@ -1,6 +1,6 @@
 package com.ndmsystems.coala;
 
-import com.ndmsystems.infrastructure.logging.ILogger;
+import com.ndmsystems.coala.helpers.logging.ILogger;
 
 /**
  * Created by bas on 16.12.16.
