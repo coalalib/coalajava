@@ -3,7 +3,7 @@ buildscript {
         android_junit5_version = '1.5.1.0'
         spek_version = '2.0.6'
         mockk_version = '1.9.3'
-        kotlinVersion = '1.5.31'
+        kotlinVersion = '1.7.0'
         daggerVersion = '2.43.2'
         gsonVersion = '2.8.7'
     }
@@ -13,7 +13,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:4.0.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.31"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10"
         classpath "de.mannodermaus.gradle.plugins:android-junit5:$android_junit5_version"
 
     }
@@ -82,9 +82,7 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    androidTestImplementation('androidx.test.espresso:espresso-core:3.1.0', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
+
     implementation 'com.madgag.spongycastle:bctls-jdk15on:1.58.0.0'
     implementation "com.google.dagger:dagger:$daggerVersion"
     annotationProcessor "com.google.dagger:dagger-compiler:$daggerVersion"
