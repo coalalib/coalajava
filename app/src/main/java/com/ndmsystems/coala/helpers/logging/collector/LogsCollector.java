@@ -24,7 +24,7 @@ public class LogsCollector implements ILogger {
         return instance;
     }
 
-    private CircularFifoQueue<LogEntry> queue = new CircularFifoQueue<>(300);
+    private final CircularFifoQueue<LogEntry> queue = new CircularFifoQueue<>(300);
 
     private LogsCollector() {
 
