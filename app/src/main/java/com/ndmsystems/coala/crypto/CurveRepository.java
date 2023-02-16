@@ -8,13 +8,13 @@ import com.ndmsystems.coala.ICoalaStorage;
 
 public class CurveRepository {
     private final ICoalaStorage storage;
-    private final String CURVE_KEY = "CURVE_KEY";
 
     public CurveRepository(ICoalaStorage storage) {
         this.storage = storage;
     }
 
     public Curve25519 getCurve() {
+        String CURVE_KEY = "CURVE_KEY";
         Curve25519 curve25519 = storage.get(CURVE_KEY, Curve25519.class);
         if (curve25519 == null) {
             curve25519 = new Curve25519();
