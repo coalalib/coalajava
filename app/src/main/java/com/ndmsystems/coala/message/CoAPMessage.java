@@ -263,7 +263,7 @@ public class CoAPMessage {
             port = Coala.DEFAULT_PORT;
 
         String host;
-        if (address != null && address.getAddress().getHostAddress() != null)
+        if (address != null && address.getAddress() != null && address.getAddress().getHostAddress() != null)
             host = address.getAddress().getHostAddress();
         else {
             LogHelper.w("Address is null! return \"null\"");
