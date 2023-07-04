@@ -180,11 +180,15 @@ public class CoAPSender {
         byte[] messageData = CoAPSerializer.toBytes(message);
         DatagramPacket udpPacket = null;
         if (messageData != null) {
-            udpPacket = new DatagramPacket(messageData, messageData.length, address);
+            try {
+                udpPacket = new DatagramPacket(messageData, messageData.length, address);
+            } catch (IllegalArgumentException exception) {
+                LogHelper.e("sendMessageToAddress IllegalArgumentException, address: " + address.toString());
+            }
         }
 
         // Send data!
-        if (connection != null) {
+        if (connection != null && udpPacket != null) {
             connection.send(udpPacket);
         }
     }
