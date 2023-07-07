@@ -5,6 +5,8 @@ import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult;
 
 import java.util.List;
 
+import io.reactivex.Single;
+
 public interface CoAPServer {
     interface OnResourcesDiscovered {
         void onResourcesDiscovered(List<ResourceDiscoveryResult> resourceDiscoveryResults);
@@ -18,5 +20,5 @@ public interface CoAPServer {
 
     void removeResource(String path, CoAPRequestMethod method);
 
-    void runResourceDiscovery(OnResourcesDiscovered onResourcesDiscovered);
+    Single<List<ResourceDiscoveryResult>> runResourceDiscovery();
 }

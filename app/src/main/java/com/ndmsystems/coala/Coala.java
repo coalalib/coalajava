@@ -16,14 +16,17 @@ import com.ndmsystems.coala.message.CoAPMessageCode;
 import com.ndmsystems.coala.message.CoAPMessagePayload;
 import com.ndmsystems.coala.message.CoAPRequestMethod;
 import com.ndmsystems.coala.observer.RegistryOfObservingResources;
+import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Random;
 
 import javax.inject.Inject;
 
 import io.reactivex.Observable;
+import io.reactivex.Single;
 
 public class Coala extends CoAPTransport {
 
@@ -155,12 +158,12 @@ public class Coala extends CoAPTransport {
 
     /**
      * Find all available to discovery coap resourceRegistry in local network.
-     * Warning! Synchronous method. Do not use from main thread.
      *
+     * @return
      */
     @Override
-    public void runResourceDiscovery(OnResourcesDiscovered onResourcesDiscovered) {
-        localPeerDiscoverer.runResourceDiscovery(onResourcesDiscovered);
+    public Single<List<ResourceDiscoveryResult>> runResourceDiscovery() {
+        return localPeerDiscoverer.runResourceDiscovery();
     }
 
     public void cancel(CoAPMessage message) {
