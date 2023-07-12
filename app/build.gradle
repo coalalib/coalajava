@@ -1,6 +1,6 @@
 buildscript {
     ext {
-        android_junit5_version = '1.5.1.0'
+        android_junit5_version = '1.6.1.0'
         spek_version = '2.0.6'
         mockk_version = '1.9.3'
         kotlinVersion = '1.7.0'
@@ -21,7 +21,6 @@ buildscript {
 
 ext {
     supportLibraryVersion = '27.1.1'
-    buildToolsVersion = '29.0.2'
     compileSdkVersion = 28
     targetSdkVersion = 27
     minSdkVersion = 21
@@ -33,7 +32,6 @@ apply plugin: 'de.mannodermaus.android-junit5'
 
 android {
     compileSdkVersion project.ext.compileSdkVersion
-    buildToolsVersion project.ext.buildToolsVersion
     defaultConfig {
         multiDexEnabled true
         minSdkVersion project.ext.minSdkVersion

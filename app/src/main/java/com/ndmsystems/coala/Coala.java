@@ -311,10 +311,6 @@ public class Coala extends CoAPTransport {
         this.storage = storage;
     }
 
-    public String getVersion() {
-        return BuildConfig.VERSION_NAME;
-    }
-
     public void setOnPortIsBusyHandler(OnPortIsBusyHandler onPortIsBusyHandler) {
         connectionProvider.setOnPortIsBusyHandler(onPortIsBusyHandler);
     }
