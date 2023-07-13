@@ -1,6 +1,6 @@
 buildscript {
     ext {
-        android_junit5_version = '1.6.1.0'
+        android_junit5_version = '1.8.2.1'
         spek_version = '2.0.6'
         mockk_version = '1.9.3'
         kotlinVersion = '1.7.0'
