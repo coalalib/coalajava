@@ -295,6 +295,7 @@ public class Coala extends CoAPTransport {
     }
 
     public void start() {
+        LogHelper.i("Coala start");
         receiver.start();
         sender.start();
     }
