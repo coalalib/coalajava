@@ -15,29 +15,39 @@ class LayersStack(
 ) {
     inner class InterruptedException : Exception()
 
+    data class LayerResult(val shouldContinue: Boolean, val message: CoAPMessage? = null)
+
     @Throws(InterruptedException::class)
-    fun onReceive(message: CoAPMessage, senderAddressReference: Reference<InetSocketAddress?>?) {
+    fun onReceive(message: CoAPMessage, senderAddressReference: Reference<InetSocketAddress>) {
         receiveStack?.let {
+            var mutableMessage = message
             for (layer in receiveStack) {
-                val shouldContinue = layer.onReceive(message, senderAddressReference)
-                if (!shouldContinue) {
+                val layerResult = layer.onReceive(mutableMessage, senderAddressReference)
+                if (!layerResult.shouldContinue) {
                     break
+                }
+                layerResult.message?.let {
+                    mutableMessage = it
                 }
             }
         }
     }
 
     @Throws(InterruptedException::class)
-    fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress?>?): Boolean {
+    fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress>): LayerResult {
+        var mutableMessage = message
         sendStack?.let {
             for (layer in sendStack) {
-                val shouldContinue = layer.onSend(message, receiverAddressReference)
-                if (!shouldContinue) {
-                    return false
+                val layerResult = layer.onSend(mutableMessage, receiverAddressReference)
+                if (!layerResult.shouldContinue) {
+                    return LayerResult(false, null)
+                }
+                layerResult.message?.let {
+                    mutableMessage = it
                 }
             }
         }
-        return true
+        return LayerResult(true, mutableMessage)
     }
 
     fun getArqReceivedStateForToken(token: ByteArray): LoggableState? {

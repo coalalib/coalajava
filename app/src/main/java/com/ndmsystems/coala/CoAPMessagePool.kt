@@ -48,7 +48,7 @@ class CoAPMessagePool(
         var isNeededSend = true
 
         init {
-            createTime = TimeHelper.getTimeForMeasurementInMilliseconds()
+            createTime = TimeHelper.timeForMeasurementInMilliseconds
         }
     }
 
@@ -70,10 +70,10 @@ class CoAPMessagePool(
             val next: QueueElement = try {
                 iterator.next()
             } catch (e: ConcurrentModificationException) {
-                LogHelper.e(if (e.message != null) e.message else "ConcurrentModificationException")
+                LogHelper.e(e.message ?: "ConcurrentModificationException")
                 continue
             }
-            val now = TimeHelper.getTimeForMeasurementInMilliseconds()
+            val now = TimeHelper.timeForMeasurementInMilliseconds
 
             // check if this message is too old to send
             if (next.createTime != null && now - next.createTime!!
@@ -121,7 +121,7 @@ class CoAPMessagePool(
                     messageDeliveryInfo[hexToken] = currentMessageDeliveryInfo
 
                     next.sent = true
-                    next.sendTime = TimeHelper.getTimeForMeasurementInMilliseconds()
+                    next.sendTime = TimeHelper.timeForMeasurementInMilliseconds
                     next.sendAttempts++
                     return CoAPMessage(next.message)
                 } else {
