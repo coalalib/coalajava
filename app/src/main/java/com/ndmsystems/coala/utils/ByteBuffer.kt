@@ -1,4 +1,8 @@
-package com.ndmsystems.coala.utils;
+package com.ndmsystems.coala.utils
+
+import java.io.ByteArrayOutputStream
+import java.io.DataOutputStream
+import java.io.IOException
 
 /*
  * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
@@ -23,135 +27,120 @@ package com.ndmsystems.coala.utils;
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-
-/** A byte buffer is a flexible array which grows when elements are
- *  appended. There are also methods to append names to byte buffers
- *  and to convert byte buffers to names.
+ */ /** A byte buffer is a flexible array which grows when elements are
+ * appended. There are also methods to append names to byte buffers
+ * and to convert byte buffers to names.
  *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ *
+ * **This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.**
  */
-public class ByteBuffer {
-
+class ByteBuffer @JvmOverloads constructor(initialSize: Int = 64) {
     /** An array holding the bytes in this buffer; can be grown.
      */
-    public byte[] elems;
+    var elems: ByteArray
 
     /** The current number of defined bytes in this buffer.
      */
-    public int length;
-
+    var length: Int
+    /** Create a new byte buffer with an initial elements array
+     * of given size.
+     */
     /** Create a new byte buffer.
      */
-    public ByteBuffer() {
-        this(64);
+    init {
+        elems = ByteArray(initialSize)
+        length = 0
     }
 
-    /** Create a new byte buffer with an initial elements array
-     *  of given size.
-     */
-    public ByteBuffer(int initialSize) {
-        elems = new byte[initialSize];
-        length = 0;
-    }
-
-    private void copy(int size) {
-        byte[] newelems = new byte[size];
-        System.arraycopy(elems, 0, newelems, 0, elems.length);
-        elems = newelems;
+    private fun copy(size: Int) {
+        val newelems = ByteArray(size)
+        System.arraycopy(elems, 0, newelems, 0, elems.size)
+        elems = newelems
     }
 
     /** Append byte to this buffer.
      */
-    public void appendByte(int b) {
-        if (length >= elems.length) copy(elems.length * 2);
-        elems[length++] = (byte)b;
+    fun appendByte(b: Int) {
+        if (length >= elems.size) copy(elems.size * 2)
+        elems[length++] = b.toByte()
     }
-
     /** Append `len' bytes from byte array,
-     *  starting at given `start' offset.
+     * starting at given `start' offset.
      */
-    public void appendBytes(byte[] bs, int start, int len) {
-        while (length + len > elems.length) copy(elems.length * 2);
-        System.arraycopy(bs, start, elems, length, len);
-        length += len;
-    }
-
     /** Append all bytes from given byte array.
      */
-    public void appendBytes(byte[] bs) {
-        appendBytes(bs, 0, bs.length);
+    @JvmOverloads
+    fun appendBytes(bs: ByteArray, start: Int = 0, len: Int = bs.size) {
+        while (length + len > elems.size) copy(elems.size * 2)
+        System.arraycopy(bs, start, elems, length, len)
+        length += len
     }
 
     /** Append a character as a two byte number.
      */
-    public void appendChar(int x) {
-        while (length + 1 >= elems.length) copy(elems.length * 2);
-        elems[length  ] = (byte)((x >>  8) & 0xFF);
-        elems[length+1] = (byte)((x      ) & 0xFF);
-        length = length + 2;
+    fun appendChar(x: Int) {
+        while (length + 1 >= elems.size) copy(elems.size * 2)
+        elems[length] = (x shr 8 and 0xFF).toByte()
+        elems[length + 1] = (x and 0xFF).toByte()
+        length = length + 2
     }
 
     /** Append an integer as a four byte number.
      */
-    public void appendInt(int x) {
-        while (length + 3 >= elems.length) copy(elems.length * 2);
-        elems[length  ] = (byte)((x >> 24) & 0xFF);
-        elems[length+1] = (byte)((x >> 16) & 0xFF);
-        elems[length+2] = (byte)((x >>  8) & 0xFF);
-        elems[length+3] = (byte)((x      ) & 0xFF);
-        length = length + 4;
+    fun appendInt(x: Int) {
+        while (length + 3 >= elems.size) copy(elems.size * 2)
+        elems[length] = (x shr 24 and 0xFF).toByte()
+        elems[length + 1] = (x shr 16 and 0xFF).toByte()
+        elems[length + 2] = (x shr 8 and 0xFF).toByte()
+        elems[length + 3] = (x and 0xFF).toByte()
+        length = length + 4
     }
 
     /** Append a long as an eight byte number.
      */
-    public void appendLong(long x) {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream(8);
-        DataOutputStream bufout = new DataOutputStream(buffer);
+    fun appendLong(x: Long) {
+        val buffer = ByteArrayOutputStream(8)
+        val bufout = DataOutputStream(buffer)
         try {
-            bufout.writeLong(x);
-            appendBytes(buffer.toByteArray(), 0, 8);
-        } catch (IOException e) {
-            throw new AssertionError("write");
+            bufout.writeLong(x)
+            appendBytes(buffer.toByteArray(), 0, 8)
+        } catch (e: IOException) {
+            throw AssertionError("write")
         }
     }
 
     /** Append a float as a four byte number.
      */
-    public void appendFloat(float x) {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream(4);
-        DataOutputStream bufout = new DataOutputStream(buffer);
+    fun appendFloat(x: Float) {
+        val buffer = ByteArrayOutputStream(4)
+        val bufout = DataOutputStream(buffer)
         try {
-            bufout.writeFloat(x);
-            appendBytes(buffer.toByteArray(), 0, 4);
-        } catch (IOException e) {
-            throw new AssertionError("write");
+            bufout.writeFloat(x)
+            appendBytes(buffer.toByteArray(), 0, 4)
+        } catch (e: IOException) {
+            throw AssertionError("write")
         }
     }
 
     /** Append a double as a eight byte number.
      */
-    public void appendDouble(double x) {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream(8);
-        DataOutputStream bufout = new DataOutputStream(buffer);
+    fun appendDouble(x: Double) {
+        val buffer = ByteArrayOutputStream(8)
+        val bufout = DataOutputStream(buffer)
         try {
-            bufout.writeDouble(x);
-            appendBytes(buffer.toByteArray(), 0, 8);
-        } catch (IOException e) {
-            throw new AssertionError("write");
+            bufout.writeDouble(x)
+            appendBytes(buffer.toByteArray(), 0, 8)
+        } catch (e: IOException) {
+            throw AssertionError("write")
         }
     }
 
     /** Reset to zero length.
      */
-    public void reset() {
-        length = 0;
+    fun reset() {
+        length = 0
     }
 }

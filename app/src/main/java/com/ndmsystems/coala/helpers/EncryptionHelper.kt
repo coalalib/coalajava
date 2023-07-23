@@ -11,8 +11,8 @@ import com.ndmsystems.coala.message.CoAPMessagePayload
 object EncryptionHelper {
     @JvmStatic
     fun encrypt(message: CoAPMessage, aead: Aead) {
-        if (message.payload != null && message.payload.content != null) message.payload =
-            CoAPMessagePayload(aead.encrypt(message.payload.content, message.id, null))
+        if (message.payload != null) message.payload =
+            CoAPMessagePayload(aead.encrypt(message.payload!!.content, message.id, null) ?: ByteArray(0))
         encryptOptions(message, aead)
     }
 
@@ -20,7 +20,7 @@ object EncryptionHelper {
         if (message.hasOption(CoAPMessageOptionCode.OptionURIQuery)
             || message.hasOption(CoAPMessageOptionCode.OptionURIPath)
         ) {
-            message.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionCoapsURI, aead.encrypt(message.uri.toByteArray(), message.id, null)))
+            message.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionCoapsURI, aead.encrypt(message.getURI().toByteArray(), message.id, null) ?: ByteArray(0)))
             message.removeOption(CoAPMessageOptionCode.OptionURIQuery)
             message.removeOption(CoAPMessageOptionCode.OptionURIPath)
         }
@@ -28,8 +28,8 @@ object EncryptionHelper {
 
     @JvmStatic
     fun decrypt(message: CoAPMessage, aead: Aead): Boolean {
-        if (message.payload != null && message.payload.content != null) {
-            val newPayload = aead.decrypt(message.payload.content, message.id, null)
+        if (message.payload != null) {
+            val newPayload = aead.decrypt(message.payload!!.content, message.id, null)
             if (newPayload == null) {
                 e("Can't decrypt message with id: " + message.id + ", token: " + message.hexToken)
                 message.payload = null
@@ -43,9 +43,9 @@ object EncryptionHelper {
 
     private fun decryptOptions(message: CoAPMessage, aead: Aead) {
         if (message.hasOption(CoAPMessageOptionCode.OptionCoapsURI)) {
-            val uriBytes = aead.decrypt(message.getOption(CoAPMessageOptionCode.OptionCoapsURI).toBytes(), message.id, null)
+            val uriBytes = aead.decrypt(message.getOption(CoAPMessageOptionCode.OptionCoapsURI)!!.toBytes(), message.id, null)
             if (uriBytes != null) {
-                message.uri = String(uriBytes)
+                message.setURI(String(uriBytes))
                 message.removeOption(CoAPMessageOptionCode.OptionCoapsURI)
             } else w("OptionCoapsURI empty after decrypt")
         }

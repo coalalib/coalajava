@@ -49,11 +49,11 @@ class ResponseLayer : ReceiveLayer, SendLayer {
         val request = requests[key] ?: return LayerResult(true, null)
         val responseError = errorFactory.proceed(message)
         if (responseError != null) {
-            request.responseHandler.onError(responseError.setMessageDeliveryInfo(client.getMessageDeliveryInfo(message)))
+            request.responseHandler?.onError(responseError.setMessageDeliveryInfo(client.getMessageDeliveryInfo(message)))
         } else {
-            val responseData = ResponseData(if (message.payload == null) ByteArray(0) else message.payload.content)
+            val responseData = ResponseData(if (message.payload == null) ByteArray(0) else message.payload!!.content)
             if (message.peerPublicKey != null) responseData.peerPublicKey = message.peerPublicKey
-            request.responseHandler.onResponse(responseData)
+            request.responseHandler?.onResponse(responseData)
         }
         return LayerResult(false, null)
     }
@@ -64,7 +64,7 @@ class ResponseLayer : ReceiveLayer, SendLayer {
         client.send(ackMessage, null)
     }
 
-    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress>): LayerResult {
+    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress?>): LayerResult {
         if (message.token != null &&
             message.isRequest && message.responseHandler != null
         ) {

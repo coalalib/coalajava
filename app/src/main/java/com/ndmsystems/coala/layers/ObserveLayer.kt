@@ -26,7 +26,7 @@ class ObserveLayer(
     private val server: CoAPServer,
     private val ackHandlers: AckHandlersPool
 ) : ReceiveLayer, SendLayer {
-    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress>): LayerResult {
+    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress?>): LayerResult {
         val token = message.token
         if (isRegistrationRequest(message)) {
             registryOfObservingResources.addObservingResource(token, ObservingResource(message, ackHandlers[message.id]))
@@ -72,8 +72,8 @@ class ObserveLayer(
 
     private fun onReceiveRequest(message: CoAPMessage, senderAddress: InetSocketAddress): LayerResult {
         v("ObserveLayer: onReceiveRequest")
-        v("searching for observable path: " + message.uriPathString)
-        val resource = server.getObservableResource(message.uriPathString) ?: return LayerResult(true, null)
+        v("searching for observable path: " + message.getURIPathString())
+        val resource = server.getObservableResource(message.getURIPathString()) ?: return LayerResult(true, null)
         if (isRegistrationRequest(message)) {
             d("Add observer")
             val observer = Observer(message, senderAddress)
@@ -135,13 +135,13 @@ class ObserveLayer(
         if (message.getOption(CoAPMessageOptionCode.OptionBlock1) != null) responseMessage.addOption(
             CoAPMessageOption(
                 CoAPMessageOptionCode.OptionBlock1,
-                message.getOption(CoAPMessageOptionCode.OptionBlock1).value
+                message.getOption(CoAPMessageOptionCode.OptionBlock1)!!.value!!
             )
         )
         if (message.getOption(CoAPMessageOptionCode.OptionBlock2) != null) responseMessage.addOption(
             CoAPMessageOption(
                 CoAPMessageOptionCode.OptionBlock2,
-                message.getOption(CoAPMessageOptionCode.OptionBlock2).value
+                message.getOption(CoAPMessageOptionCode.OptionBlock2)!!.value!!
             )
         )
         if (message.hasOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize)) responseMessage.addOption(
@@ -151,7 +151,7 @@ class ObserveLayer(
         )
 
         // Validate message scheme
-        responseMessage.uriScheme = message.uriScheme
+        responseMessage.setURIScheme(message.getURIScheme())
         client.send(responseMessage, null)
     }
 
@@ -167,13 +167,13 @@ class ObserveLayer(
             responseMessage.addOption(
                 CoAPMessageOption(
                     CoAPMessageOptionCode.OptionBlock1,
-                    message.getOption(CoAPMessageOptionCode.OptionBlock1).value
+                    message.getOption(CoAPMessageOptionCode.OptionBlock1)!!.value!!
                 )
             )
         }
 
         // Validate message scheme
-        responseMessage.uriScheme = message.uriScheme
+        responseMessage.setURIScheme(message.getURIScheme())
         client.send(responseMessage, null)
     }
 

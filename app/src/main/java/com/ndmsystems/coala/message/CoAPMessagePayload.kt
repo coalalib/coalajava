@@ -1,19 +1,18 @@
-package com.ndmsystems.coala.message;
+package com.ndmsystems.coala.message
 
+class CoAPMessagePayload {
+    @JvmField
+    var content: ByteArray
 
-public class CoAPMessagePayload {
-    public byte[] content;
-
-    public CoAPMessagePayload(byte[] content) {
-        this.content = content;
+    constructor(content: ByteArray) {
+        this.content = content
     }
 
-    public CoAPMessagePayload(String stringContent) {
-        content = stringContent.getBytes();
+    constructor(stringContent: String) {
+        content = stringContent.toByteArray()
     }
 
-    public String toString() {
-        if (content == null) return null;
-        else return new String(content);
+    override fun toString(): String {
+        return if (content.isEmpty()) "" else String(content)
     }
 }

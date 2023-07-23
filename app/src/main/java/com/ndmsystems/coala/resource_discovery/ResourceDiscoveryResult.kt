@@ -1,44 +1,29 @@
-package com.ndmsystems.coala.resource_discovery;
+package com.ndmsystems.coala.resource_discovery
 
-import java.net.InetSocketAddress;
+import java.net.InetSocketAddress
 
 /**
  * Created by bas on 19.09.16.
  */
-public class ResourceDiscoveryResult {
-    private final String payload;
-    private final InetSocketAddress host;
+class ResourceDiscoveryResult(payload: String, host: InetSocketAddress) {
+    val payload: String
+    val host: InetSocketAddress
 
-    public ResourceDiscoveryResult(String payload, InetSocketAddress host) {
-        this.payload = payload == null ? "" : payload;
-        this.host = host;
+    init {
+        this.payload = payload ?: ""
+        this.host = host
     }
 
-    public InetSocketAddress getHost() {
-        return host;
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        val that = other as ResourceDiscoveryResult
+        return if (payload != that.payload) false else host == that.host
     }
 
-    public String getPayload() {
-        return payload;
-    }
-
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        ResourceDiscoveryResult that = (ResourceDiscoveryResult) o;
-
-        if (!payload.equals(that.payload)) return false;
-        return host.equals(that.host);
-
-    }
-
-    @Override
-    public int hashCode() {
-        int result = payload.hashCode();
-        result = 31 * result + host.hashCode();
-        return result;
+    override fun hashCode(): Int {
+        var result = payload.hashCode()
+        result = 31 * result + host.hashCode()
+        return result
     }
 }

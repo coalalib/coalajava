@@ -1,11 +1,14 @@
-package com.ndmsystems.coala.message;
+package com.ndmsystems.coala.message
 
 /**
  * Created by Владимир on 26.06.2017.
  */
-
-public enum CoAPRequestMethod {
-
+enum class CoAPRequestMethod
+/**
+ * Instantiates a new type with the specified integer value.
+ *
+ * @param value the integer value
+ */(val value: String) {
     /**
      * The GET code.
      */
@@ -25,16 +28,4 @@ public enum CoAPRequestMethod {
      * The DELETE code.
      */
     DELETE("DELETE");
-
-    public final String value;
-
-    /**
-     * Instantiates a new type with the specified integer value.
-     *
-     * @param value the integer value
-     */
-    CoAPRequestMethod(String value) {
-        this.value = value;
-    }
 }
-

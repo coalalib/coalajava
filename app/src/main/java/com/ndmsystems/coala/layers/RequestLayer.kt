@@ -16,7 +16,7 @@ import java.net.InetSocketAddress
 class RequestLayer(private val resourceRegistry: ResourceRegistry, private val client: CoAPClient) : ReceiveLayer {
     override fun onReceive(message: CoAPMessage, senderAddressReference: Reference<InetSocketAddress>): LayerResult {
         if (message.type != CoAPMessageType.ACK && message.code.isRequest) {
-            val resourcesForPath = resourceRegistry.getResourcesForPath(message.uriPathString)
+            val resourcesForPath = resourceRegistry.getResourcesForPath(message.getURIPathString())
             if (resourcesForPath != null) {
                 val resource = resourcesForPath.getResourceByMethod(message.method)
                 if (resource != null) {
@@ -40,13 +40,13 @@ class RequestLayer(private val resourceRegistry: ResourceRegistry, private val c
                     }
                     return LayerResult(false, null)
                 }
-                e("Resource for path '" + message.uriPathString + "' with method: " + message.method + ", code: " + message.code + " does not exists")
+                e("Resource for path '" + message.getURIPathString() + "' with method: " + message.method + ", code: " + message.code + " does not exists")
                 val responseMessage = CoAPMessage.ackTo(message, senderAddressReference.get(), CoAPMessageCode.CoapCodeMethodNotAllowed)
                 // validate message address
                 addOptions(responseMessage, message, senderAddressReference.get())
                 client.send(responseMessage, null, false)
             } else {
-                e("Resource for path '" + message.uriPathString + ", code: " + message.code + " does not exists")
+                e("Resource for path '" + message.getURIPathString() + ", code: " + message.code + " does not exists")
                 val responseMessage = CoAPMessage.ackTo(message, senderAddressReference.get(), CoAPMessageCode.CoapCodeNotFound)
                 // validate message address
                 addOptions(responseMessage, message, senderAddressReference.get())
@@ -66,7 +66,7 @@ class RequestLayer(private val resourceRegistry: ResourceRegistry, private val c
             responseMessage.addOption(
                 CoAPMessageOption(
                     CoAPMessageOptionCode.OptionBlock1,
-                    message.getOption(CoAPMessageOptionCode.OptionBlock1).value
+                    message.getOption(CoAPMessageOptionCode.OptionBlock1)!!.value!!
                 )
             )
         }
@@ -74,14 +74,14 @@ class RequestLayer(private val resourceRegistry: ResourceRegistry, private val c
             responseMessage.addOption(
                 CoAPMessageOption(
                     CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize,
-                    message.getOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize).value
+                    message.getOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize)!!.value!!
                 )
             )
         }
         if (message.hasOption(CoAPMessageOptionCode.OptionProxyURI)) responseMessage.addOption(message.getOption(CoAPMessageOptionCode.OptionProxyURI))
-        if (message.proxy != null) responseMessage.proxy = message.proxy
+        if (message.proxy != null) responseMessage.setProxy(message.proxy)
 
         // Validate message scheme
-        responseMessage.uriScheme = message.uriScheme
+        responseMessage.setURIScheme(message.getURIScheme())
     }
 }

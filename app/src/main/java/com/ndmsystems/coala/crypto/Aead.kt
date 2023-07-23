@@ -39,7 +39,7 @@ class Aead(peerKey: ByteArray, myKey: ByteArray, peerIV: ByteArray, myIV: ByteAr
         return Hex.encodeHexString(peerKey) + Hex.encodeHexString(myKey) + Hex.encodeHexString(peerIV) + Hex.encodeHexString(myIV)
     }
 
-    fun encrypt(plainText: ByteArray?, counter: Int, associatedData: ByteArray?): ByteArray? {
+    fun encrypt(plainText: ByteArray, counter: Int, associatedData: ByteArray?): ByteArray? {
         return try {
             encryptor.seal(plainText, makeNonce(myIV, counter), associatedData)
         } catch (e: Exception) {

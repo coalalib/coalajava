@@ -22,14 +22,14 @@ object MessageHelper {
     @JvmStatic
     fun getMessageOptionsString(message: CoAPMessage): String {
         val buf = StringBuilder()
-        for (option in message.options) {
+        for (option in message.getOptions()) {
             when (option.code) {
                 CoAPMessageOptionCode.OptionBlock1, CoAPMessageOptionCode.OptionBlock2 -> buf
                     .append(option.code).append(" : '")
                     .append(
                         if (option.value == null) "null" else Block(
                             (option.value as Int),
-                            if (message.payload == null) null else message.payload.content
+                            if (message.payload == null) null else message.payload!!.content
                         ).toString() + "'(" + option.value + ") "
                     )
 

@@ -21,15 +21,15 @@ class ProxyLayer(private val client: CoAPClient, private val messagePool: CoAPMe
                     " message: " + message.id +
                     " sourceMessage id = " + (sourceMessage?.id ?: "null") +
                     " destination: " + sourceMessage?.address +
-                    " proxy: " + if (sourceMessage == null || sourceMessage.proxy == null) "null" else sourceMessage.proxy
+                    " proxy: " + if (sourceMessage?.proxy == null) "null" else sourceMessage.proxy
         )
-        if (sourceMessage != null && sourceMessage.proxy != null) {
+        if (sourceMessage?.proxy != null) {
             i("Set destination: " + sourceMessage.address + ", proxy: " + sourceMessage.proxy)
             message.address = sourceMessage.address
             if (message.address == null) {
                 e("Message address == null in ProxyLayer onReceive")
             }
-            senderAddressReference.set(sourceMessage.address)
+            sourceMessage.address?.let { senderAddressReference.set(it) }
         } else {
             if (sourceMessage == null) {
                 v("Source message is null")
@@ -45,7 +45,7 @@ class ProxyLayer(private val client: CoAPClient, private val messagePool: CoAPMe
         return LayerResult(true, null)
     }
 
-    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress>): LayerResult {
+    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress?>): LayerResult {
         if (!isAboutProxying(message)) return LayerResult(true, null)
         v(
             "ProxyLayer onSend:" +
@@ -69,7 +69,7 @@ class ProxyLayer(private val client: CoAPClient, private val messagePool: CoAPMe
         if (responseMessage.address == null) {
             e("Message address == null in ProxyLayer respondNotSupported")
         }
-        responseMessage.uriScheme = message.uriScheme
+        responseMessage.setURIScheme(message.getURIScheme())
         client.send(responseMessage, null)
     }
 }

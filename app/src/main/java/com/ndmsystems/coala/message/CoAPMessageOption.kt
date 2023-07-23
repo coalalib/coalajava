@@ -1,159 +1,110 @@
-package com.ndmsystems.coala.message;
+package com.ndmsystems.coala.message
 
+import com.ndmsystems.coala.helpers.logging.LogHelper.e
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
+import java.util.Arrays
 
-import com.ndmsystems.coala.helpers.logging.LogHelper;
+class CoAPMessageOption : Comparable<CoAPMessageOption> {
+    @JvmField
+    val code: CoAPMessageOptionCode
+    @JvmField
+    var value: Any? = null
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-
-import static com.ndmsystems.coala.message.CoAPMessageOptionCode.OptionProxySecurityID;
-
-public class CoAPMessageOption implements Comparable<CoAPMessageOption> {
-    public final CoAPMessageOptionCode code;
-    public Object value;
-
-    public CoAPMessageOption(CoAPMessageOptionCode code, Object value) {
-        this.code = code;
-        this.value = value;
+    constructor(code: CoAPMessageOptionCode, value: Any) {
+        this.code = code
+        this.value = value
     }
 
-    public CoAPMessageOption(CoAPMessageOptionCode code, byte[] value) {
-        this.code = code;
-        this.fromBytes(value);
+    constructor(code: CoAPMessageOptionCode, value: ByteArray) {
+        this.code = code
+        fromBytes(value)
     }
 
-    public boolean isRepeatable() {
-        switch (this.code) {
-            case OptionURIPath:
-            case OptionURIQuery:
-            case OptionLocationPath:
-            case OptionLocationQuery:
-            case OptionIfMatch:
-            case OptionEtag:
-                return true;
-            default:
-                return false;
+    val isRepeatable: Boolean
+        get() = when (this.code) {
+            CoAPMessageOptionCode.OptionURIPath, CoAPMessageOptionCode.OptionURIQuery, CoAPMessageOptionCode.OptionLocationPath, CoAPMessageOptionCode.OptionLocationQuery, CoAPMessageOptionCode.OptionIfMatch, CoAPMessageOptionCode.OptionEtag -> true
+            else -> false
         }
+
+    override fun compareTo(other: CoAPMessageOption): Int {
+        return code.value.compareTo(other.code.value)
     }
 
-    @Override
-    public int compareTo(CoAPMessageOption option) {
-        return Integer.compare(code.value, option.code.value);
-    }
-
-    public void fromBytes(byte[] data) {
-        switch (this.code) {
-            // int only
-            case OptionBlock1:
-            case OptionBlock2:
-            case OptionURIPort:
-            case OptionContentFormat:
-            case OptionMaxAge:
-            case OptionAccept:
-            case OptionSize1:
-            case OptionSize2:
-            case OptionHandshakeType:
-            case OptionObserve:
-            case OptionSessionNotFound:
-            case OptionSessionExpired:
-            case OptionSelectiveRepeatWindowSize:
-            case OptionURIScheme:
-                if (data.length > 4) this.value = ByteBuffer.wrap(data).getInt();
-                else {
-                    byte[] bigData = new byte[4];
-                    for (int i = 0; i < data.length; i++)
-                        bigData[3 - data.length + i + 1] = data[i];
-                    this.value = ByteBuffer.wrap(bigData).getInt();
+    private fun fromBytes(data: ByteArray) {
+        when (this.code) {
+            CoAPMessageOptionCode.OptionBlock1, CoAPMessageOptionCode.OptionBlock2, CoAPMessageOptionCode.OptionURIPort, CoAPMessageOptionCode.OptionContentFormat, CoAPMessageOptionCode.OptionMaxAge, CoAPMessageOptionCode.OptionAccept, CoAPMessageOptionCode.OptionSize1, CoAPMessageOptionCode.OptionSize2, CoAPMessageOptionCode.OptionHandshakeType, CoAPMessageOptionCode.OptionObserve, CoAPMessageOptionCode.OptionSessionNotFound, CoAPMessageOptionCode.OptionSessionExpired, CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize, CoAPMessageOptionCode.OptionURIScheme -> if (data.size > 4) value =
+                ByteBuffer.wrap(data).int else {
+                val bigData = ByteArray(4)
+                var i = 0
+                while (i < data.size) {
+                    bigData[3 - data.size + i + 1] = data[i]
+                    i++
                 }
-                break;
-            case OptionProxySecurityID:
-                if (data.length > 4) this.value = ByteBuffer.wrap(data).getLong();
-                else {
-                    ByteBuffer buffer = ByteBuffer.allocate(8).put(new byte[]{0, 0, 0, 0}).put(data);
-                    buffer.position(0);
-                    this.value = buffer.getLong();
-                }
-                break;
-            // string values
-            case OptionURIHost:
-            case OptionEtag:
-            case OptionLocationPath:
-            case OptionURIPath:
-            case OptionURIQuery:
-            case OptionLocationQuery:
-            case OptionProxyScheme:
-            case OptionProxyURI:
-                this.value = new String(data);
-                break;
-            case OptionCookie:
-            case OptionCoapsURI:
-                this.value = data;
-                break;
+                value = ByteBuffer.wrap(bigData).int
+            }
 
-            default:
-                LogHelper.e("Try from byte unknown option: " + this.code);
-                this.value = data;
-                break;
+            CoAPMessageOptionCode.OptionProxySecurityID -> if (data.size > 4) value = ByteBuffer.wrap(data).long else {
+                val buffer = ByteBuffer.allocate(8).put(byteArrayOf(0, 0, 0, 0)).put(data)
+                buffer.position(0)
+                value = buffer.long
+            }
+
+            CoAPMessageOptionCode.OptionURIHost, CoAPMessageOptionCode.OptionEtag, CoAPMessageOptionCode.OptionLocationPath, CoAPMessageOptionCode.OptionURIPath, CoAPMessageOptionCode.OptionURIQuery, CoAPMessageOptionCode.OptionLocationQuery, CoAPMessageOptionCode.OptionProxyScheme, CoAPMessageOptionCode.OptionProxyURI -> value =
+                String(data)
+
+            CoAPMessageOptionCode.OptionCookie, CoAPMessageOptionCode.OptionCoapsURI -> value = data
+            else -> {
+                e("Try from byte unknown option: " + this.code)
+                value = data
+            }
         }
     }
 
-    public int getMaxSizeInBytes() {
-        switch (this.code) {
-            case OptionBlock1:
-            case OptionBlock2:
-                return 3;
-            case OptionURIScheme:
-                return 1;
-            default:
-                return Integer.MAX_VALUE;
+    val maxSizeInBytes: Int
+        get() = when (this.code) {
+            CoAPMessageOptionCode.OptionBlock1, CoAPMessageOptionCode.OptionBlock2 -> 3
+            CoAPMessageOptionCode.OptionURIScheme -> 1
+            else -> Int.MAX_VALUE
         }
-    }
 
-    public byte[] toBytes() {
+    fun toBytes(): ByteArray {
         if (value != null) {
 
             //is it long
-            if (code == OptionProxySecurityID)
-                try {
-                    byte[] bytes = new byte[8];
-                    ByteBuffer.wrap(bytes).putLong((long) value);
-                    return Arrays.copyOfRange(bytes, 4, 8);
-                } catch (ClassCastException e) {
-                }
+            if (code == CoAPMessageOptionCode.OptionProxySecurityID) try {
+                val bytes = ByteArray(8)
+                ByteBuffer.wrap(bytes).putLong(value as Long)
+                return Arrays.copyOfRange(bytes, 4, 8)
+            } catch (e: ClassCastException) {
+            }
 
             // Is it Integer?
             // @hbz
             try {
-                return toByteArray((int) value);
-            } catch (ClassCastException e) {
+                return toByteArray(value as Int)
+            } catch (e: ClassCastException) {
             }
 
             // Is it String?
             try {
-                String stringValue = (String) value;
-                return stringValue.getBytes(StandardCharsets.UTF_8);
-            } catch (ClassCastException e) {
+                val stringValue = value as String
+                return stringValue.toByteArray(StandardCharsets.UTF_8)
+            } catch (e: ClassCastException) {
             }
-
-
             try {
-                return (byte[])value;
-            } catch (ClassCastException e) {
+                return value as ByteArray
+            } catch (e: ClassCastException) {
             }
         }
 
         // can't recognize the value type...
-        return new byte[0];
+        return ByteArray(0)
     }
 
-    private byte[] toByteArray(int number) {
-        if (number >>> 24 != 0)
-            return new byte[]{(byte) (number >>> 24), (byte) (number >>> 16), (byte) (number >>> 8), (byte) number};
-        if (number >>> 16 != 0)
-            return new byte[]{(byte) (number >>> 16), (byte) (number >>> 8), (byte) number};
-        if (number >>> 8 != 0)
-            return new byte[]{(byte) (number >>> 8), (byte) number};
-        return new byte[]{(byte) number};
+    private fun toByteArray(number: Int): ByteArray {
+        if (number ushr 24 != 0) return byteArrayOf((number ushr 24).toByte(), (number ushr 16).toByte(), (number ushr 8).toByte(), number.toByte())
+        if (number ushr 16 != 0) return byteArrayOf((number ushr 16).toByte(), (number ushr 8).toByte(), number.toByte())
+        return if (number ushr 8 != 0) byteArrayOf((number ushr 8).toByte(), number.toByte()) else byteArrayOf(number.toByte())
     }
 }

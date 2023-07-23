@@ -1,23 +1,14 @@
-package com.ndmsystems.coala.resource_discovery;
+package com.ndmsystems.coala.resource_discovery
 
-import java.util.ArrayList;
-import java.util.List;
-
-
-public class ResourceDiscoveryHelper {
-    private final List<ResourceDiscoveryResult> resultsList = new ArrayList<>();
-
-    public void clear() {
-        resultsList.clear();
+class ResourceDiscoveryHelper {
+    val resultsList: MutableList<ResourceDiscoveryResult> = ArrayList()
+    fun clear() {
+        resultsList.clear()
     }
 
-    public List<ResourceDiscoveryResult> getResultsList() {
-        return resultsList;
-    }
-
-    public void addResult(ResourceDiscoveryResult oneResource) {
-        if(!resultsList.contains(oneResource)) {
-            resultsList.add(oneResource);
+    fun addResult(oneResource: ResourceDiscoveryResult) {
+        if (!resultsList.contains(oneResource)) {
+            resultsList.add(oneResource)
         }
     }
 }

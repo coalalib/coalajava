@@ -267,9 +267,9 @@ public class CoAPSerializer {
         byte[] token = message.getToken();
 
         int encodedHeader = ((COAP_PROTOCOL_VERSION & 0x03) << 30)
-                | ((message.getType().value & 0x03) << 28)
+                | ((message.getType().getValue() & 0x03) << 28)
                 | (((token != null ? token.length : 0) & 0x0F) << 24)
-                | ((message.getCode().value & 0xFF) << 16)
+                | ((message.getCode().getValue() & 0xFF) << 16)
                 | ((message.getId() & 0xFFFF));
         buffer.write((encodedHeader & 0xFF000000) >> 24);
         buffer.write((encodedHeader & 0x00FF0000) >> 16);
@@ -301,12 +301,12 @@ public class CoAPSerializer {
             encodeOption(buffer, option, previousOptionNumber);
 
             // remember previous number
-            previousOptionNumber = option.code.value;
+            previousOptionNumber = option.code.getValue();
         }
     }
 
     private static void encodeOption(ByteArrayOutputStream buffer, CoAPMessageOption option, int previousNumber) throws Exception {
-        int optionNumber = option.code.value;
+        int optionNumber = option.code.getValue();
 
         //The previous option number must be smaller or equal to the actual one
         if (previousNumber > optionNumber) {
@@ -326,7 +326,7 @@ public class CoAPSerializer {
             throw new Exception("Option no. " + optionNumber + " exceeds maximum option delta: " + optionDelta + " vs " + MAX_OPTION_DELTA);
         }
 
-        if (optionNumber == CoAPMessageOptionCode.OptionContentFormat.value) {
+        if (optionNumber == CoAPMessageOptionCode.OptionContentFormat.getValue()) {
             LogHelper.d("encodeOption, length: " + optionLength + ", delta: " + optionDelta);
         }
 

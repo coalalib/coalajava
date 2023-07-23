@@ -85,7 +85,7 @@ class CoAPSender(
                         }
                         val messageForSend = layerResult.message ?: message
                         if (destinationAddressReference.get() == null) {
-                            e("Destination is null!! isNeedToSend = " + layerResult.shouldContinue + ", message = " + getStringToPrintSendingMessage(messageForSend, null))
+                            e("Destination is null!! isNeedToSend = " + layerResult.shouldContinue + ", message = " + getStringToPrintSendingMessage(messageForSend, destinationAddressReference))
                         } else {
                             if (destinationAddressReference.get().toString().contains("local")) {
                                 e("Try to send to localhost!!!")
@@ -95,7 +95,7 @@ class CoAPSender(
                         // send it now!
                         if (layerResult.shouldContinue) {
                             if (destinationAddressReference.get() == null) {
-                                e("Destination is null, but need to sending, message = " + getStringToPrintSendingMessage(messageForSend, null))
+                                e("Destination is null, but need to sending, message = " + getStringToPrintSendingMessage(messageForSend, destinationAddressReference))
                             } else {
                                 sendMessageToAddress(destinationAddressReference.get(), messageForSend)
                             }

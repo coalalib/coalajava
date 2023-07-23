@@ -1,137 +1,137 @@
-package com.ndmsystems.coala.observer;
+package com.ndmsystems.coala.observer
 
-import com.ndmsystems.coala.CoAPClient;
-import com.ndmsystems.coala.CoAPHandler;
-import com.ndmsystems.coala.helpers.Hex;
-import com.ndmsystems.coala.helpers.RandomGenerator;
-import com.ndmsystems.coala.helpers.logging.LogHelper;
-import com.ndmsystems.coala.message.CoAPMessage;
-import com.ndmsystems.coala.message.CoAPMessageCode;
-import com.ndmsystems.coala.message.CoAPMessageOption;
-import com.ndmsystems.coala.message.CoAPMessageOptionCode;
-import com.ndmsystems.coala.message.CoAPMessageType;
-
-import java.util.HashMap;
-import java.util.Timer;
-import java.util.TimerTask;
+import com.ndmsystems.coala.CoAPClient
+import com.ndmsystems.coala.CoAPHandler
+import com.ndmsystems.coala.helpers.Hex.encodeHexString
+import com.ndmsystems.coala.helpers.RandomGenerator.getRandom
+import com.ndmsystems.coala.helpers.logging.LogHelper.d
+import com.ndmsystems.coala.helpers.logging.LogHelper.e
+import com.ndmsystems.coala.helpers.logging.LogHelper.v
+import com.ndmsystems.coala.helpers.logging.LogHelper.w
+import com.ndmsystems.coala.message.CoAPMessage
+import com.ndmsystems.coala.message.CoAPMessageCode
+import com.ndmsystems.coala.message.CoAPMessageOption
+import com.ndmsystems.coala.message.CoAPMessageOptionCode
+import com.ndmsystems.coala.message.CoAPMessageType
+import java.util.Timer
+import java.util.TimerTask
 
 /**
  * Created by bas on 14.11.16.
  */
-
-public class RegistryOfObservingResources {
-
-    private static final long PERIOD_OF_CHECKING = 10000;
-
-    private final HashMap<String, ObservingResource> observingResources = new HashMap<>();
-    private Timer timer;
-    private TimerTask checkResourcesTask;
-    private final CoAPClient client;
-
-    public RegistryOfObservingResources(CoAPClient client) {
-        this.client = client;
+class RegistryOfObservingResources(private val client: CoAPClient) {
+    private val observingResources = HashMap<String, ObservingResource>()
+    private var timer: Timer? = null
+    private var checkResourcesTask: TimerTask? = null
+    fun unregisterObserver(uri: String?) {
+        d("unregisterObserver")
+        removeObservingResource(getTokenForObservingResourceUri(uri))
     }
 
-    public void unregisterObserver(String uri) {
-        LogHelper.d("unregisterObserver");
-        removeObservingResource(getTokenForObservingResourceUri(uri));
-    }
-
-    private synchronized byte[] getTokenForObservingResourceUri(String stringUri) {
-        for (ObservingResource resource : observingResources.values()) {
-            LogHelper.d("uri1 = " + resource.getUri());
-            LogHelper.d("uri2 = " + stringUri);
-            LogHelper.d("uri1 equals uri2 ? " + resource.getUri().equals(stringUri));
-            if (resource.getUri().equals(stringUri)) {
-                LogHelper.d("initial message token: " + Hex.encodeHexString(resource.getInitiatingMessage().getToken()));
-                return resource.getInitiatingMessage().getToken();
+    @Synchronized
+    private fun getTokenForObservingResourceUri(stringUri: String?): ByteArray? {
+        for (resource in observingResources.values) {
+            d("uri1 = " + resource.uri)
+            d("uri2 = $stringUri")
+            d("uri1 equals uri2 ? " + (resource.uri == stringUri))
+            if (resource.uri == stringUri) {
+                d("initial message token: " + encodeHexString(resource.initiatingMessage.token))
+                return resource.initiatingMessage.token
             }
         }
-        return null;
+        return null
     }
 
-    public void registerObserver(String uri, CoAPHandler handler) {
-        LogHelper.d("registerObserver " + uri);
-        byte[] token = getTokenForObservingResourceUri(uri);
-        LogHelper.d("token for observing resources: " + Hex.encodeHexString(token));
-        if (token == null)
-            token = RandomGenerator.getRandom(8);
-
-        CoAPMessage message = new CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET);
-        message.setURI(uri);
-        message.setToken(token);
-        LogHelper.v("Token: " + Hex.encodeHexString(token));
-        message.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, 0));
-        client.send(message, handler);
+    fun registerObserver(uri: String?, handler: CoAPHandler?) {
+        d("registerObserver $uri")
+        var token = getTokenForObservingResourceUri(uri)
+        d("token for observing resources: " + encodeHexString(token))
+        if (token == null) token = getRandom(8)
+        val message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
+        message.setURI(uri!!)
+        message.token = token
+        v("Token: " + encodeHexString(token))
+        message.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, 0))
+        client.send(message, handler)
     }
 
-    private synchronized void checkResources() {
-        LogHelper.v("checkResourcesTask: " + observingResources.size());
-        for (ObservingResource resource : observingResources.values()) {
-            LogHelper.d("resource: "+resource.getUri());
-            if (resource.isExpired()) {
-                LogHelper.d("checkResourcesTask, register: " + resource.getUri());
-                registerObserver(resource.getUri(), resource.getHandler());
+    @Synchronized
+    private fun checkResources() {
+        v("checkResourcesTask: " + observingResources.size)
+        for (resource in observingResources.values) {
+            d("resource: " + resource.uri)
+            if (resource.isExpired) {
+                d("checkResourcesTask, register: " + resource.uri)
+                registerObserver(resource.uri, resource.handler)
             }
         }
     }
 
-    public synchronized void addObservingResource(byte[] token, ObservingResource resource) {
-        String strToken = Hex.encodeHexString(token);
-        LogHelper.d("addObservingResource " + strToken);
-        observingResources.put(strToken, resource);
-        if (!isTimerRunning()) {
-            timer = new Timer(true);
-            checkResourcesTask = new TimerTask() {
-                @Override
-                public void run() {
-                    checkResources();
+    @Synchronized
+    fun addObservingResource(token: ByteArray?, resource: ObservingResource) {
+        val strToken = encodeHexString(token)
+        d("addObservingResource $strToken")
+        observingResources[strToken] = resource
+        if (!isTimerRunning) {
+            timer = Timer(true)
+            checkResourcesTask = object : TimerTask() {
+                override fun run() {
+                    checkResources()
                 }
-            };
-            timer.scheduleAtFixedRate(checkResourcesTask, PERIOD_OF_CHECKING, PERIOD_OF_CHECKING);
+            }
+            timer!!.scheduleAtFixedRate(checkResourcesTask, PERIOD_OF_CHECKING, PERIOD_OF_CHECKING)
         }
     }
 
-    public ObservingResource getResource(String token) {
-        return observingResources.get(token);
+    private fun getResource(token: String): ObservingResource? {
+        return observingResources[token]
     }
 
-    public ObservingResource getResource(byte[] token) {
-        String strToken = Hex.encodeHexString(token);
-        return getResource(strToken);
+    fun getResource(token: ByteArray?): ObservingResource? {
+        val strToken = encodeHexString(token)
+        return getResource(strToken)
     }
 
-    public synchronized void removeObservingResource(byte[] token) {
-        String hexToken = Hex.encodeHexString(token);
-        LogHelper.v("removeObservingResource " + hexToken);
-        if (!observingResources.containsKey(hexToken)) return;
-        observingResources.remove(hexToken);
-        if (observingResources.size() == 0) {
-            if (isTimerRunning()) {
-                checkResourcesTask.cancel();
-                checkResourcesTask = null;
-                timer.cancel();
-                timer = null;
+    @Synchronized
+    fun removeObservingResource(token: ByteArray?) {
+        val hexToken = encodeHexString(token)
+        v("removeObservingResource $hexToken")
+        if (!observingResources.containsKey(hexToken)) return
+        observingResources.remove(hexToken)
+        if (observingResources.size == 0) {
+            if (isTimerRunning) {
+                checkResourcesTask!!.cancel()
+                checkResourcesTask = null
+                timer!!.cancel()
+                timer = null
             }
         }
     }
 
-    private boolean isTimerRunning() {
-        return timer != null;
+    private val isTimerRunning: Boolean
+        private get() = timer != null
+
+    fun processNotification(message: CoAPMessage, maxAge: Int?, sequenceNumber: Int?) {
+        val resource = getResource(message.token)
+        v("processNotification")
+        v("resource sequence number = " + resource?.sequenceNumber)
+        v("message sequence number = $sequenceNumber")
+        if (resource == null) {
+            w("Resource is null")
+            return
+        }
+        if (sequenceNumber != null && sequenceNumber > resource.sequenceNumber ||
+            resource.sequenceNumber == -1
+        ) {
+            resource.setMaxAge(maxAge ?: 30)
+            resource.sequenceNumber = sequenceNumber ?: -1
+            resource.handler?.onMessage(message, null)
+        } else {
+            e("Wrong sequence number")
+        }
     }
 
-    public void processNotification(CoAPMessage message, Integer maxAge, Integer sequenceNumber) {
-        ObservingResource resource = getResource(message.getToken());
-        LogHelper.v("processNotification");
-        LogHelper.v("resource sequence number = " + resource.getSequenceNumber());
-        LogHelper.v("message sequence number = " + sequenceNumber);
-        if ((sequenceNumber != null && sequenceNumber > resource.getSequenceNumber()) ||
-                resource.getSequenceNumber() == -1) {
-            resource.setMaxAge(maxAge == null ? 30 : maxAge);
-            resource.setSequenceNumber(sequenceNumber == null ? -1 : sequenceNumber);
-            resource.getHandler().onMessage(message, null);
-        } else {
-            LogHelper.e("Wrong sequence number");
-        }
+    companion object {
+        private const val PERIOD_OF_CHECKING: Long = 10000
     }
 }

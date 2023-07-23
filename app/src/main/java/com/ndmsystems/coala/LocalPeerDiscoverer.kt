@@ -27,23 +27,21 @@ class LocalPeerDiscoverer(
             }
             .delay(500, TimeUnit.MILLISECONDS)
             .map {
-                var result = resourceDiscoveryHelper.resultsList
-                if (result == null) result = ArrayList()
-                result
+                resourceDiscoveryHelper.resultsList
             }
     }
 
     private fun sendDiscoveryMulticast() {
         val message = CoAPMessage(CoAPMessageType.NON, CoAPMessageCode.GET) // ID will be auto-generated
-        message.uri = "coap://224.0.0.187:$port/info"
+        message.setURI("coap://224.0.0.187:$port/info")
         message.token = Hex.decodeHex("eb21926ad2e765a7".toCharArray()) // Simple random token, some in ReliabilityLayer. For recognize broadcast
         client.send(message, object : CoAPHandler {
-            override fun onMessage(message: CoAPMessage?, error: String?) {
-                LogHelper.d("sendDiscoveryMulticast response: " + message?.address + ", payload " + message)
+            override fun onMessage(message: CoAPMessage, error: String?) {
+                LogHelper.d("sendDiscoveryMulticast response: " + message.address + ", payload " + message)
                 resourceDiscoveryHelper.addResult(
                     ResourceDiscoveryResult(
-                        if (message?.payload != null) message.payload.toString() else "",
-                        message?.address
+                        if (message.payload != null) message.payload.toString() else "",
+                        message.address!!
                     )
                 )
             }

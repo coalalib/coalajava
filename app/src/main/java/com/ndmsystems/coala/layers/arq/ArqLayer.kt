@@ -52,19 +52,17 @@ class ArqLayer(
     }
 
     private fun getBlock1(message: CoAPMessage): Block {
-        val payload = message.payload
-        val data = if (payload == null) null else message.payload.content
+        val data = message.payload?.content
         return Block(
-            message.getOption(CoAPMessageOptionCode.OptionBlock1).value as Int,
+            message.getOption(CoAPMessageOptionCode.OptionBlock1)?.value as Int,
             data
         )
     }
 
     private fun getBlock2(message: CoAPMessage): Block {
-        val payload = message.payload
-        val data = if (payload == null) null else message.payload.content
+        val data = message.payload?.content
         return Block(
-            message.getOption(CoAPMessageOptionCode.OptionBlock2).value as Int,
+            message.getOption(CoAPMessageOptionCode.OptionBlock2)?.value as Int,
             data
         )
     }
@@ -85,7 +83,7 @@ class ArqLayer(
         if (message.token == null) {
             sendResetMessage(message, senderAddressReference.get())
         }
-        val windowSize = message.getOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize).value as Int
+        val windowSize = message.getOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize)!!.value as Int
         val ackMessage = CoAPMessage.ackTo(message, senderAddressReference.get(), CoAPMessageCode.CoapCodeEmpty)
         if (message.hasOption(CoAPMessageOptionCode.OptionBlock1)) {
             val block = getBlock1(message)
@@ -165,8 +163,10 @@ class ArqLayer(
                             ackMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI))
                         }
                         if (originalMessage.proxy != null) {
-                            ackMessage.proxy = originalMessage.proxy
-                            ackMessage.proxySecurityId = originalMessage.proxySecurityId
+                            ackMessage.setProxy(originalMessage.proxy)
+                            originalMessage.getProxySecurityId()?.let {
+                                ackMessage.setProxySecurityId(it)
+                            }
                         }
                         mutableIncomingMessage.id = originalMessage.id
                     } else {
@@ -179,7 +179,7 @@ class ArqLayer(
                     client.send(ackMessage, null)
 
                     //mutableIncomingMessage = messagePool.getSourceMessageByToken(mutableIncomingMessage.getHexToken());
-                    mutableIncomingMessage.payload = CoAPMessagePayload(receiveState.data)
+                    mutableIncomingMessage.payload = CoAPMessagePayload(receiveState.data ?: ByteArray(0))
                     mutableIncomingMessage.code = CoAPMessageCode.CoapCodeContent
                     mutableIncomingMessage.type = CoAPMessageType.ACK
                     return LayersStack.LayerResult(true, mutableIncomingMessage)
@@ -197,7 +197,7 @@ class ArqLayer(
                             ackMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI))
                         }
                         if (originalMessage.proxy != null) {
-                            ackMessage.proxy = originalMessage.proxy
+                            ackMessage.setProxy(originalMessage.proxy)
                         }
                     }
                     client.send(ackMessage, null)
@@ -237,24 +237,24 @@ class ArqLayer(
 
     private fun send(block: Block, originalMessage: CoAPMessage?, token: String, state: SendState) {
         val blockMessage = CoAPMessage(originalMessage!!.type, originalMessage.code)
-        blockMessage.options = originalMessage.options
+        blockMessage.setOptions(originalMessage.getOptions())
         val blockCode = if (originalMessage.isRequest) CoAPMessageOptionCode.OptionBlock1 else CoAPMessageOptionCode.OptionBlock2
         val blockOption = CoAPMessageOption(blockCode, block.toInt())
         blockMessage.addOption(blockOption)
         val srOption = CoAPMessageOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize, state.windowSize)
         blockMessage.addOption(srOption)
         blockMessage.token = decodeHex(token.toCharArray())
-        blockMessage.payload = CoAPMessagePayload(block.data)
-        blockMessage.uri = originalMessage.uri
+        blockMessage.payload = CoAPMessagePayload(block.data ?: ByteArray(0))
+        blockMessage.setURI(originalMessage.getURI())
         if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI)) {
             blockMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI))
         }
         if (originalMessage.proxy != null) {
-            blockMessage.proxy = originalMessage.proxy
+            blockMessage.setProxy(originalMessage.proxy)
         }
         blockMessage.resendHandler = state
         client.send(blockMessage, object : CoAPHandler {
-            override fun onMessage(message: CoAPMessage, error: String) {
+            override fun onMessage(message: CoAPMessage, error: String?) {
                 if (error != null) {
                     v("Block number = " + block.number + " failed " + error)
                     fail(token)
@@ -280,7 +280,7 @@ class ArqLayer(
         receiveStates.remove(token)
     }
 
-    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress>): LayersStack.LayerResult {
+    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress?>): LayersStack.LayerResult {
         if (hasWindowSizeOption(message) && !isStartMixingModeMessage(message)) {
             return LayersStack.LayerResult(true)
         }
@@ -304,7 +304,7 @@ class ArqLayer(
                 d(
                     "ARQ: Send empty ack, id " + ackMessage.id + " " +
                             "payload: '" + ackMessage + " " +
-                            "destination host: " + ackMessage.uri + " " +
+                            "destination host: " + ackMessage.getURI() + " " +
                             "type: " + ackMessage.type + " " +
                             "code: " + ackMessage.code.name + " " +
                             "token: " + encodeHexString(ackMessage.token) + " " +
@@ -320,10 +320,10 @@ class ArqLayer(
 
             CoAPMessageType.CON -> originalMessage = CoAPMessage(message)
         }
-        val sendState = SendState(DataFactory.create(payload.content), WINDOW_SIZE, MAX_PAYLOAD_SIZE, originalMessage)
+        val sendState = SendState(DataFactory.create(payload?.content ?: ByteArray(0)), WINDOW_SIZE, MAX_PAYLOAD_SIZE, originalMessage)
         sendStates[token] = sendState
         sendMoreData(token)
-        v("ARQ: split message " + message.id + " to values. Sending payload = " + payload.content.size)
+        v("ARQ: split message " + message.id + " to values. Sending payload = " + payload?.content?.size)
         return LayersStack.LayerResult(ackMessage != null)
     }
 
@@ -339,7 +339,7 @@ class ArqLayer(
     }
 
     private fun isBiggerThenCanBeTransferedBySingleBlock(message: CoAPMessage): Boolean {
-        return message.payload != null && message.payload.content != null && message.payload.content.size > MAX_PAYLOAD_SIZE
+        return message.payload != null && message.payload!!.content.size > MAX_PAYLOAD_SIZE
     }
 
     fun getArqReceivingStateForToken(token: ByteArray?): LoggableState? {

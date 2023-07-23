@@ -53,7 +53,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
             messagePool.requeue(message.id)
             return LayersStack.LayerResult(false)
         }
-        if (message.uriScheme == CoAPMessage.Scheme.SECURE) {
+        if (message.getURIScheme() == CoAPMessage.Scheme.SECURE) {
             val sessionByAddress = getSessionForAddress(mainMessage ?: message)
             val sessionByPeerProxySecurityId = getSessionByPeerProxySecurityId(message)
             val session = sessionByPeerProxySecurityId ?: sessionByAddress
@@ -68,7 +68,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                 message.peerPublicKey = session.peerPublicKey
             } else {
                 removeSessionForAddressIfNotInProgress(mainMessage ?: message)
-                LogHelper.w("Can't decrypt, message: " + LogLayer.getStringToPrintReceivedMessage(message, senderAddressReference) + ", mainMessage:" + (if (mainMessage != null) LogLayer.getStringToPrintSendingMessage(mainMessage, senderAddressReference) else "null") + ", send SessionExpired")
+                LogHelper.w("Can't decrypt, message: " + LogLayer.getStringToPrintReceivedMessage(message, senderAddressReference) + ", mainMessage:" + (if (mainMessage != null) LogLayer.getStringToPrintReceivedMessage(mainMessage, senderAddressReference) else "null") + ", send SessionExpired")
                 mainMessage?.let { addMessageToPending(it) }
                 sendSessionError(message, senderAddress, CoAPMessageOptionCode.OptionSessionExpired)
                 return LayersStack.LayerResult(false)
@@ -77,9 +77,9 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         return LayersStack.LayerResult(true)
     }
 
-    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress>): LayersStack.LayerResult {
+    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress?>): LayersStack.LayerResult {
         val receiverAddress = receiverAddressReference.get()
-        if (message.uriScheme == CoAPMessage.Scheme.SECURE) {
+        if (message.getURIScheme() == CoAPMessage.Scheme.SECURE) {
             var session = getSessionForAddress(message)
             if (session == null) {
                 session = SecuredSession(false)
@@ -90,7 +90,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                 sendClientHello(message.proxy, session.peerProxySecurityId, message.address, session.publicKey, object : CoAPHandler {
                     override fun onMessage(clientHelloResponseMessage: CoAPMessage, error: String?) {
                         if (error == null) {
-                            val publicKey = clientHelloResponseMessage.payload.content
+                            val publicKey = clientHelloResponseMessage.payload!!.content
                             if (message.peerPublicKey == null
                                     || Arrays.equals(message.peerPublicKey, publicKey)) {
                                 LogHelper.d("Session with " + message.address + " started, publicKey = " + Hex.encodeHexString(publicKey))
@@ -98,7 +98,11 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                                 if (securedSession != null) {
                                     securedSession.start(publicKey)
                                     setSessionForAddress(securedSession, message)
-                                    sendPendingMessage(message.address)
+                                    if (message.address != null) {
+                                        sendPendingMessage(message.address!!)
+                                    } else {
+                                        LogHelper.e("Can't send pending messages, address is null")
+                                    }
                                 } else {
                                     LogHelper.i("Error then try to client hello, session removed, error is nul, securedSession is null")
                                     removeSessionForAddress(message)
@@ -131,7 +135,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                 return LayersStack.LayerResult(false)
             }
             if (session.peerProxySecurityId != null) {
-                message.proxySecurityId = session.peerProxySecurityId //Don't need be encrypted
+                message.setProxySecurityId(session.peerProxySecurityId!!) //Don't need be encrypted
             } else {
                 if (message.proxy != null) {
                     generateProxySessionSecurityIdAndAddToMessageAndSession(session, message)
@@ -153,10 +157,10 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
     private fun generateProxySessionSecurityIdAndAddToMessageAndSession(session: SecuredSession, message: CoAPMessage) {
         val securityId = RandomGenerator.randomUnsignedIntAsLong
         session.peerProxySecurityId = securityId
-        message.proxySecurityId = securityId
+        message.setProxySecurityId(securityId)
     }
 
-    private fun throwMismatchKeysError(message: CoAPMessage, receiverAddress: InetSocketAddress) {
+    private fun throwMismatchKeysError(message: CoAPMessage, receiverAddress: InetSocketAddress?) {
         val responseHandler = message.responseHandler
         if (responseHandler != null) {
             val errorText = "Can't create session with $receiverAddress: peer public key mismatch"
@@ -241,7 +245,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
             setSessionForAddress(peerSession, message)
             LogHelper.d("Received HANDSHAKE Client Public Key")
             // Update peer public key and send my public key to peer
-            peerSession.startPeer(message.payload.content)
+            peerSession.startPeer(message.payload!!.content)
             sendPeerHello(senderAddress, peerSession.publicKey, message)
         } else { //TODO: Realize!
             LogHelper.e("Received Client signature")
@@ -254,15 +258,15 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         if (responseMessage.address == null) {
             LogHelper.e("Message address == null in SecurityLayer sendSessionError")
         }
-        if (message.proxySecurityId != null) {
-            responseMessage.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionProxySecurityID, message.proxySecurityId))
+        if (message.getProxySecurityId() != null) {
+            responseMessage.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionProxySecurityID, message.getProxySecurityId()!!))
         }
         responseMessage.addOption(CoAPMessageOption(code, 1))
         responseMessage.token = message.token
         client.send(responseMessage, null)
     }
 
-    private fun sendClientHello(proxyAddress: InetSocketAddress?, proxySecurityId: Long?, address: InetSocketAddress?, myPublicKey: ByteArray?, handler: CoAPHandler?) {
+    private fun sendClientHello(proxyAddress: InetSocketAddress?, proxySecurityId: Long?, address: InetSocketAddress?, myPublicKey: ByteArray, handler: CoAPHandler?) {
         val responseMessage = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
         responseMessage.address = address
         if (responseMessage.address == null) {
@@ -273,7 +277,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
             responseMessage.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionProxySecurityID, proxySecurityId))
         }
         responseMessage.payload = CoAPMessagePayload(myPublicKey)
-        responseMessage.proxy = proxyAddress
+        responseMessage.setProxy(proxyAddress)
         client.send(responseMessage, handler)
         LogHelper.d(
                 "sendClientHello messageId: " + responseMessage.id
@@ -283,14 +287,14 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         )
     }
 
-    private fun sendPeerHello(address: InetSocketAddress?, publicKey: ByteArray?, message: CoAPMessage) {
+    private fun sendPeerHello(address: InetSocketAddress?, publicKey: ByteArray, message: CoAPMessage) {
         LogHelper.d("sendPeerHello")
         val responseMessage = CoAPMessage(CoAPMessageType.ACK, CoAPMessageCode.CoapCodeContent, message.id)
         responseMessage.address = address
         if (responseMessage.address == null) {
             LogHelper.e("Message address == null in SecurityLayer sendPeerHello")
         }
-        responseMessage.uriScheme = message.uriScheme
+        responseMessage.setURIScheme(message.getURIScheme())
         responseMessage.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionHandshakeType, HandshakeType.PeerHello.toInt()))
         responseMessage.payload = CoAPMessagePayload(publicKey)
         client.send(responseMessage, null)
@@ -314,7 +318,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
             LogHelper.e("getHashAddressString, try to get hash for null message!")
             return null
         }
-        return (if (mainMessage.address != null) mainMessage.address.address.hostAddress + ":" + mainMessage.address.port else mainMessage.uri) + if (mainMessage.proxy == null) "" else mainMessage.proxy.toString()
+        return (if (mainMessage.address != null) mainMessage.address!!.address.hostAddress + ":" + mainMessage.address!!.port else mainMessage.getURI()) + if (mainMessage.proxy == null) "" else mainMessage.proxy.toString()
     }
 
     private fun setSessionForAddress(securedSession: SecuredSession, message: CoAPMessage) {

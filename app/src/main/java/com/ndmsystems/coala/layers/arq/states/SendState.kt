@@ -54,7 +54,7 @@ class SendState(data: IData?, windowSize: Int, blockSize: Int, originalMessage: 
     }
 
     fun onError(messageDeliveryInfo: MessageDeliveryInfo?) {
-        originalMessage.responseHandler.onError(BaseCoalaThrowable("ARQ: fail to transfer").setMessageDeliveryInfo(messageDeliveryInfo))
+        originalMessage.responseHandler?.onError(BaseCoalaThrowable("ARQ: fail to transfer").setMessageDeliveryInfo(messageDeliveryInfo))
     }
 
     fun didTransmit(blockNumber: Int) {

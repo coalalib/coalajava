@@ -26,7 +26,7 @@ class LogLayer : ReceiveLayer, SendLayer {
         return LayerResult(true, null)
     }
 
-    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress>): LayerResult {
+    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress?>): LayerResult {
         if (BuildConfig.DEBUG) {
             val stringForPrint = getStringToPrintSendingMessage(message, receiverAddressReference)
             if (isResourceDiscoveryMessage(message) || isArqAckMessage(message)) {
@@ -46,32 +46,32 @@ class LogLayer : ReceiveLayer, SendLayer {
     private fun isResourceDiscoveryMessage(message: CoAPMessage): Boolean {
         val option = message.getOption(CoAPMessageOptionCode.OptionContentFormat)
         var dist: String? = null
-        if (message.address != null && message.address.address.hostAddress != null) dist = message.address.address.hostAddress
+        if (message.address != null && message.address!!.address.hostAddress != null) dist = message.address!!.address.hostAddress
         return option != null && option.value as Int == 40 || "224.0.0.187" == dist
     }
 
     companion object {
         @JvmStatic
-        fun getStringToPrintSendingMessage(message: CoAPMessage, receiverAddress: Reference<InetSocketAddress>?): String {
+        fun getStringToPrintSendingMessage(message: CoAPMessage, receiverAddress: Reference<InetSocketAddress?>): String {
             var stringForPrint =
-                """Send data to Peer, id ${message.id}, payload: '${if (message.payload != null) message.payload.toString() else ""}', destination host: ${message.uri}${if (receiverAddress?.get() == null || receiverAddress.get() == message.address) "" else " real destination: " + receiverAddress.get()} type ${message.type} code ${message.code.name} token ${
+                """Send data to Peer, id ${message.id}, payload: '${if (message.payload != null) message.payload.toString() else ""}', destination host: ${message.getURI()}${if (receiverAddress?.get() == null || receiverAddress.get() == message.address) "" else " real destination: " + receiverAddress.get()} type ${message.type} code ${message.code.name} token ${
                     encodeHexString(message.token)
                 }
 Options: ${getMessageOptionsString(message)}"""
             if (message.proxy != null) {
-                stringForPrint += ", proxy: " + message.proxy.address.hostAddress + ":" + message.proxy.port
+                stringForPrint += ", proxy: " + message.proxy!!.address.hostAddress + ":" + message.proxy!!.port
             }
             return stringForPrint
         }
 
         fun getStringToPrintReceivedMessage(message: CoAPMessage, senderAddress: Reference<InetSocketAddress>): String {
             var stringForPrint =
-                """Received data from Peer, id ${message.id}, payload:'${if (message.payload != null) message.payload.toString() else ""}', address: ${senderAddress.get().address.hostAddress}:${senderAddress.get().port} type: ${message.type.name} code: ${message.code.name} path: ${message.uriPathString} schema: ${if (message.uriScheme == null) "coap:" else message.uriScheme} token ${
+                """Received data from Peer, id ${message.id}, payload:'${if (message.payload != null) message.payload.toString() else ""}', address: ${senderAddress.get().address.hostAddress}:${senderAddress.get().port} type: ${message.type.name} code: ${message.code.name} path: ${message.getURIPathString()} schema: ${message.getURIScheme()} token ${
                     encodeHexString(message.token)
                 }
 Options: ${getMessageOptionsString(message)}"""
             if (message.proxy != null) {
-                stringForPrint += ", proxy: " + message.proxy.address.hostAddress + ":" + message.proxy.port
+                stringForPrint += ", proxy: " + message.proxy!!.address.hostAddress + ":" + message.proxy!!.port
             }
             return stringForPrint
         }

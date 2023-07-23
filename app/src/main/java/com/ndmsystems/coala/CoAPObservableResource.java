@@ -52,14 +52,14 @@ public class CoAPObservableResource extends CoAPResource {
 
     public void send(CoAPResourceOutput resourceOutput, Observer observer) {
         CoAPMessage responseMessage = new CoAPMessage(CoAPMessageType.CON, resourceOutput.code);
-        addOptions(responseMessage, observer.registerMessage, observer.address);
+        addOptions(responseMessage, observer.getRegisterMessage(), observer.getAddress());
 
         if (resourceOutput.payload != null) responseMessage.setPayload(resourceOutput.payload);
         if (resourceOutput.mediaType != null)
             responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionContentFormat, resourceOutput.mediaType.toInt()));
 
         responseMessage.addOption(new CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, sequenceNumber));
-        responseMessage.setToken(observer.registerMessage.getToken());
+        responseMessage.setToken(observer.getRegisterMessage().getToken());
 
         client.send(responseMessage, null);
     }
