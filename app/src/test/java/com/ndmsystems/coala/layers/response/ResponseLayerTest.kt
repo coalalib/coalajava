@@ -46,7 +46,7 @@ object ResponseLayerTest: Spek({
             assertTrue { mockResponseLayer.onReceive(
                     CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.CoapCodeContent),
                     mockRefAddress
-            )}
+            ).shouldContinue}
         }
     }
 
@@ -63,7 +63,7 @@ object ResponseLayerTest: Spek({
         val msg = CoAPMessage(CoAPMessageType.ACK, CoAPMessageCode.CoapCodeEmpty)
         msg.token = ByteArray(2){0b0}
         it("return false"){
-            assertFalse { mockResponseLayer.onReceive(msg, mockRefAddress) }
+            assertFalse { mockResponseLayer.onReceive(msg, mockRefAddress).shouldContinue }
         }
     }
 
@@ -71,12 +71,12 @@ object ResponseLayerTest: Spek({
         val msg = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.CoapCodeChanged)
         msg.token = ByteArray(2){0b0}
 
-        val requests = mockk<Map<String, CoAPMessage>>()
+        val requests = mockk<MutableMap<String, CoAPMessage>>()
         every { requests[Hex.encodeHexString(msg.token)] } returns null
 
         val responseLayer = ResponseLayer(mockCoAPClient, requests, mockk(relaxed = true))
         it("return false"){
-            assertTrue { responseLayer.onReceive(msg, mockRefAddress) }
+            assertTrue { responseLayer.onReceive(msg, mockRefAddress).shouldContinue }
         }
     }
 
@@ -90,7 +90,7 @@ object ResponseLayerTest: Spek({
         every { errorFactory.proceed(msg) } returns coAPException
 
         val reqMsgResponseHandler = mockk<ResponseHandler>(relaxed = true)
-        val requests = mockk<Map<String, CoAPMessage>>(relaxed = true)
+        val requests = mockk<MutableMap<String, CoAPMessage>>(relaxed = true)
         val reqMsg = mockk<CoAPMessage>(relaxed = true)
 
         every { reqMsg.responseHandler } returns reqMsgResponseHandler
@@ -99,7 +99,7 @@ object ResponseLayerTest: Spek({
         val responseLayer = ResponseLayer(mockCoAPClient, requests, errorFactory)
 
         it("return false"){
-            assertFalse { responseLayer.onReceive(msg, mockRefAddress) }
+            assertFalse { responseLayer.onReceive(msg, mockRefAddress).shouldContinue }
         }
 
         it("handle error"){
@@ -116,7 +116,7 @@ object ResponseLayerTest: Spek({
         every { errorFactory.proceed(msg) } returns null
 
         val reqMsgResponseHandler = mockk<ResponseHandler>(relaxed = true)
-        val requests = mockk<Map<String, CoAPMessage>>(relaxed = true)
+        val requests = mockk<MutableMap<String, CoAPMessage>>(relaxed = true)
         val reqMsg = mockk<CoAPMessage>(relaxed = true)
 
         every { reqMsg.responseHandler } returns reqMsgResponseHandler
@@ -125,7 +125,7 @@ object ResponseLayerTest: Spek({
         val responseLayer = ResponseLayer(mockCoAPClient, requests, errorFactory)
 
         it("return false"){
-            assertFalse { responseLayer.onReceive(msg, mockRefAddress) }
+            assertFalse { responseLayer.onReceive(msg, mockRefAddress).shouldContinue }
         }
 
         it("proceed response"){
@@ -143,7 +143,7 @@ object ResponseLayerTest: Spek({
         val responseLayer = ResponseLayer(mockCoAPClient, requests, mockk(relaxed = true))
 
         it("return true"){
-            assertTrue { responseLayer.onSend(msg, mockRefAddress) }
+            assertTrue { responseLayer.onSend(msg, mockRefAddress).shouldContinue }
         }
 
         it("proceed response"){
@@ -161,7 +161,7 @@ object ResponseLayerTest: Spek({
         val responseLayer = ResponseLayer(mockCoAPClient, requests, mockk(relaxed = true))
 
         it("return true"){
-            assertTrue { responseLayer.onSend(msg, mockRefAddress) }
+            assertTrue { responseLayer.onSend(msg, mockRefAddress).shouldContinue }
         }
 
         it("not proceed response"){
@@ -178,7 +178,7 @@ object ResponseLayerTest: Spek({
         val responseLayer = ResponseLayer(mockCoAPClient, requests, mockk(relaxed = true))
 
         it("return true"){
-            assertTrue { responseLayer.onSend(msg, mockRefAddress) }
+            assertTrue { responseLayer.onSend(msg, mockRefAddress).shouldContinue }
         }
 
         it("not proceed response"){
@@ -195,7 +195,7 @@ object ResponseLayerTest: Spek({
         val responseLayer = ResponseLayer(mockCoAPClient, requests, mockk(relaxed = true))
 
         it("return true"){
-            assertTrue { responseLayer.onSend(msg, mockRefAddress) }
+            assertTrue { responseLayer.onSend(msg, mockRefAddress).shouldContinue }
         }
 
         it("not proceed response"){

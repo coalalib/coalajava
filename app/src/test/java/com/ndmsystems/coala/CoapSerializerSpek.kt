@@ -1,6 +1,5 @@
 package com.ndmsystems.coala
 
-import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageOptionCode
@@ -77,13 +76,13 @@ object CoapSerializerSpek : Spek({
                 context("testing different message types") {
 
                     it("serialization successful with message type $expectedValue") {
-                        result = CoAPSerializer.toBytes(message)
+                        result = CoAPSerializer.toBytes(message)!!
                         assertNotNull(result)
                     }
 
                     it("deserialization successful with message type $expectedValue") {
                         val result = CoAPSerializer.fromBytes(result)
-                        assertEquals(expectedValue, result.type)
+                        assertEquals(expectedValue, result!!.type)
                     }
                 }
             }
@@ -130,12 +129,12 @@ object CoapSerializerSpek : Spek({
                 context("testing with message type ${expectedValue.name}") {
 
                     it("serialization successful with message type $${expectedValue.name}") {
-                        result = CoAPSerializer.toBytes(message)
+                        result = CoAPSerializer.toBytes(message)!!
                         assertNotNull(result)
                     }
                     it("deserialization successful with message type ${expectedValue.name}") {
                         val result = CoAPSerializer.fromBytes(result)
-                        assertEquals(expectedValue, result.code)
+                        assertEquals(expectedValue, result!!.code)
                     }
                 }
 
@@ -190,13 +189,13 @@ object CoapSerializerSpek : Spek({
 
                     it("serialization successful with message id $expectedValue") {
                         message.id = expectedValue
-                        result = CoAPSerializer.toBytes(message)
+                        result = CoAPSerializer.toBytes(message)!!
                         assertNotNull(result)
                     }
 
                     it("deserialization successful with message id $expectedValue") {
                         val result = CoAPSerializer.fromBytes(result)
-                        assertEquals(expectedValue, result.id)
+                        assertEquals(expectedValue, result!!.id)
                     }
 
                 }
@@ -228,7 +227,7 @@ object CoapSerializerSpek : Spek({
                         120, 1, 0, 0,
                         125, 27, 117, 127, -76, 2, 0, -41)
                 val result = CoAPSerializer.fromBytes(binaryCoAPSimpleMessageWithToken)
-                assertArrayEquals(byteArrayOf(125, 27, 117, 127, -76, 2, 0, -41), result.token)
+                assertArrayEquals(byteArrayOf(125, 27, 117, 127, -76, 2, 0, -41), result!!.token)
             }
 
 
@@ -243,7 +242,7 @@ object CoapSerializerSpek : Spek({
 
                 val result = CoAPSerializer.fromBytes(binaryMessage)
 
-                assertEquals(loremText, result.payload.toString())
+                assertEquals(loremText, result!!.payload.toString())
             }
 
         }
@@ -254,20 +253,20 @@ object CoapSerializerSpek : Spek({
             it("successfully serialize and deserialize uri string") {
                 val source = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.GET)
 
-                source.uri = "coaps://192.168.1.1:8080/test?param=1&param2=value"
+                source.setURI("coaps://192.168.1.1:8080/test?param=1&param2=value")
 
                 val sourceBytes = CoAPSerializer.toBytes(source)
                 assertNotNull(sourceBytes)
 
                 val result = CoAPSerializer.fromBytes(sourceBytes)
-                result.address = source.address
+                result!!.address = source.address
 
-                if (result.getAddress() == null) {
+                if (result!!.address == null) {
                     com.ndmsystems.coala.helpers.logging.LogHelper.e("Message address == null in CoapSerializerSpek")
                 }
                 assertNotNull(result)
 
-                assertEquals("coaps://192.168.1.1:8080/test?param=1&param2=value", result.uri)
+                assertEquals("coaps://192.168.1.1:8080/test?param=1&param2=value", result.getURI())
             }
 
         }
@@ -276,7 +275,7 @@ object CoapSerializerSpek : Spek({
         describe("all possible") {
             it("should have valid options") {
                 val msg = CoAPSerializer.fromBytes(DummyData.OptionsAllPossible.read())
-                assertEquals(25, msg.options.size)
+                assertEquals(25, msg!!.getOptions().size)
             }
         }
 
@@ -284,31 +283,31 @@ object CoapSerializerSpek : Spek({
         describe("given option value") {
             it("of Int") {
                 val msg = CoAPSerializer.fromBytes(DummyData.OptionsIntValue.read())
-                val data = msg.getOption(CoAPMessageOptionCode.OptionAccept).value
+                val data = msg!!.getOption(CoAPMessageOptionCode.OptionAccept)!!.value
                 assertEquals(100, data as? Int ?: 0)
             }
 
             it("of string") {
                 val msg = CoAPSerializer.fromBytes(DummyData.OptionsStringValue.read())
-                val data = msg.getOption(CoAPMessageOptionCode.OptionAccept).toBytes()
+                val data = msg!!.getOption(CoAPMessageOptionCode.OptionAccept)!!.toBytes()
                 assertEquals("test", String(data))
             }
 
             it("of data") {
                 val msg = CoAPSerializer.fromBytes(DummyData.OptionsDataValue.read())
-                val data = msg.getOption(CoAPMessageOptionCode.OptionAccept).toBytes()
+                val data = msg!!.getOption(CoAPMessageOptionCode.OptionAccept)!!.toBytes()
                 assertArrayEquals("test".toByteArray(), data)
             }
 
             it("of max Int") {
                 val msg = CoAPSerializer.fromBytes(DummyData.OptionsMaxIntValue.read())
-                val data = msg.getOption(CoAPMessageOptionCode.OptionAccept).value
+                val data = msg!!.getOption(CoAPMessageOptionCode.OptionAccept)!!.value
                 assertEquals(Int.MAX_VALUE, data as? Int ?: 0)
             }
 
             it("of min Int") {
                 val msg = CoAPSerializer.fromBytes(DummyData.OptionsMinIntValue.read())
-                val data = msg.getOption(CoAPMessageOptionCode.OptionAccept).value
+                val data = msg!!.getOption(CoAPMessageOptionCode.OptionAccept)!!.value
                 assertEquals(Int.MIN_VALUE, data as? Int ?: 0)
             }
         }

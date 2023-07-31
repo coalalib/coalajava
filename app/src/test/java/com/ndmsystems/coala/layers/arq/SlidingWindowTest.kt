@@ -33,8 +33,8 @@ object SlidingWindowTest : Spek({
             }
 
             it("mid value should equals") {
-                slidingWindow.set(slidingWindow.size / 2, 0)
-                val value = slidingWindow.getValue(slidingWindow.size / 2)
+                slidingWindow.set(slidingWindow.getSize() / 2, 0)
+                val value = slidingWindow.getValue(slidingWindow.getSize() / 2)
 
                 assertEquals(0, value)
             }
@@ -81,7 +81,7 @@ object SlidingWindowTest : Spek({
             it("test advance() called $i times then element at position [$i] equals null") {
                 for (j in 0..i) slidingWindow.advance()
 
-                (slidingWindow.getValue(slidingWindow.size - slidingWindow.offset))
+                (slidingWindow.getValue(slidingWindow.getSize() - slidingWindow.offset))
             }
         }
 

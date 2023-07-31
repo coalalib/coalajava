@@ -160,10 +160,10 @@ class ArqLayer(
                                     + " along"
                         )
                         if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI)) {
-                            ackMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI))
+                            ackMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI)!!)
                         }
-                        if (originalMessage.proxy != null) {
-                            ackMessage.setProxy(originalMessage.proxy)
+                        originalMessage.proxy?.let {
+                            ackMessage.setProxy(it)
                             originalMessage.getProxySecurityId()?.let {
                                 ackMessage.setProxySecurityId(it)
                             }
@@ -194,11 +194,9 @@ class ArqLayer(
                     val originalMessage = messagePool.getSourceMessageByToken(mutableIncomingMessage.hexToken)
                     if (originalMessage != null) {
                         if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI)) {
-                            ackMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI))
+                            ackMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI)!!)
                         }
-                        if (originalMessage.proxy != null) {
-                            ackMessage.setProxy(originalMessage.proxy)
-                        }
+                        originalMessage.proxy?.let { ackMessage.setProxy(it) }
                     }
                     client.send(ackMessage, null)
                 }
@@ -224,11 +222,11 @@ class ArqLayer(
 
     private fun sendMoreData(token: String) {
         val state = sendStates[token]
-        var block: Block
+        var block: Block?
         if (state != null) {
-            while (state.popBlock().also { block = it!! } != null) {
-                v("ARQ: did pop block number = " + block.number)
-                send(block, state.originalMessage, token, state)
+            while (state.popBlock().also { block = it } != null) {
+                v("ARQ: did pop block number = " + block!!.number)
+                send(block!!, state.originalMessage, token, state)
                 state.incrementNumberOfMessage()
                 sendStates[token] = state
             }
@@ -247,11 +245,9 @@ class ArqLayer(
         blockMessage.payload = CoAPMessagePayload(block.data ?: ByteArray(0))
         blockMessage.setURI(originalMessage.getURI())
         if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI)) {
-            blockMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI))
+            blockMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI)!!)
         }
-        if (originalMessage.proxy != null) {
-            blockMessage.setProxy(originalMessage.proxy)
-        }
+        originalMessage.proxy?.let { blockMessage.setProxy(it) }
         blockMessage.resendHandler = state
         client.send(blockMessage, object : CoAPHandler {
             override fun onMessage(message: CoAPMessage, error: String?) {
@@ -280,7 +276,7 @@ class ArqLayer(
         receiveStates.remove(token)
     }
 
-    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress?>): LayersStack.LayerResult {
+    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress>): LayersStack.LayerResult {
         if (hasWindowSizeOption(message) && !isStartMixingModeMessage(message)) {
             return LayersStack.LayerResult(true)
         }

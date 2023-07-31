@@ -44,7 +44,7 @@ class AckHandlersPool {
             val iter = poolCopy.iterator()
             while (iter.hasNext()) {
                 val handler = iter.next()
-                handler?.onAckError(exception.message)
+                handler?.onAckError(exception.message ?: "Unknown")
             }
         }
     }

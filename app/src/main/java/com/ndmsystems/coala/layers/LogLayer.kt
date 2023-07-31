@@ -26,7 +26,7 @@ class LogLayer : ReceiveLayer, SendLayer {
         return LayerResult(true, null)
     }
 
-    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress?>): LayerResult {
+    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress>): LayerResult {
         if (BuildConfig.DEBUG) {
             val stringForPrint = getStringToPrintSendingMessage(message, receiverAddressReference)
             if (isResourceDiscoveryMessage(message) || isArqAckMessage(message)) {
@@ -52,7 +52,7 @@ class LogLayer : ReceiveLayer, SendLayer {
 
     companion object {
         @JvmStatic
-        fun getStringToPrintSendingMessage(message: CoAPMessage, receiverAddress: Reference<InetSocketAddress?>): String {
+        fun getStringToPrintSendingMessage(message: CoAPMessage, receiverAddress: Reference<InetSocketAddress>): String {
             var stringForPrint =
                 """Send data to Peer, id ${message.id}, payload: '${if (message.payload != null) message.payload.toString() else ""}', destination host: ${message.getURI()}${if (receiverAddress?.get() == null || receiverAddress.get() == message.address) "" else " real destination: " + receiverAddress.get()} type ${message.type} code ${message.code.name} token ${
                     encodeHexString(message.token)

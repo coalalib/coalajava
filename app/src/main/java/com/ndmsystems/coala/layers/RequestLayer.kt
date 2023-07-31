@@ -78,8 +78,8 @@ class RequestLayer(private val resourceRegistry: ResourceRegistry, private val c
                 )
             )
         }
-        if (message.hasOption(CoAPMessageOptionCode.OptionProxyURI)) responseMessage.addOption(message.getOption(CoAPMessageOptionCode.OptionProxyURI))
-        if (message.proxy != null) responseMessage.setProxy(message.proxy)
+        if (message.hasOption(CoAPMessageOptionCode.OptionProxyURI)) responseMessage.addOption(message.getOption(CoAPMessageOptionCode.OptionProxyURI)!!)
+        if (message.proxy != null) responseMessage.setProxy(message.proxy!!)
 
         // Validate message scheme
         responseMessage.setURIScheme(message.getURIScheme())

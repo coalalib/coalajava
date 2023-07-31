@@ -167,7 +167,7 @@ class CoAPMessagePool(
         }
     }
 
-    fun clear(exception: BaseCoalaThrowable?) {
+    fun clear(exception: BaseCoalaThrowable) {
         CoroutineScope(IO).launch {
             LogHelper.v("Clear message pool")
             for (queueElement in pool.values) {

@@ -16,7 +16,7 @@ class SecuredSession(incoming: Boolean) {
     private var curve: Curve25519? = null
         get() {
             if (field == null) {
-                field = Coala.getDependencyGraph().provideCurveRepository()!!.curve
+                field = Coala.dependencyGraph.provideCurveRepository()!!.curve
             }
             return field
         }

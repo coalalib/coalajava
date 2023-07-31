@@ -34,7 +34,7 @@ class LayersStack(
     }
 
     @Throws(InterruptedException::class)
-    fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress?>): LayerResult {
+    fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress>): LayerResult {
         var mutableMessage = message
         sendStack?.let {
             for (layer in sendStack) {

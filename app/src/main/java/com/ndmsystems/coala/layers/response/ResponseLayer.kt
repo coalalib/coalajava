@@ -64,7 +64,7 @@ class ResponseLayer : ReceiveLayer, SendLayer {
         client.send(ackMessage, null)
     }
 
-    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress?>): LayerResult {
+    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress>): LayerResult {
         if (message.token != null &&
             message.isRequest && message.responseHandler != null
         ) {

@@ -1,13 +1,28 @@
 package com.ndmsystems.coala.layers
 
-import com.ndmsystems.coala.*
+import com.ndmsystems.coala.AckHandlersPool
+import com.ndmsystems.coala.CoAPClient
+import com.ndmsystems.coala.CoAPHandler
+import com.ndmsystems.coala.CoAPObservableResource
+import com.ndmsystems.coala.CoAPResource
+import com.ndmsystems.coala.CoAPResourceOutput
+import com.ndmsystems.coala.CoAPServer
 import com.ndmsystems.coala.layers.ObserveLayerTest.IP_ADDRESS
-import com.ndmsystems.coala.message.*
+import com.ndmsystems.coala.message.CoAPMessage
+import com.ndmsystems.coala.message.CoAPMessageCode
+import com.ndmsystems.coala.message.CoAPMessageOption
+import com.ndmsystems.coala.message.CoAPMessageOptionCode
+import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.observer.Observer
 import com.ndmsystems.coala.observer.ObservingResource
 import com.ndmsystems.coala.observer.RegistryOfObservingResources
 import com.ndmsystems.coala.utils.Reference
-import io.mockk.*
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.gherkin.Feature
 import java.net.InetSocketAddress
@@ -34,7 +49,7 @@ object ObserveLayerTest : Spek({
             Given("CoAP message with OptionObserve") {
                 message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
                         .apply {
-                            uri = "coap://$IP_ADDRESS/test?key=value"
+                            setURI("coap://$IP_ADDRESS/test?key=value")
                             token = byteArrayOf(1, 2)
                             addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, 0))
                         }
@@ -48,11 +63,11 @@ object ObserveLayerTest : Spek({
             }
 
             Then("resource observation has added") {
-                verify(exactly = 1) { registryOfObservingResources.addObservingResource(eq(message.token), any()) }
+                verify(exactly = 1) { registryOfObservingResources.addObservingResource(eq(message.token!!), any()) }
             }
 
             And("URI is match") {
-                assertEquals(message.uri, observingResource.captured.uri)
+                assertEquals(message.getURI(), observingResource.captured.uri)
             }
 
             And("handler is match") {
@@ -68,7 +83,7 @@ object ObserveLayerTest : Spek({
             Given("CoAP message with OptionObserve") {
                 message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
                         .apply {
-                            uri = "coap://$IP_ADDRESS/test?key=value"
+                            setURI("coap://$IP_ADDRESS/test?key=value")
                             token = byteArrayOf(1, 2)
                             addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, 1))
                         }
@@ -81,7 +96,7 @@ object ObserveLayerTest : Spek({
             }
 
             Then("resource observation has removed") {
-                verify(exactly = 1) { registryOfObservingResources.removeObservingResource(eq(message.token)) }
+                verify(exactly = 1) { registryOfObservingResources.removeObservingResource(eq(message.token!!)) }
             }
         }
 
@@ -92,7 +107,7 @@ object ObserveLayerTest : Spek({
             Given("CoAP message with OptionObserve") {
                 message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
                         .apply {
-                            uri = "coap://$IP_ADDRESS/test?key=value"
+                            setURI("coap://$IP_ADDRESS/test?key=value")
                             token = byteArrayOf(1, 2)
                             addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, 2))
                         }
@@ -124,7 +139,7 @@ object ObserveLayerTest : Spek({
             Given("CoAP message with OptionObserve") {
                 message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
                         .apply {
-                            uri = "coap://$IP_ADDRESS/test?key=value"
+                            setURI("coap://$IP_ADDRESS/test?key=value")
                             token = byteArrayOf(1, 2)
                             addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, 0))
                         }
@@ -132,12 +147,12 @@ object ObserveLayerTest : Spek({
                 every { resource.handler } returns coapResourceHandler
                 every { resource.addObserver(capture(observer)) } just Runs
                 every { coapResourceHandler.onReceive(any()) } returns coapResourceOutput
-                every { server.getObservableResource(message.uriPathString) } returns resource
+                every { server.getObservableResource(message.getURIPathString()) } returns resource
 
             }
 
             When("receive message") {
-                result = observeLayer.onReceive(message, addressReference)
+                result = observeLayer.onReceive(message, addressReference).shouldContinue
             }
 
             Then("message shouldn't be processed further") {
@@ -174,17 +189,17 @@ object ObserveLayerTest : Spek({
             Given("CoAP message with OptionObserve") {
                 message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
                         .apply {
-                            uri = "coap://$IP_ADDRESS/test?key=value"
+                            setURI("coap://$IP_ADDRESS/test?key=value")
                             token = byteArrayOf(1, 2)
                             addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, 1))
                         }
-                every { server.getObservableResource(message.uriPathString) } returns resource
+                every { server.getObservableResource(message.getURIPathString()) } returns resource
                 every { resource.removeObserver(capture(observer)) } just Runs
 
             }
 
             When("receive message") {
-                result = observeLayer.onReceive(message, addressReference)
+                result = observeLayer.onReceive(message, addressReference).shouldContinue
             }
 
             Then("message should be processed further") {
@@ -215,15 +230,15 @@ object ObserveLayerTest : Spek({
             Given("CoAP message with OptionObserve") {
                 message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
                         .apply {
-                            uri = "coap://$IP_ADDRESS/test?key=value"
+                            setURI("coap://$IP_ADDRESS/test?key=value")
                             token = byteArrayOf(1, 2)
                             addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, 2))
                         }
-                every { server.getObservableResource(message.uriPathString) } returns resource
+                every { server.getObservableResource(message.getURIPathString()) } returns resource
             }
 
             When("receive message") {
-                result = observeLayer.onReceive(message, addressReference)
+                result = observeLayer.onReceive(message, addressReference).shouldContinue
             }
 
             Then("message should be processed further") {
@@ -247,15 +262,15 @@ object ObserveLayerTest : Spek({
             Given("CoAP message with OptionObserve") {
                 message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
                         .apply {
-                            uri = "coap://$IP_ADDRESS/test?key=value"
+                            setURI("coap://$IP_ADDRESS/test?key=value")
                             token = byteArrayOf(1, 2)
                             addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, 0))
                         }
-                every { server.getObservableResource(message.uriPathString) } returns null
+                every { server.getObservableResource(message.getURIPathString()) } returns null
             }
 
             When("receive message") {
-                result = observeLayer.onReceive(message, addressReference)
+                result = observeLayer.onReceive(message, addressReference).shouldContinue
             }
 
             Then("message should be processed further") {
@@ -288,7 +303,7 @@ object ObserveLayerTest : Spek({
             }
 
             When("receive message") {
-                result = observeLayer.onReceive(message, addressReference)
+                result = observeLayer.onReceive(message, addressReference).shouldContinue
             }
 
             Then("message shouldn't be processed further") {
@@ -323,7 +338,7 @@ object ObserveLayerTest : Spek({
                         .apply {
                             token = byteArrayOf(1, 2)
                             addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, SEQUENCE_NUM))
-                            uriScheme = CoAPMessage.Scheme.NORMAL
+                            setURIScheme(CoAPMessage.Scheme.NORMAL)
                         }
 
                 every { registryOfObservingResources.getResource(message.token) } returns observingResource
@@ -331,7 +346,7 @@ object ObserveLayerTest : Spek({
             }
 
             When("receive message") {
-                result = observeLayer.onReceive(message, addressReference)
+                result = observeLayer.onReceive(message, addressReference).shouldContinue
             }
 
             Then("message shouldn't be processed further") {
@@ -344,15 +359,15 @@ object ObserveLayerTest : Spek({
             }
 
             And("original host matches ACK message host") {
-                assertEquals(address.address.hostAddress, ackMessage.captured.address.address.hostAddress)
+                assertEquals(address.address.hostAddress, ackMessage.captured.address!!.address.hostAddress)
             }
 
             And("original port matches ACK message port") {
-                assertEquals(address.port, ackMessage.captured.address.port)
+                assertEquals(address.port, ackMessage.captured.address!!.port)
             }
 
             And("original URIScheme matches ACK message URIScheme") {
-                assertEquals(message.uriScheme, ackMessage.captured.uriScheme)
+                assertEquals(message.getURIScheme(), ackMessage.captured.getURIScheme())
             }
 
             And("original message Id matches ACK message id") {
@@ -383,14 +398,14 @@ object ObserveLayerTest : Spek({
                 message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.CoapCodeContent)
                         .apply {
                             token = byteArrayOf(1, 2)
-                            uriScheme = CoAPMessage.Scheme.NORMAL
+                            setURIScheme(CoAPMessage.Scheme.NORMAL)
                         }
 
                 every { registryOfObservingResources.getResource(message.token) } returns observingResource
             }
 
             When("receive message") {
-                result = observeLayer.onReceive(message, addressReference)
+                result = observeLayer.onReceive(message, addressReference).shouldContinue
             }
 
             Then("message shouldn't be processed further") {
@@ -408,7 +423,7 @@ object ObserveLayerTest : Spek({
 
             lateinit var message: CoAPMessage
             val address = InetSocketAddress(IP_ADDRESS, 5683)
-            val addressReference = Reference<InetSocketAddress>(address)
+            val addressReference = Reference(address)
             val observingResource = mockk<ObservingResource>(relaxed = true, relaxUnitFun = true)
 
             var result: Boolean? = null
@@ -418,14 +433,14 @@ object ObserveLayerTest : Spek({
                         .apply {
                             token = byteArrayOf(1, 2)
                             addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, 1))
-                            uriScheme = CoAPMessage.Scheme.NORMAL
+                            setURIScheme(CoAPMessage.Scheme.NORMAL)
                         }
 
                 every { registryOfObservingResources.getResource(message.token) } returns observingResource
             }
 
             When("receive message") {
-                result = observeLayer.onReceive(message, addressReference)
+                result = observeLayer.onReceive(message, addressReference).shouldContinue
             }
 
             Then("message shouldn't be processed further") {
@@ -454,7 +469,7 @@ object ObserveLayerTest : Spek({
                         .apply {
                             token = byteArrayOf(1, 2)
                             addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, SEQUENCE_NUM))
-                            uriScheme = CoAPMessage.Scheme.NORMAL
+                            setURIScheme(CoAPMessage.Scheme.NORMAL)
                         }
 
                 every { registryOfObservingResources.getResource(message.token) } returns null
@@ -462,7 +477,7 @@ object ObserveLayerTest : Spek({
             }
 
             When("receive message") {
-                result = observeLayer.onReceive(message, addressReference)
+                result = observeLayer.onReceive(message, addressReference).shouldContinue
             }
 
             Then("message shouldn't be processed further") {
@@ -482,7 +497,7 @@ object ObserveLayerTest : Spek({
             }
 
             And("original URIScheme matches RESET message URIScheme") {
-                assertEquals(message.uriScheme, sentMessage.captured.uriScheme)
+                assertEquals(message.getURIScheme(), sentMessage.captured.getURIScheme())
             }
 
             And("original message Id matches RESET message id") {
@@ -515,7 +530,7 @@ object ObserveLayerTest : Spek({
                 message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.CoapCodeContent)
                         .apply {
                             addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, SEQUENCE_NUM))
-                            uriScheme = CoAPMessage.Scheme.NORMAL
+                            setURIScheme( CoAPMessage.Scheme.NORMAL)
                         }
 
                 every { registryOfObservingResources.getResource(message.token) } returns null
@@ -523,7 +538,7 @@ object ObserveLayerTest : Spek({
             }
 
             When("receive message") {
-                result = observeLayer.onReceive(message, addressReference)
+                result = observeLayer.onReceive(message, addressReference).shouldContinue
             }
 
             Then("message shouldn't be processed further") {
@@ -543,7 +558,7 @@ object ObserveLayerTest : Spek({
             }
 
             And("original URIScheme matches RESET message URIScheme") {
-                assertEquals(message.uriScheme, sentMessage.captured.uriScheme)
+                assertEquals(message.getURIScheme(), sentMessage.captured.getURIScheme())
             }
 
             And("original message Id matches RESET message id") {
@@ -576,7 +591,7 @@ object ObserveLayerTest : Spek({
             }
 
             When("receive message") {
-                result = observeLayer.onReceive(message, addressReference)
+                result = observeLayer.onReceive(message, addressReference).shouldContinue
             }
 
             Then("message should be processed further") {
@@ -596,7 +611,7 @@ object ObserveLayerTest : Spek({
 
             lateinit var message: CoAPMessage
             val address = InetSocketAddress(IP_ADDRESS, 5683)
-            val addressReference = Reference<InetSocketAddress>(address)
+            val addressReference = Reference(address)
 
 
             var result: Boolean? = null
@@ -605,14 +620,14 @@ object ObserveLayerTest : Spek({
                 message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.CoapCodeContent)
                         .apply {
                             token = byteArrayOf(2, 2)
-                            uriScheme = CoAPMessage.Scheme.NORMAL
+                            setURIScheme(CoAPMessage.Scheme.NORMAL)
                         }
                 every { registryOfObservingResources.getResource(message.token) } returns null
 
             }
 
             When("receive message") {
-                result = observeLayer.onReceive(message, addressReference)
+                result = observeLayer.onReceive(message, addressReference).shouldContinue
             }
 
             Then("message should be processed further") {

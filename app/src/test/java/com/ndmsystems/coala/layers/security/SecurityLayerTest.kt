@@ -57,7 +57,7 @@ object SecurityLayerTest: Spek({
         msg.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionHandshakeType, HandshakeType.PeerHello.toInt()))
 
         it("return false"){
-            assertFalse { securityLayer.onReceive(msg, mockRefAddress) }
+            assertFalse { securityLayer.onReceive(msg, mockRefAddress).shouldContinue }
         }
     }
 
@@ -66,7 +66,7 @@ object SecurityLayerTest: Spek({
         msg.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionSessionNotFound, 1))
 
         it("return false"){
-            assertFalse { securityLayer.onReceive(msg, mockRefAddress) }
+            assertFalse { securityLayer.onReceive(msg, mockRefAddress).shouldContinue }
         }
     }
 
@@ -75,23 +75,23 @@ object SecurityLayerTest: Spek({
         msg.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionSessionExpired, 1))
 
         it("return false"){
-            assertFalse { securityLayer.onReceive(msg, mockRefAddress) }
+            assertFalse { securityLayer.onReceive(msg, mockRefAddress).shouldContinue }
         }
     }
 
     describe("Check onReceive return false by secured protocol"){
         val msg = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.POST)
-        msg.uri = "coaps://192.168.1.1:8080/test?param=1&param=value"
+        msg.setURI("coaps://192.168.1.1:8080/test?param=1&param=value")
 
         every { mockSecuredSessionPool.get(any()) } returns null
         it("return false"){
-            assertFalse { securityLayer.onReceive(msg, mockRefAddress) }
+            assertFalse { securityLayer.onReceive(msg, mockRefAddress).shouldContinue }
         }
     }
 
     describe("Check onReceive return false by secured protocol with unsuccess decrypt result"){
         val msg = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.POST)
-        msg.uri = "coaps://192.168.1.1:8080/test?param=1&param=value"
+        msg.setURI("coaps://192.168.1.1:8080/test?param=1&param=value")
         msg.setStringPayload("Some data")
         EncryptionHelper.encrypt(msg, Aead(
                 Hex.decodeHex("bdd1cf3e4a5d0d1c009be633da60a372".toCharArray()),
@@ -121,13 +121,13 @@ object SecurityLayerTest: Spek({
         )
 
         it("return false"){
-            assertFalse { securityLayerTest.onReceive(msg, mockRefAddress) }
+            assertFalse { securityLayerTest.onReceive(msg, mockRefAddress).shouldContinue }
         }
     }
 
     describe("Check onReceive return true by secured protocol with success decrypt result"){
         val msg = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.POST)
-        msg.uri = "coaps://192.168.1.1:8080/test?param=1&param=value"
+        msg.setURI("coaps://192.168.1.1:8080/test?param=1&param=value")
         msg.setStringPayload("Some data")
         EncryptionHelper.encrypt(msg, Aead(
                 Hex.decodeHex("bdd1cf3e4a5d0d1c009be633da60a372".toCharArray()),
@@ -159,7 +159,7 @@ object SecurityLayerTest: Spek({
         )
 
         it("return true"){
-            assertTrue { securityLayerTest.onReceive(msg, mockRefAddress) }
+            assertTrue { securityLayerTest.onReceive(msg, mockRefAddress).shouldContinue }
         }
 
         it("msg peer key eq session peer key"){
@@ -169,10 +169,10 @@ object SecurityLayerTest: Spek({
 
     describe("Check onReceive return true by not secured protocol"){
         val msg = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.POST)
-        msg.uri = "coap://192.168.1.1:8080/test?param=1&param=value"
+        msg.setURI("coap://192.168.1.1:8080/test?param=1&param=value")
 
         it("return true"){
-            assertTrue { securityLayer.onReceive(msg, mockRefAddress) }
+            assertTrue { securityLayer.onReceive(msg, mockRefAddress).shouldContinue }
         }
     }
 
@@ -182,30 +182,30 @@ object SecurityLayerTest: Spek({
 
     describe("Check onSend return false by secured protocol without stored session"){
         val msg = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.POST)
-        msg.uri = "coaps://192.168.1.1:8080/test?param=1&param=value"
+        msg.setURI("coaps://192.168.1.1:8080/test?param=1&param=value")
 
         every { mockSecuredSessionPool.get(any()) } returns null
         it("return false"){
-            assertFalse { securityLayer.onSend(msg, mockRefAddress) }
+            assertFalse { securityLayer.onSend(msg, mockRefAddress).shouldContinue }
         }
     }
 
     describe("Check onSend return false by secured protocol with don't ready session"){
         val msg = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.POST)
-        msg.uri = "coaps://192.168.1.1:8080/test?param=1&param=value"
+        msg.setURI("coaps://192.168.1.1:8080/test?param=1&param=value")
 
         val secSession = mockk<SecuredSession>(relaxed = true)
         every { secSession.isReady } returns false
         every { mockSecuredSessionPool.get(any()) } returns secSession
 
         it("return false"){
-            assertFalse { securityLayer.onReceive(msg, mockRefAddress) }
+            assertFalse { securityLayer.onReceive(msg, mockRefAddress).shouldContinue }
         }
     }
 
     describe("Check onSend return false by secured protocol with wrong session and peer public key"){
         val msg = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.POST)
-        msg.uri = "coaps://192.168.1.1:8080/test?param=1&param=value"
+        msg.setURI("coaps://192.168.1.1:8080/test?param=1&param=value")
         msg.peerPublicKey = ByteArray(5){0b00000000}
 
         val secSession = mockk<SecuredSession>(relaxed = true)
@@ -213,16 +213,16 @@ object SecurityLayerTest: Spek({
         every { mockSecuredSessionPool.get(any()) } returns secSession
 
         it("return false"){
-            assertFalse { securityLayer.onReceive(msg, mockRefAddress) }
+            assertFalse { securityLayer.onReceive(msg, mockRefAddress).shouldContinue }
         }
     }
 
     describe("Check onSend return true by not secured protocol"){
         val msg = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.POST)
-        msg.uri = "coap://192.168.1.1:8080/test?param=1&param=value"
+        msg.setURI("coap://192.168.1.1:8080/test?param=1&param=value")
 
         it("return true"){
-            assertTrue { securityLayer.onSend(msg, mockRefAddress) }
+            assertTrue { securityLayer.onSend(msg, mockRefAddress).shouldContinue }
         }
     }
 

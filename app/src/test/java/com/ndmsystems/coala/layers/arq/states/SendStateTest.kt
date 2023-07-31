@@ -34,7 +34,7 @@ object SendStateTest : Spek({
             }
 
             When("pop block and transmit") {
-                popedBlock = sendState.popBlock()
+                popedBlock = sendState.popBlock()!!
                 sendState.didTransmit(0)
             }
 

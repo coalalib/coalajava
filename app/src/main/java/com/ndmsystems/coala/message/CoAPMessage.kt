@@ -16,7 +16,7 @@ import java.net.URLEncoder
 import java.util.StringTokenizer
 
 class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code: CoAPMessageCode, var id: Int = generateId()) {
-    var address: InetSocketAddress? = null
+    lateinit var address: InetSocketAddress
     var proxy: InetSocketAddress? = null
         private set
     var payload: CoAPMessagePayload? = null
@@ -41,10 +41,7 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
             System.arraycopy(message.token!!, 0, token, 0, token!!.size)
         }
         if (message.proxy != null) proxy = message.proxy
-        if (message.address != null) address = message.address
-        if (message.address == null) {
-            e("Message address == null in CoAPMessage constructor")
-        }
+        address = message.address
         if (message.responseHandler != null) responseHandler = message.responseHandler
         resendHandler = message.resendHandler
         if (message.peerPublicKey != null) peerPublicKey = message.peerPublicKey
@@ -106,7 +103,7 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
      *
      * @return CoAPMessage
      */
-    fun setURI(uri: String): CoAPMessage? {
+    fun setURI(uri: String): CoAPMessage {
         var uri = uri
         return try {
             if (!uri.startsWith(Scheme.NORMAL.toString() + "://") && !uri.startsWith(Scheme.SECURE.toString() + "://")) {
@@ -118,21 +115,21 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
         }
     }
 
-    fun setURI(uri: URI): CoAPMessage? {
+    fun setURI(uri: URI): CoAPMessage {
         setURIScheme(Scheme.fromString(uri.scheme))
         removeOption(CoAPMessageOptionCode.OptionURIHost)
         removeOption(CoAPMessageOptionCode.OptionURIPort)
         val port = if (uri.port != -1) uri.port else Coala.DEFAULT_PORT
         address = InetSocketAddress(uri.host, port)
-        setURIPath(uri.path)
-        setURIQuery(uri.query)
+        uri.path?.let { setURIPath(it) }
+        uri.query?.let { setURIQuery(it) }
         return this
     }
 
     fun getURI(): String {
         val builder = StringBuilder()
-        val port: Int = if (address != null && address!!.port != -1) address!!.port else Coala.DEFAULT_PORT
-        val host: String = if (address != null && address!!.address != null && address!!.address.hostAddress != null) address!!.address.hostAddress else {
+        val port: Int = if (address.port != -1) address.port else Coala.DEFAULT_PORT
+        val host: String = if (address.address != null && address.address.hostAddress != null) address.address.hostAddress else {
             w("Address is null! return \"null\"")
             "null"
         }
@@ -142,9 +139,8 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
             builder.append(getURIScheme().toString()).append("://").append(host).append(":").append(port)
         }
         val uriPath = getURIPathString()
-        if (uriPath != null) {
-            builder.append("/").append(uriPath)
-        }
+        builder.append("/").append(uriPath)
+
         val queryOptions = this.getOptions(CoAPMessageOptionCode.OptionURIQuery)
         if (queryOptions.isNotEmpty()) {
             builder.append("?")
@@ -165,10 +161,10 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
         return builder.toString()
     }
 
-    fun getURIPathString(): String? {
+    fun getURIPathString(): String {
         val pathOptions = this.getOptions(CoAPMessageOptionCode.OptionURIPath)
         if (pathOptions.isEmpty()) {
-            return null
+            return ""
         }
         val pathParts: MutableList<String?> = java.util.ArrayList()
         for (pathElem in pathOptions) {
@@ -177,10 +173,10 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
         return join(pathParts, "/")
     }
 
-    fun getURIQueryString(): String? {
+    fun getURIQueryString(): String {
         val queryOptions = this.getOptions(CoAPMessageOptionCode.OptionURIQuery)
-        if (queryOptions.size == 0) {
-            return null
+        if (queryOptions.isEmpty()) {
+            return ""
         }
         val queryParts: MutableList<String?> = java.util.ArrayList()
         for (queryElem in queryOptions) {
@@ -205,18 +201,16 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
         return this
     }
 
-    fun addQueryParams(params: Map<String, String?>?): CoAPMessage {
-        if (params != null) for (key in params.keys) addQueryParam(key, params[key])
+    fun addQueryParams(params: Map<String, String>): CoAPMessage {
+        for (key in params.keys) addQueryParam(key, params[key])
         return this
     }
 
-    private fun setURIQuery(query: String?) {
-        if (query != null) {
-            val st = StringTokenizer(query, "&")
-            while (st.hasMoreTokens()) {
-                val parts = st.nextToken().split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-                if (parts.size < 2) e("Wrong parts") else addQueryParam(parts[0], parts[1])
-            }
+    private fun setURIQuery(query: String) {
+        val st = StringTokenizer(query, "&")
+        while (st.hasMoreTokens()) {
+            val parts = st.nextToken().split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+            if (parts.size < 2) e("Wrong parts") else addQueryParam(parts[0], parts[1])
         }
     }
 
@@ -234,17 +228,15 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
         return Scheme.fromInt(option.value as Int?)
     }
 
-    fun setURIPath(path: String?): CoAPMessage {
+    fun setURIPath(path: String): CoAPMessage {
         removeOption(CoAPMessageOptionCode.OptionURIPath)
-        if (path != null) {
-            val pathSegments = path.split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-            for (pathSegment in pathSegments) if (pathSegment.isNotEmpty()) addOption(
-                CoAPMessageOption(
-                    CoAPMessageOptionCode.OptionURIPath,
-                    pathSegment
-                )
+        val pathSegments = path.split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+        for (pathSegment in pathSegments) if (pathSegment.isNotEmpty()) addOption(
+            CoAPMessageOption(
+                CoAPMessageOptionCode.OptionURIPath,
+                pathSegment
             )
-        }
+        )
         return this
     }
 
@@ -280,17 +272,16 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
         return null
     }
 
-    fun setProxy(proxyAddress: InetSocketAddress?) {
-        if (proxyAddress == null) return
+    fun setProxy(proxyAddress: InetSocketAddress) {
         proxy = proxyAddress
         val option = CoAPMessageOption(
             CoAPMessageOptionCode.OptionProxyURI,
-            getURIScheme().toString() + "://" + address!!.address.hostAddress + ":" + address!!.port
+            getURIScheme().toString() + "://" + address.address.hostAddress + ":" + address.port
         )
         addOption(option)
     }
 
-    fun removeOption(optionCode: CoAPMessageOptionCode?) {
+    fun removeOption(optionCode: CoAPMessageOptionCode) {
         val iterator: MutableIterator<CoAPMessageOption> = options.listIterator()
         while (iterator.hasNext()) {
             val option = iterator.next()
@@ -298,8 +289,7 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
         }
     }
 
-    fun addOption(option: CoAPMessageOption?): CoAPMessage {
-        if (option == null) return this
+    fun addOption(option: CoAPMessageOption): CoAPMessage {
         if (!option.isRepeatable) removeOption(option.code)
         options.add(option)
         return this
@@ -400,20 +390,17 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
     companion object {
         fun convertToEmptyAck(
             message: CoAPMessage,
-            from: InetSocketAddress?
+            from: InetSocketAddress
         ) {
             message.setType(CoAPMessageType.ACK)
             message.setCode(CoAPMessageCode.CoapCodeEmpty)
             message.address = from
-            if (message.address == null) {
-                e("Message address == null in CoAPMessage convertToEmptyAck")
-            }
             message.payload = null
         }
 
         fun ackTo(
             message: CoAPMessage,
-            from: InetSocketAddress?,
+            from: InetSocketAddress,
             code: CoAPMessageCode
         ): CoAPMessage {
             val result = CoAPMessage(CoAPMessageType.ACK, code)
@@ -421,9 +408,6 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
             result.token = message.token
             result.setURIScheme(message.getURIScheme())
             result.address = from
-            if (result.address == null) {
-                e("Message address == null in CoAPMessage ackTo")
-            }
             val option = message.getOption(CoAPMessageOptionCode.OptionObserve)
             if (option != null) result.addOption(option)
             val proxySecurityId = message.getOption(CoAPMessageOptionCode.OptionProxySecurityID)
@@ -431,15 +415,13 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
             return result
         }
 
-        fun resetTo(message: CoAPMessage, from: InetSocketAddress?): CoAPMessage {
+        fun resetTo(message: CoAPMessage, from: InetSocketAddress): CoAPMessage {
             val result = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.CoapCodeEmpty)
             result.setId(message.id)
             result.token = message.token
             result.setURIScheme(message.getURIScheme())
             result.address = from
-            if (result.address == null) {
-                e("Message address == null in CoAPMessage resetTo")
-            }
+
             return result
         }
     }

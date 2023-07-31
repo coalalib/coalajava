@@ -26,7 +26,7 @@ class ObserveLayer(
     private val server: CoAPServer,
     private val ackHandlers: AckHandlersPool
 ) : ReceiveLayer, SendLayer {
-    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress?>): LayerResult {
+    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress>): LayerResult {
         val token = message.token
         if (isRegistrationRequest(message)) {
             registryOfObservingResources.addObservingResource(token, ObservingResource(message, ackHandlers[message.id]))
@@ -78,7 +78,7 @@ class ObserveLayer(
             d("Add observer")
             val observer = Observer(message, senderAddress)
             resource.addObserver(observer)
-            val output = resource.handler.onReceive(CoAPResourceInput(null, null))
+            val output = resource.handler.onReceive(CoAPResourceInput(message, null))
             resource.send(output, observer)
             return LayerResult(false, null)
         } else if (isDeregistrationRequest(message)) {
@@ -147,7 +147,7 @@ class ObserveLayer(
         if (message.hasOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize)) responseMessage.addOption(
             message.getOption(
                 CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize
-            )
+            )!!
         )
 
         // Validate message scheme
@@ -180,6 +180,6 @@ class ObserveLayer(
     companion object {
         private const val REGISTER = 0
         private const val DEREGISTER = 1
-        private const val DEFAULT_MAX_AGE = 30
+        const val DEFAULT_MAX_AGE = 30
     }
 }

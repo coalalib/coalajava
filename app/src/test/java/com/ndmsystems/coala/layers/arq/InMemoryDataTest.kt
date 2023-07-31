@@ -49,7 +49,7 @@ object InMemoryDataTest : Spek({
             }
 
             When("get bytes between range 4..7") {
-                result = data.get(4, 7)
+                result = data.get(4, 7)!!
             }
 
             Then("size should be equal 3") {

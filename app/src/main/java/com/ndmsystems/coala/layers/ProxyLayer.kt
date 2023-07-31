@@ -45,7 +45,7 @@ class ProxyLayer(private val client: CoAPClient, private val messagePool: CoAPMe
         return LayerResult(true, null)
     }
 
-    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress?>): LayerResult {
+    override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress>): LayerResult {
         if (!isAboutProxying(message)) return LayerResult(true, null)
         v(
             "ProxyLayer onSend:" +
@@ -53,12 +53,12 @@ class ProxyLayer(private val client: CoAPClient, private val messagePool: CoAPMe
                     " destination: " + message.address +
                     " proxy: " + if (message.proxy == null) "null" else message.proxy
         )
-        receiverAddressReference.set(message.proxy)
+        receiverAddressReference.set(message.proxy!!)
         return LayerResult(true, null)
     }
 
     private fun isAboutProxying(message: CoAPMessage): Boolean {
-        return message.hasOption(CoAPMessageOptionCode.OptionProxyURI)
+        return message.hasOption(CoAPMessageOptionCode.OptionProxyURI) && message.proxy != null
     }
 
     private fun respondNotSupported(message: CoAPMessage, senderAddress: InetSocketAddress) {
@@ -66,9 +66,6 @@ class ProxyLayer(private val client: CoAPClient, private val messagePool: CoAPMe
         val responseMessage = CoAPMessage(CoAPMessageType.NON, CoAPMessageCode.CoapCodeProxyingNotSupported, message.id)
         if (message.token != null) responseMessage.token = message.token
         responseMessage.address = senderAddress
-        if (responseMessage.address == null) {
-            e("Message address == null in ProxyLayer respondNotSupported")
-        }
         responseMessage.setURIScheme(message.getURIScheme())
         client.send(responseMessage, null)
     }

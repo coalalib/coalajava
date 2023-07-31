@@ -4,7 +4,6 @@ import com.ndmsystems.coala.CoAPHandler
 import com.ndmsystems.coala.CoAPMessagePool
 import com.ndmsystems.coala.Coala
 import com.ndmsystems.coala.TestHelper
-import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageOption
@@ -77,7 +76,7 @@ object ArqLayerTest : Spek({
             }
 
             When("receive message") {
-                passNext = arqLayer.onReceive(message, senderReference)
+                passNext = arqLayer.onReceive(message, senderReference).shouldContinue
             }
 
             Then("message should be passed to next layers") {
@@ -96,7 +95,7 @@ object ArqLayerTest : Spek({
 
             Given("simple arq request") {
                 message = ArqLayerTest.arqMessageOfRequest(0, false, null)
-                firstMessageOption = message.getOption(CoAPMessageOptionCode.OptionBlock1)
+                firstMessageOption = message.getOption(CoAPMessageOptionCode.OptionBlock1)!!
                 senderAddressReference = Reference(InetSocketAddress("8.8.8.8", 5008))
 
                 every { messagePool.getSourceMessageByToken(any()) } returns message
@@ -104,7 +103,7 @@ object ArqLayerTest : Spek({
             }
 
             When("receive first message of ARQ request") {
-                passNext = arqLayer.onReceive(message, senderAddressReference)
+                passNext = arqLayer.onReceive(message, senderAddressReference).shouldContinue
             }
 
 
@@ -140,7 +139,7 @@ object ArqLayerTest : Spek({
             }
 
             When("send message through ARQ") {
-                result = arqLayer.onSend(message, addressReference)
+                result = arqLayer.onSend(message, addressReference).shouldContinue
             }
 
             Then("message shouldn't be processed in this layer") {
@@ -167,7 +166,7 @@ object ArqLayerTest : Spek({
             }
 
             When("send message through ARQ") {
-                result = arqLayer.onSend(message, addressReference)
+                result = arqLayer.onSend(message, addressReference).shouldContinue
             }
 
             Then("message shouldn't be processed in this layer") {
@@ -179,7 +178,8 @@ object ArqLayerTest : Spek({
 
             val testCase = 48000
             lateinit var message: CoAPMessage
-            val addressReference = Reference(InetSocketAddress("8.8.8.8", 5008))
+            val address = InetSocketAddress("8.8.8.8", 5008)
+            val addressReference = Reference(address)
 
             var result: Boolean? = null
             val sentMessages = mutableListOf<CoAPMessage>()
@@ -187,6 +187,7 @@ object ArqLayerTest : Spek({
             Given("CoAP message with CoapCodeContent") {
                 message = CoAPMessage(CoAPMessageType.ACK, CoAPMessageCode.CoapCodeContent)
                         .apply {
+                            this.address = address
                             payload = CoAPMessagePayload(ByteArray(testCase))
                             token = byteArrayOf(1, 2)
                         }
@@ -198,7 +199,7 @@ object ArqLayerTest : Spek({
             }
 
             When("send message through ARQ") {
-                result = arqLayer.onSend(message, addressReference)
+                result = arqLayer.onSend(message, addressReference).shouldContinue
             }
 
             Then("message should be processed in this layer") {
@@ -230,9 +231,9 @@ object ArqLayerTest : Spek({
         val request = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.POST)
         request.token = byteArrayOf(1, 2, 3)
         request.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize, 10))
-        request.uri = "coap://8.8.8.8:5050/coap?test=true"
+        request.setURI("coap://8.8.8.8:5050/coap?test=true")
         val block = Block(blockNumber, data ?: ByteArray(512), !last)
-        request.payload = CoAPMessagePayload(block.data)
+        request.payload = CoAPMessagePayload(block.data!!)
         val block1Option = CoAPMessageOption(CoAPMessageOptionCode.OptionBlock1, block.toInt())
         request.addOption(block1Option)
         return request
@@ -243,7 +244,7 @@ object ArqLayerTest : Spek({
         assertEquals(senderAddress.port.toLong(), ackMessage.address.port.toLong())
         assertEquals(senderAddress.address.hostAddress, ackMessage.address.address.hostAddress)
 
-        val block = Block(requestBlock1Option.value as Int, request.payload.content)
+        val block = Block(requestBlock1Option.value as Int, request.payload!!.content)
         val ackBlockOption = ackMessage.getOption(CoAPMessageOptionCode.OptionBlock1)
 
         if (block.isMoreComing)

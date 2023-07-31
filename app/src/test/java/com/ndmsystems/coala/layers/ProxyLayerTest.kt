@@ -1,38 +1,13 @@
-package com.ndmsystems.coala.layers;
+package com.ndmsystems.coala.layers
 
-import com.ndmsystems.coala.CoAPClient;
-import com.ndmsystems.coala.CoAPHandler;
-import com.ndmsystems.coala.CoAPMessagePool;
-import com.ndmsystems.coala.message.CoAPMessage;
-import com.ndmsystems.coala.message.CoAPMessageCode;
-import com.ndmsystems.coala.message.CoAPMessageOption;
-import com.ndmsystems.coala.message.CoAPMessageOptionCode;
-import com.ndmsystems.coala.message.CoAPMessageType;
-import com.ndmsystems.coala.utils.Reference;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-
-import java.net.InetSocketAddress;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import com.ndmsystems.coala.CoAPClient
 
 /**
  * Created by Владимир on 01.06.2017.
  */
-public class ProxyLayerTest {
-    private ProxyLayer proxyLayer;
-    private CoAPClient client;
-    //private CoAPMessagePool messagePool;
-
+class ProxyLayerTest {
+    private val proxyLayer: ProxyLayer? = null
+    private val client: CoAPClient? = null //private CoAPMessagePool messagePool;
     /*@Before
     public void setUp() throws Exception {
         client = mock(CoAPClient.class);
@@ -51,7 +26,6 @@ public class ProxyLayerTest {
         assertTrue(shouldContinue);
         verify(client, times(0)).send((CoAPMessage) any(), (CoAPHandler) any());
     }*/
-
     /*@Test
     public void onSend_messageThroughProxy_shouldRemoveRestrictedOptions() {
         CoAPMessage message = new CoAPMessage(CoAPMessageType.NON, CoAPMessageCode.GET);

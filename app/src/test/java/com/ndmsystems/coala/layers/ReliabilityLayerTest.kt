@@ -46,7 +46,7 @@ object ReliabilityLayerTest: Spek( {
 
             var result = false
             When("call onReceive") {
-                result = reliabilityLayer.onReceive(msg, mockRefAddress)
+                result = reliabilityLayer.onReceive(msg, mockRefAddress).shouldContinue
             }
 
             Then("handler not deleted"){
@@ -76,7 +76,7 @@ object ReliabilityLayerTest: Spek( {
 
             var result = false
             When("call onReceive") {
-                result = reliabilityLayer.onReceive(msg, mockRefAddress)
+                result = reliabilityLayer.onReceive(msg, mockRefAddress).shouldContinue
             }
 
             Then("shouldn't call other methods") {
@@ -100,7 +100,7 @@ object ReliabilityLayerTest: Spek( {
 
             var result = false
             When("call onReceive") {
-                result = reliabilityLayer.onReceive(msg, mockRefAddress)
+                result = reliabilityLayer.onReceive(msg, mockRefAddress).shouldContinue
             }
 
             Then("shouldn't call other methods"){
@@ -128,7 +128,7 @@ object ReliabilityLayerTest: Spek( {
 
             var result = false
             When("call onReceive") {
-                result = reliabilityLayer.onReceive(msg, mockRefAddress)
+                result = reliabilityLayer.onReceive(msg, mockRefAddress).shouldContinue
             }
 
             Then("remove msg from msgPool"){
@@ -166,7 +166,7 @@ object ReliabilityLayerTest: Spek( {
 
             var result = false
             When("call onReceive") {
-                result = reliabilityLayer.onReceive(msg, mockRefAddress)
+                result = reliabilityLayer.onReceive(msg, mockRefAddress).shouldContinue
             }
 
             Then("remove msg from msgPool"){
@@ -203,7 +203,7 @@ object ReliabilityLayerTest: Spek( {
 
             var result = false
             When("call onReceive") {
-                result = reliabilityLayer.onReceive(msg, mockRefAddress)
+                result = reliabilityLayer.onReceive(msg, mockRefAddress).shouldContinue
             }
 
             Then("remove msg from msgPool"){
