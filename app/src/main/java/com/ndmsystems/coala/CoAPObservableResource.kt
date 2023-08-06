@@ -57,7 +57,9 @@ class CoAPObservableResource(
     }
 
     private fun addOptions(responseMessage: CoAPMessage, message: CoAPMessage, senderAddress: InetSocketAddress?) {
-        responseMessage.address = senderAddress
+        if (senderAddress != null) {
+            responseMessage.address = senderAddress
+        }
         if (responseMessage.address == null) {
             e("Message address == null in addOptions")
         }
