@@ -4,6 +4,7 @@ import com.ndmsystems.coala.CoAPResource.CoAPResourceHandler
 import com.ndmsystems.coala.CoAPResourceInput
 import com.ndmsystems.coala.CoAPResourceOutput
 import com.ndmsystems.coala.Coala
+import com.ndmsystems.coala.helpers.CoalaHelper
 import com.ndmsystems.coala.helpers.logging.LogHelper.addLogger
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.helpers.logging.LogHelper.v
@@ -31,8 +32,8 @@ class BigDataTest {
         w(100)
         addLogger(SystemOutLogger(""))
         lock = CountDownLatch(1)
-        val client = Coala(3456)
-        val server = Coala(3457)
+        val client = Coala(3456, CoalaHelper.storage)
+        val server = Coala(3457, CoalaHelper.storage)
         val responseReceived = AtomicBoolean(false)
         val responseDataIsCorrect = AtomicBoolean(false)
         server.addResource("msg", CoAPRequestMethod.GET, object : CoAPResourceHandler() {
@@ -65,8 +66,8 @@ class BigDataTest {
         addLogger(SystemOutLogger(""))
         w(100)
         lock = CountDownLatch(1)
-        val client = Coala(3456)
-        val server = Coala(3457)
+        val client = Coala(3456, CoalaHelper.storage)
+        val server = Coala(3457, CoalaHelper.storage)
         val requestReceived = AtomicBoolean(false)
         val requestDataIsCorrect = AtomicBoolean(false)
         server.addResource("msg", CoAPRequestMethod.POST, object : CoAPResourceHandler() {
@@ -105,8 +106,8 @@ class BigDataTest {
         addLogger(SystemOutLogger(""))
         w(100)
         lock = CountDownLatch(2)
-        val client = Coala(3456)
-        val server = Coala(3457)
+        val client = Coala(3456, CoalaHelper.storage)
+        val server = Coala(3457, CoalaHelper.storage)
         val requestReceived = AtomicBoolean(false)
         val requestDataIsCorrect = AtomicBoolean(false)
         server.addResource("msg", CoAPRequestMethod.POST, object : CoAPResourceHandler() {

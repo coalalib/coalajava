@@ -25,7 +25,7 @@ import io.reactivex.ObservableEmitter
 import io.reactivex.Single
 import javax.inject.Inject
 
-class Coala @JvmOverloads constructor(port: Int? = 0, params: CoAPMessagePool.Companion.Params? = CoAPMessagePool.Companion.Params()) :
+class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage, params: CoAPMessagePool.Companion.Params? = CoAPMessagePool.Companion.Params()) :
     CoAPTransport() {
     @JvmField
     @Inject
@@ -58,7 +58,6 @@ class Coala @JvmOverloads constructor(port: Int? = 0, params: CoAPMessagePool.Co
     @JvmField
     @Inject
     var localPeerDiscoverer: LocalPeerDiscoverer? = null
-    lateinit var storage: ICoalaStorage
     /**
      * Create instance of coala with given port and resend message time
      */
@@ -256,10 +255,10 @@ class Coala @JvmOverloads constructor(port: Int? = 0, params: CoAPMessagePool.Co
         start()
     }
 
-    override fun getMessageDeliveryInfo(message: CoAPMessage): MessageDeliveryInfo {
+    override fun getMessageDeliveryInfo(message: CoAPMessage): MessageDeliveryInfo? {
         val infoForReturn = messagePool!!.getMessageDeliveryInfo(message.hexToken)
         infoForReturn?.addARQReceiveInfoIfNeeded(getReceivedStateForToken(message.token!!))
-        return infoForReturn!!
+        return infoForReturn
     }
 
     fun getReceivedStateForToken(tokenForDownload: ByteArray): LoggableState? {

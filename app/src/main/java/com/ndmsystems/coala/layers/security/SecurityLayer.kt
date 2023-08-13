@@ -184,7 +184,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                         val responseHandler = message.responseHandler
                         if (responseHandler != null) {
                             LogHelper.i(errorText)
-                            responseHandler.onError(AckError(errorText).setMessageDeliveryInfo(client.getMessageDeliveryInfo(message)))
+                            responseHandler.onError(AckError(errorText))
                         }
                     }
                     it.remove()

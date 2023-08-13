@@ -5,6 +5,7 @@ import com.ndmsystems.coala.CoAPResource.CoAPResourceHandler
 import com.ndmsystems.coala.CoAPResourceInput
 import com.ndmsystems.coala.CoAPResourceOutput
 import com.ndmsystems.coala.Coala
+import com.ndmsystems.coala.helpers.CoalaHelper
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.helpers.logging.LogHelper.v
@@ -47,8 +48,8 @@ class ObserveTest : BaseAsyncTest() {
 
     @Test
     fun testObserveSuccessSubscribe() {
-        client = Coala(4538)
-        server = Coala(5685)
+        client = Coala(4538, CoalaHelper.storage)
+        server = Coala(5685, CoalaHelper.storage)
         w(30)
         server!!.addObservableResource("msg", object : CoAPResourceHandler() {
             override fun onReceive(inputData: CoAPResourceInput): CoAPResourceOutput {
@@ -65,8 +66,8 @@ class ObserveTest : BaseAsyncTest() {
 
     @Test
     fun testObserveSuccessGetNotification() {
-        client = Coala(1111)
-        server = Coala(2222)
+        client = Coala(1111, CoalaHelper.storage)
+        server = Coala(2222, CoalaHelper.storage)
         w(30)
         server!!.addObservableResource("msg", object : CoAPResourceHandler() {
             override fun onReceive(inputData: CoAPResourceInput): CoAPResourceOutput {
@@ -89,8 +90,8 @@ class ObserveTest : BaseAsyncTest() {
 
     @Test //    @Ignore("disable due error that required deep research")
     fun testObserveSuccessBigNotification() {
-        client = Coala(1111)
-        server = Coala(2222)
+        client = Coala(1111, CoalaHelper.storage)
+        server = Coala(2222, CoalaHelper.storage)
         w(30)
         val bigText =
             "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
@@ -114,8 +115,8 @@ class ObserveTest : BaseAsyncTest() {
 
     @Test
     fun testObserveUnknownToken() {
-        client = Coala(1111)
-        server = Coala(2222)
+        client = Coala(1111, CoalaHelper.storage)
+        server = Coala(2222, CoalaHelper.storage)
         w(30)
         server!!.addObservableResource("msg", object : CoAPResourceHandler() {
             override fun onReceive(inputData: CoAPResourceInput): CoAPResourceOutput {
