@@ -1,5 +1,6 @@
 package com.ndmsystems.coala
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.helpers.logging.LogHelper.e
 import com.ndmsystems.coala.helpers.logging.LogHelper.i
@@ -24,11 +25,15 @@ class CoAPSender(
     private var connection: MulticastSocket? = null
     @Synchronized
     fun start() {
+        v("CoAPSender start")
         if (connection == null) connectionProvider.waitForConnection()
-            .subscribe { newConnection: MulticastSocket? ->
+            .subscribe( { newConnection: MulticastSocket? ->
+                LogHelper.d("CoAPSender started, socket: $newConnection")
                 connection = newConnection
                 startSendingThread()
-            }
+            }, {
+                LogHelper.i("Can't start CoAPSender: $it")
+            })
     }
 
     private fun startSendingThread() {

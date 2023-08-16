@@ -4,18 +4,18 @@ import com.ndmsystems.coala.Coala.OnPortIsBusyHandler
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.helpers.logging.LogHelper.e
 import com.ndmsystems.coala.helpers.logging.LogHelper.i
+import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.helpers.logging.LogHelper.w
 import io.reactivex.Observable
 import io.reactivex.disposables.Disposable
-import io.reactivex.subjects.PublishSubject
-import io.reactivex.subjects.Subject
+import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.AsyncSubject
 import java.io.IOException
 import java.net.Inet4Address
 import java.net.InetSocketAddress
 import java.net.MulticastSocket
 import java.net.SocketException
 import java.net.UnknownHostException
-import java.util.concurrent.TimeUnit
 
 /**
  * Created by Владимир on 19.07.2017.
@@ -23,18 +23,29 @@ import java.util.concurrent.TimeUnit
 class ConnectionProvider(private val port: Int) {
     private var onPortIsBusyHandler: OnPortIsBusyHandler? = null
     private var connection: MulticastSocket? = null
-    private val subject: Subject<MulticastSocket> = PublishSubject.create()
+    private var subject: AsyncSubject<MulticastSocket>? = null
     private var timerSubscription: Disposable? = null
+
     @Synchronized
     fun waitForConnection(): Observable<MulticastSocket> {
-        return if (connection != null) Observable.just(connection) else {
-            initConnection()
-            subject
+        v("waitForConnection")
+        return if (connection != null) {
+            v("waitForConnection return connection")
+            Observable.just(connection)
+        } else {
+            if (subject == null) {
+                v("waitForConnection initConnection")
+                subject = AsyncSubject.create()
+                initConnection()
+            }
+            v("waitForConnection return subject")
+            subject!!
         }
     }
 
     @Synchronized
     fun close() {
+        d("close")
         if (connection != null &&
             !connection!!.isClosed
         ) {
@@ -47,34 +58,54 @@ class ConnectionProvider(private val port: Int) {
             timerSubscription!!.dispose()
             timerSubscription = null
         }
+        subject?.onError(Exception("Closed"))
+        subject = null
     }
 
-    @Synchronized
     private fun initConnection() {
-        if (timerSubscription == null) timerSubscription = Observable.interval(10, 1000, TimeUnit.MILLISECONDS)
-            .map { createConnection() }
-            .filter { connection: MulticastSocket? -> connection != null }
-            .retry()
-            .subscribe()
+        if (timerSubscription == null) timerSubscription = Observable.just(0)
+            .map {
+                val newConnection = createConnection() ?: throw Exception("Can't create connection")
+                newConnection
+            }
+            .map {
+                saveConnection(it)
+                invokeResultAndCompleteSubject(it)
+                it
+            }
+            .retry(3)
+            .doOnError {
+            }
+            .subscribeOn(Schedulers.io())
+            .subscribe({}, {
+                i("Can't init connection: ${it.message}")
+                timerSubscription?.dispose()
+                timerSubscription = null
+                subject?.onError(it)
+                setSubjectToNull()
+                invokePortIsBusyIfNeeded()
+            })
+    }
+
+    private fun invokeResultAndCompleteSubject(connection: MulticastSocket) {
+        subject?.onNext(connection)
+        subject?.onComplete()
+
+        setSubjectToNull()
     }
 
     @Synchronized
-    private fun saveConnection(connection: MulticastSocket) {
-        this.connection = connection
-        subject.onNext(connection)
-        timerSubscription!!.dispose()
-        timerSubscription = null
+    private fun setSubjectToNull() {
+        subject = null
     }
 
-    @Synchronized
     @Throws(IOException::class)
     private fun createConnection(): MulticastSocket? {
         return try {
             val connection = MulticastSocket(port)
             connection.joinGroup(Inet4Address.getByName("224.0.0.187"))
-            connection.receiveBufferSize = 409600
+            connection.receiveBufferSize = 1048576
             connection.trafficClass = IPTOS_RELIABILITY or IPTOS_THROUGHPUT or IPTOS_LOWDELAY
-            saveConnection(connection)
             connection
         } catch (ex: SocketException) {
             i("MulticastSocket can't be created, try to reuse: " + ex.javaClass + " " + ex.localizedMessage)
@@ -82,7 +113,16 @@ class ConnectionProvider(private val port: Int) {
         }
     }
 
+    @Synchronized
+    private fun saveConnection(connection: MulticastSocket) {
+        d("saveConnection")
+        this.connection = connection
+        timerSubscription?.dispose()
+        timerSubscription = null
+    }
+
     private fun tryToReuseSocket(): MulticastSocket? {
+        d("tryToReuseSocket")
         return try {
             val srcAddress = InetSocketAddress(port)
             val connection = MulticastSocket(null)
@@ -98,40 +138,31 @@ class ConnectionProvider(private val port: Int) {
                         + ", socket isConnected = " + connection.isConnected
             )
             saveConnection(connection)
+            invokeResultAndCompleteSubject(connection)
             connection
         } catch (ex: SocketException) {
             e("MulticastSocket can't be created, and can't be reused: " + ex.javaClass + " " + ex.localizedMessage)
-            if (onPortIsBusyHandler != null) {
-                onPortIsBusyHandler!!.onPortIsBusy()
-            }
             null
         } catch (e: UnknownHostException) {
             e("MulticastSocket can't be created, and can't be reuse UnknownHostException: " + e.localizedMessage)
             e.printStackTrace()
-            if (onPortIsBusyHandler != null) {
-                onPortIsBusyHandler!!.onPortIsBusy()
-            }
             null
         } catch (e: IOException) {
             e("MulticastSocket can't be created, and can't be reuse IOException: " + e.localizedMessage)
             e.printStackTrace()
-            if (onPortIsBusyHandler != null) {
-                onPortIsBusyHandler!!.onPortIsBusy()
-            }
             null
+        }
+    }
+
+    private fun invokePortIsBusyIfNeeded() {
+        if (onPortIsBusyHandler != null) {
+            onPortIsBusyHandler!!.onPortIsBusy()
         }
     }
 
     fun setOnPortIsBusyHandler(onPortIsBusyHandler: OnPortIsBusyHandler?) {
         d("setOnPortIsBusyHandler")
         this.onPortIsBusyHandler = onPortIsBusyHandler
-    }
-
-    fun restartConnection() {
-        if (connection != null && !connection!!.isClosed) {
-            connection!!.close()
-        }
-        connection = null
     }
 
     companion object {

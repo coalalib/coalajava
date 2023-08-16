@@ -2,6 +2,7 @@ package com.ndmsystems.coala
 
 import com.ndmsystems.coala.CoAPSerializer.DeserializeException
 import com.ndmsystems.coala.CoAPSerializer.fromBytes
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.helpers.logging.LogHelper.e
 import com.ndmsystems.coala.helpers.logging.LogHelper.i
@@ -21,11 +22,15 @@ class CoAPReceiver(private val connectionProvider: ConnectionProvider, private v
     private var connection: MulticastSocket? = null
     @Synchronized
     fun start() {
+        v("CoAPReceiver start")
         if (connection == null) connectionProvider.waitForConnection()
-            .subscribe { newConnection: MulticastSocket? ->
+            .subscribe( { newConnection: MulticastSocket? ->
+                v("CoAPReceiver started, socket: $newConnection")
                 connection = newConnection
                 startReceivingThread()
-            }
+            }, {
+            LogHelper.i("Can't start CoAPReceiver: $it")
+        })
     }
 
     @Synchronized

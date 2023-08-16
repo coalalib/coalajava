@@ -251,7 +251,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
 
     fun restartConnection() {
         stop()
-        connectionProvider!!.restartConnection()
+        connectionProvider!!.close()
         start()
     }
 
