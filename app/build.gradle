@@ -31,6 +31,7 @@ apply plugin: 'kotlin-kapt'
 apply plugin: 'de.mannodermaus.android-junit5'
 
 android {
+    namespace = "com.ndmsystems.coala"
     compileSdkVersion project.ext.compileSdkVersion
     defaultConfig {
         multiDexEnabled true
