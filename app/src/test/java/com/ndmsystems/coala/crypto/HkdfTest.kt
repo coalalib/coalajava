@@ -2,6 +2,7 @@ package com.ndmsystems.coala.crypto
 
 import com.ndmsystems.coala.helpers.Hex.decodeHex
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import org.junit.Assert
 import org.junit.Test
 
@@ -11,6 +12,7 @@ import org.junit.Test
 class HkdfTest {
     @Test
     fun testCase1() {
+        LogHelper.setLogLevel(LogHelper.LogLevel.WARNING)
         val IKM = "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"
         val salt = "000102030405060708090a0b0c"
         val info = "f0f1f2f3f4f5f6f7f8f9"
@@ -31,6 +33,7 @@ class HkdfTest {
 
     @Test
     fun testCase2() {
+        LogHelper.setLogLevel(LogHelper.LogLevel.WARNING)
         val IKM = "000102030405060708090a0b0c0d0e0f" +
                 "101112131415161718191a1b1c1d1e1f" +
                 "202122232425262728292a2b2c2d2e2f" +
@@ -63,6 +66,7 @@ class HkdfTest {
 
     @Test
     fun testCase3() {
+        LogHelper.setLogLevel(LogHelper.LogLevel.WARNING)
         val IKM = "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"
         val salt = ""
         val info = ""
