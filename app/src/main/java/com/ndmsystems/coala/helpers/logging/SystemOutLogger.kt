@@ -22,10 +22,11 @@ class SystemOutLogger(private val tagPrefix: String) : ILogger {
     }
 
     private fun getTag(severity: String): String {
-        val fullClassName = Thread.currentThread().stackTrace[4].className
+        val stackTraceElement = Thread.currentThread().stackTrace[4]
+        val fullClassName = stackTraceElement.className
         val className = fullClassName.substring(fullClassName.lastIndexOf(".") + 1)
-        val methodName = Thread.currentThread().stackTrace[4].methodName
-        val lineNumber = Thread.currentThread().stackTrace[4].lineNumber
+        val methodName = stackTraceElement.methodName
+        val lineNumber = stackTraceElement.lineNumber
         return "$severity: $tagPrefix$className$methodName():$lineNumber"
     }
 }
