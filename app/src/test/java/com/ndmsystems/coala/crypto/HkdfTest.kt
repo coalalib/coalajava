@@ -1,7 +1,6 @@
 package com.ndmsystems.coala.crypto
 
 import com.ndmsystems.coala.helpers.Hex
-import com.ndmsystems.coala.helpers.Hex.decodeHex
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import org.junit.Assert
@@ -24,7 +23,7 @@ class HkdfTest {
         val myKey = "2d2d0a90cf1a5a4c5db02d56ecc4c5bf"
         val peerIV = "34007208"
         val myIV = "d5b88718"
-        val hkdf = Hkdf(Hex.decodeHex(IKM.toCharArray()), decodeHex(salt.toCharArray()), decodeHex(info.toCharArray()))
+        val hkdf = Hkdf(Hex.decodeHex(IKM.toCharArray()), Hex.decodeHex(salt.toCharArray()), Hex.decodeHex(info.toCharArray()))
         Assert.assertEquals(hkdf.toString(), OKM)
         Assert.assertEquals(encodeHexString(hkdf.peerKey), peerKey)
         Assert.assertEquals(encodeHexString(hkdf.myKey), myKey)
@@ -57,7 +56,7 @@ class HkdfTest {
         val myKey = "4f012eda2d4efad8a050cc4c19afa97c"
         val peerIV = "59045a99"
         val myIV = "cac78272"
-        val hkdf = Hkdf(Hex.decodeHex(IKM.toCharArray()), decodeHex(salt.toCharArray()), decodeHex(info.toCharArray()))
+        val hkdf = Hkdf(Hex.decodeHex(IKM.toCharArray()), Hex.decodeHex(salt.toCharArray()), Hex.decodeHex(info.toCharArray()))
         Assert.assertEquals(hkdf.toString(), OKM)
         Assert.assertEquals(encodeHexString(hkdf.peerKey), peerKey)
         Assert.assertEquals(encodeHexString(hkdf.myKey), myKey)
@@ -78,7 +77,7 @@ class HkdfTest {
         val myKey = "b8a11f5c5ee1879ec3454e5f3c738d2d"
         val peerIV = "9d201395"
         val myIV = "faa4b61a"
-        val hkdf = Hkdf(Hex.decodeHex(IKM.toCharArray()), decodeHex(salt.toCharArray()), decodeHex(info.toCharArray()))
+        val hkdf = Hkdf(Hex.decodeHex(IKM.toCharArray()), Hex.decodeHex(salt.toCharArray()), Hex.decodeHex(info.toCharArray()))
         Assert.assertEquals(hkdf.toString(), OKM)
         Assert.assertEquals(encodeHexString(hkdf.peerKey), peerKey)
         Assert.assertEquals(encodeHexString(hkdf.myKey), myKey)

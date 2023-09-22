@@ -6,7 +6,6 @@ package com.ndmsystems.coala.helpers
 object Hex {
     private val DIGITS_LOWER: CharArray
     private val DIGITS_UPPER: CharArray
-    @JvmStatic
     fun decodeHex(data: CharArray): ByteArray {
         val len = data.size
         val out = ByteArray(len shr 1)
