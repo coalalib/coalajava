@@ -127,9 +127,10 @@ class ArqLayer(
                         sendStates.remove(token)
                         LayersStack.LayerResult(false)
                     } else {
-                        mutableIncomingMessage = originalMessage
+                        messagePool.add(originalMessage)
+                        messagePool.setNoNeededSending(originalMessage)
                         sendStates.remove(token)
-                        LayersStack.LayerResult(true, mutableIncomingMessage)
+                        LayersStack.LayerResult(true)
                     }
                 }
             }
