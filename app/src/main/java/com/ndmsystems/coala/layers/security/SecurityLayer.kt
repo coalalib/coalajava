@@ -235,14 +235,18 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
     }
 
     private fun processIncomingHandshake(handshakeType: HandshakeType, message: CoAPMessage, senderAddress: InetSocketAddress) {
+
+
         if (message.payload == null) return
         if (handshakeType == HandshakeType.ClientHello) {
-            val peerSession = SecuredSession(true)
-            setSessionForAddress(peerSession, message)
             LogHelper.d("Received HANDSHAKE Client Public Key")
+            /*val peerSession = SecuredSession(true)
+            setSessionForAddress(peerSession, message)
             // Update peer public key and send my public key to peer
             peerSession.startPeer(message.payload!!.content)
-            sendPeerHello(senderAddress, peerSession.publicKey, message)
+            sendPeerHello(senderAddress, peerSession.publicKey, message)*/
+            //TODO: Disabled before server fixed
+            return
         } else { //TODO: Realize!
             LogHelper.e("Received Client signature")
         }
