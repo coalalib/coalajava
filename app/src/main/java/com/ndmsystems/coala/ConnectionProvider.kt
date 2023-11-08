@@ -2,7 +2,6 @@ package com.ndmsystems.coala
 
 import com.ndmsystems.coala.Coala.OnPortIsBusyHandler
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
 import com.ndmsystems.coala.helpers.logging.LogHelper.i
 import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.helpers.logging.LogHelper.w
@@ -141,14 +140,14 @@ class ConnectionProvider(private val port: Int) {
             invokeResultAndCompleteSubject(connection)
             connection
         } catch (ex: SocketException) {
-            e("MulticastSocket can't be created, and can't be reused: " + ex.javaClass + " " + ex.localizedMessage)
+            i("MulticastSocket can't be created, and can't be reused: " + ex.javaClass + " " + ex.localizedMessage)
             null
         } catch (e: UnknownHostException) {
-            e("MulticastSocket can't be created, and can't be reuse UnknownHostException: " + e.localizedMessage)
+            i("MulticastSocket can't be created, and can't be reuse UnknownHostException: " + e.localizedMessage)
             e.printStackTrace()
             null
         } catch (e: IOException) {
-            e("MulticastSocket can't be created, and can't be reuse IOException: " + e.localizedMessage)
+            i("MulticastSocket can't be created, and can't be reuse IOException: " + e.localizedMessage)
             e.printStackTrace()
             null
         }

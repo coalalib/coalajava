@@ -49,7 +49,9 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         if (sessionNotFound != null
                 || sessionExpired != null) {
             LogHelper.i("Session not found or expired for address: $senderAddress, try to restart.")
-            removeSessionForAddressIfNotInProgress(mainMessage)
+            mainMessage?.let {
+                removeSessionForAddressIfNotInProgress(it)
+            }
             messagePool.requeue(message.id)
             return LayersStack.LayerResult(false)
         }
@@ -291,10 +293,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         client.send(responseMessage, null)
     }
 
-    private fun getSessionForAddress(mainMessage: CoAPMessage?): SecuredSession? {
-        if (mainMessage == null) {
-            LogHelper.e("getSessionForAddress, try to get hash for null message!")
-        }
+    private fun getSessionForAddress(mainMessage: CoAPMessage): SecuredSession? {
         return sessionPool[getHashAddressString(mainMessage)]
     }
 
@@ -304,12 +303,11 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         return sessionPool.getByPeerProxySecurityId(if (obj != null) obj as Long else null)
     }
 
-    private fun getHashAddressString(mainMessage: CoAPMessage?): String? {
-        if (mainMessage == null) {
-            LogHelper.e("getHashAddressString, try to get hash for null message!")
-            return null
-        }
-        return (if (mainMessage.address.address?.hostAddress != null) mainMessage.address.address.hostAddress + ":" + mainMessage.address.port else mainMessage.getURI()) + if (mainMessage.proxy == null) "" else mainMessage.proxy.toString()
+    private fun getHashAddressString(mainMessage: CoAPMessage): String {
+        return (if (mainMessage.address.address?.hostAddress != null)
+            mainMessage.address.address.hostAddress + ":" + mainMessage.address.port
+        else mainMessage.getURI()) +
+                if (mainMessage.proxy == null) "" else mainMessage.proxy.toString()
     }
 
     private fun setSessionForAddress(securedSession: SecuredSession, message: CoAPMessage) {
@@ -317,7 +315,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         sessionPool[getHashAddressString(message)] = securedSession
     }
 
-    private fun removeSessionForAddressIfNotInProgress(mainMessage: CoAPMessage?) {
+    private fun removeSessionForAddressIfNotInProgress(mainMessage: CoAPMessage) {
         val securedSession = getSessionForAddress(mainMessage)
         if (securedSession != null) {
             LogHelper.d("removeSessionForAddressIfNotInProgress, ready: " + securedSession.isReady)
@@ -325,14 +323,9 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         }
     }
 
-    private fun removeSessionForAddress(mainMessage: CoAPMessage?) {
-        if (mainMessage == null) {
-            LogHelper.e("removeSessionForAddress, try to get hash for null message!")
-        }
+    private fun removeSessionForAddress(mainMessage: CoAPMessage) {
         val hashAddress = getHashAddressString(mainMessage)
-        hashAddress?.let {
-            LogHelper.v("removeSessionForAddress $it")
-            sessionPool.remove(it)
-        }
+        LogHelper.v("removeSessionForAddress $hashAddress")
+        sessionPool.remove(hashAddress)
     }
 }
