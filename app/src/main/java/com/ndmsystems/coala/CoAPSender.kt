@@ -102,6 +102,7 @@ class CoAPSender(
                             if (destinationAddressReference.get() == null) {
                                 e("Destination is null, but need to sending, message = " + getStringToPrintSendingMessage(messageForSend, destinationAddressReference))
                             } else {
+                                v("message id ${message.id}, token ${message.token} actual sending")
                                 sendMessageToAddress(destinationAddressReference.get(), messageForSend)
                             }
                         }

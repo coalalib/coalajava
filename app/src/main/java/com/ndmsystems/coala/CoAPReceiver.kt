@@ -30,17 +30,18 @@ class CoAPReceiver(private val connectionProvider: ConnectionProvider, private v
                 startReceivingThread()
             }, {
             LogHelper.i("Can't start CoAPReceiver: $it")
-        })
+        }) else {
+            startReceivingThread()
+        }
     }
 
-    @Synchronized
     private fun startReceivingThread() {
         if (!isStarted || receivingThread != null && receivingThread!!.state == Thread.State.TERMINATED) {
-            v("ReceivingAsyncTask try to start")
+            v("ReceivingAsyncTask try to start, state is ${receivingThread?.state}")
             receivingThread = ReceivingThread()
             receivingThread!!.start()
-            isStarted = true
         }
+        isStarted = true
     }
 
     @Synchronized

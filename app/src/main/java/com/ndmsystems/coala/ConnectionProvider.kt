@@ -48,6 +48,7 @@ class ConnectionProvider(private val port: Int) {
         if (connection != null &&
             !connection!!.isClosed
         ) {
+            v("Actual close connection")
             connection!!.close()
         }
         connection = null
