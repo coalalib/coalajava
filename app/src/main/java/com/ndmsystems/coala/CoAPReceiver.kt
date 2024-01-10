@@ -2,7 +2,6 @@ package com.ndmsystems.coala
 
 import com.ndmsystems.coala.CoAPSerializer.DeserializeException
 import com.ndmsystems.coala.CoAPSerializer.fromBytes
-import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.helpers.logging.LogHelper.e
 import com.ndmsystems.coala.helpers.logging.LogHelper.i
@@ -29,7 +28,7 @@ class CoAPReceiver(private val connectionProvider: ConnectionProvider, private v
                 connection = newConnection
                 startReceivingThread()
             }, {
-            LogHelper.i("Can't start CoAPReceiver: $it")
+            i("Can't start CoAPReceiver: $it")
         }) else {
             startReceivingThread()
         }
@@ -99,6 +98,10 @@ class CoAPReceiver(private val connectionProvider: ConnectionProvider, private v
                     receiveLayerStack.onReceive(message, senderAddressReference)
                 } catch (e: LayersStack.InterruptedException) {
                     e.printStackTrace()
+                } catch (ex: Exception) {
+                    i("Exception: ${ex.message}")
+                    ex.printStackTrace()
+                    continue
                 }
             }
             v("ReceivingAsyncTask end")

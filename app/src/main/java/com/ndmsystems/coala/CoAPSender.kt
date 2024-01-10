@@ -87,6 +87,10 @@ class CoAPSender(
                         } catch (e: LayersStack.InterruptedException) {
                             e.printStackTrace()
                             continue
+                        } catch (ex: Exception) {
+                            LogHelper.i("Exception: ${ex.message}")
+                            ex.printStackTrace()
+                            continue
                         }
                         val messageForSend = layerResult.message ?: message
                         if (destinationAddressReference.get() == null) {
