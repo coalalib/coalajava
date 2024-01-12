@@ -44,7 +44,7 @@ class Aead(peerKey: ByteArray, myKey: ByteArray, peerIV: ByteArray, myIV: ByteAr
             encryptor.seal(plainText, makeNonce(myIV, counter), associatedData)
         } catch (e: Exception) {
             e.printStackTrace()
-            LogHelper.e("Error then encrypt: " + e.message)
+            LogHelper.e("Error then encrypt: $e, ${e.message}")
             null
         }
     }
