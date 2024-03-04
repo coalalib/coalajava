@@ -3,8 +3,8 @@ buildscript {
         android_junit5_version = '1.8.2.1'
         spek_version = '2.0.6'
         mockk_version = '1.9.3'
-        kotlinVersion = '1.7.0'
-        daggerVersion = '2.43.2'
+        kotlinVersion = '1.9.20'
+        daggerVersion = '2.51'
         gsonVersion = '2.8.7'
     }
     repositories {
@@ -12,7 +12,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20"
         classpath "de.mannodermaus.gradle.plugins:android-junit5:$android_junit5_version"
 
     }
@@ -20,8 +20,8 @@ buildscript {
 
 ext {
     supportLibraryVersion = '27.1.1'
-    compileSdkVersion = 28
-    targetSdkVersion = 27
+    compileSdkVersion = 33
+    targetSdkVersion = 33
     minSdkVersion = 21
 }
 
@@ -49,8 +49,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = 1.8
-        targetCompatibility = 1.8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     testOptions {
@@ -75,7 +75,7 @@ android {
 
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = JavaVersion.VERSION_11.toString()
     }
 }
 
