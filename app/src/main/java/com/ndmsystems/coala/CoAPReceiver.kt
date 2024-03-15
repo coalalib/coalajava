@@ -82,7 +82,7 @@ class CoAPReceiver(private val connectionProvider: ConnectionProvider, private v
                 }
 
                 // Build message from bytes
-                val message = getMessageFromPacket(udpPacket) ?: continue
+                val message = getMessageFromPacket(udpPacket, udpPacket.socketAddress as InetSocketAddress) ?: continue
                 if (message.id < 0) {
                     e("CoAPReceiver: Receiving data from CoAP Peer: Invalid Data. Skipping.")
                     continue
@@ -119,11 +119,11 @@ class CoAPReceiver(private val connectionProvider: ConnectionProvider, private v
         }
     }
 
-    private fun getMessageFromPacket(udpPacket: DatagramPacket): CoAPMessage? {
+    private fun getMessageFromPacket(udpPacket: DatagramPacket, addressFrom: InetSocketAddress? = null): CoAPMessage? {
         val data = ByteArray(udpPacket.length)
         System.arraycopy(udpPacket.data, udpPacket.offset, data, 0, udpPacket.length)
         val message: CoAPMessage? = try {
-            fromBytes(data)
+            fromBytes(data, addressFrom)
         } catch (e: DeserializeException) {
             e("Deserialization error: " + e.message)
             if (BuildConfig.DEBUG) e.printStackTrace()

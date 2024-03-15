@@ -12,6 +12,7 @@ import com.ndmsystems.coala.message.CoAPMessageType
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.net.InetSocketAddress
 import java.util.Collections
 
 /**
@@ -80,7 +81,7 @@ object CoAPSerializer {
      */
     @JvmStatic
     @Throws(DeserializeException::class)
-    fun fromBytes(data: ByteArray): CoAPMessage? {
+    fun fromBytes(data: ByteArray, addressFrom: InetSocketAddress? = null): CoAPMessage? {
         if (data.size < COAP_HEADER_SIZE) {
             raiseDeserializeException(null, "Encoded CoAP messages MUST have min. 4 bytes. This has " + data.size)
             return null
@@ -93,7 +94,7 @@ object CoAPSerializer {
 
         // Check whether the protocol version is supported (=1)
         if (version != COAP_PROTOCOL_VERSION) {
-            raiseDeserializeException(messageId, "Invalid CoAP version. Should be: " + COAP_PROTOCOL_VERSION)
+            raiseDeserializeException(messageId, "Invalid CoAP version $version. Should be: $COAP_PROTOCOL_VERSION + from address $addressFrom")
             return null
         }
 
