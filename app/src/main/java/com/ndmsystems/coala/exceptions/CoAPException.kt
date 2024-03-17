@@ -9,7 +9,7 @@ open class CoAPException : BaseCoalaThrowable {
     val code: CoAPMessageCode
     val payloadErrorCode: Int?
 
-    constructor(code: CoAPMessageCode, message: String?) : super(message!!) {
+    constructor(code: CoAPMessageCode, message: String?) : super("Code: $code, $message") {
         this.code = code
         payloadErrorCode = null
     }
@@ -18,7 +18,7 @@ open class CoAPException : BaseCoalaThrowable {
         message: String?,
         code: CoAPMessageCode,
         payloadErrorCode: Int
-    ) : super(if (!message.isNullOrEmpty()) message else "Handle payload error:$payloadErrorCode") {
+    ) : super(if (!message.isNullOrEmpty()) "Code: $code, $message, $payloadErrorCode" else "Handle payload error: code $code, $payloadErrorCode") {
         this.code = code
         this.payloadErrorCode = payloadErrorCode
     }

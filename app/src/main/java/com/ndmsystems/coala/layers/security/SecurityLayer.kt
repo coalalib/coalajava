@@ -60,7 +60,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
             val sessionByPeerProxySecurityId = getSessionByPeerProxySecurityId(message)
             val session = sessionByPeerProxySecurityId ?: sessionByAddress
             if (session == null || !session.isReady) {
-                LogHelper.e("Encrypt message error: " + message.id + ", token: " + message.hexToken + ", sessionAddress: " + senderAddress)
+                LogHelper.i("Decrypt message error, session is null or not ready: token: " + message.hexToken + ", sessionAddress: " + senderAddress)
                 mainMessage?.let { addMessageToPending(it) }
                 sendSessionError(message, senderAddress, CoAPMessageOptionCode.OptionSessionNotFound)
                 return LayersStack.LayerResult(false)
