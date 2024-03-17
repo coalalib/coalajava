@@ -2,6 +2,7 @@ package com.ndmsystems.coala
 
 import com.ndmsystems.coala.CoAPSerializer.DeserializeException
 import com.ndmsystems.coala.CoAPSerializer.fromBytes
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.helpers.logging.LogHelper.e
 import com.ndmsystems.coala.helpers.logging.LogHelper.i
@@ -75,14 +76,23 @@ class CoAPReceiver(private val connectionProvider: ConnectionProvider, private v
                     }
                 } catch (e: IOException) {
                     e.printStackTrace()
+                    LogHelper.w("IOException when try to receive message: ${e.message}")
+                    continue
                 }
                 if (isInterrupted || !isStarted) {
                     d("isInterrupted() = $isInterrupted isRunning = $isStarted stopping")
                     break
                 }
 
+                val socketAddress = try {
+                     udpPacket.socketAddress as InetSocketAddress
+                } catch (e: IllegalArgumentException) {
+                    LogHelper.w("IllegalArgumentException when try to get message address: ${e.message}")
+                    continue
+                }
+
                 // Build message from bytes
-                val message = getMessageFromPacket(udpPacket, udpPacket.socketAddress as InetSocketAddress) ?: continue
+                val message = getMessageFromPacket(udpPacket, socketAddress) ?: continue
                 if (message.id < 0) {
                     e("CoAPReceiver: Receiving data from CoAP Peer: Invalid Data. Skipping.")
                     continue
@@ -90,7 +100,7 @@ class CoAPReceiver(private val connectionProvider: ConnectionProvider, private v
 
                 // Run Layers Chain
                 try {
-                    val senderAddressReference = Reference(udpPacket.socketAddress as InetSocketAddress)
+                    val senderAddressReference = Reference(socketAddress)
                     message.address = senderAddressReference.get()
                     if (message.address == null) {
                         e("Message address == null in ReceivingThread")
