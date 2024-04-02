@@ -62,6 +62,17 @@ object LogHelper {
         for (logger in loggers) logger.e(message)
     }
 
+    @JvmStatic
+    fun getFirstOurAppEntryFromStacktrace(stackTrace: Array<StackTraceElement>, fileNameToExclude: String?): String {
+        val stackTraceEntry =
+            stackTrace.first {
+                it.className.contains(".knext.")
+                        && (fileNameToExclude == null || !it.fileName.contains(fileNameToExclude))
+            }
+
+        return stackTraceEntry.fileName + "." + stackTraceEntry.methodName + ":" + stackTraceEntry.lineNumber
+    }
+
     enum class LogLevel {
         VERBOSE, DEBUG, INFO, WARNING, ERROR
     }
