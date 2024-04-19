@@ -11,7 +11,7 @@ import org.json.JSONObject
 class ResponseErrorFactory {
     fun proceed(message: CoAPMessage): CoAPException? {
         if (message.type == CoAPMessageType.RST) {
-            return CoAPException(message.code, if (message.payload == null) "Request has been reset!" else message.payload.toString())
+            return CoAPException(message.code, if (message.payload == null || message.payload.toString() == "null") "Request has been reset!" else message.payload.toString())
         } else if (message.code.codeClass != 2) {
             if (message.payload == null) return proceedByResponseCode(message)
             if (message.payload.toString() == "Wrong login or password") {
@@ -27,7 +27,7 @@ class ResponseErrorFactory {
     private fun proceedByResponseCode(message: CoAPMessage): CoAPException {
         return when (message.code) {
             CoAPMessageCode.CoapCodeUnauthorized -> WrongAuthDataException(message.code, CoAPMessageCode.CoapCodeUnauthorized.name)
-            else -> CoAPException(message.code, if (message.payload == null) "Request has been reset!" else message.payload.toString())
+            else -> CoAPException(message.code, if (message.payload == null || message.payload.toString() == "null") "Request has been reset!" else message.payload.toString())
         }
     }
 

@@ -171,7 +171,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
                         emitter.onError(
                             CoAPException(
                                 response.code ?: CoAPMessageCode.CoapCodeEmpty,
-                                error
+                                error ?: "error on send, error is null"
                             ).setMessageDeliveryInfo(
                                 getMessageDeliveryInfo(message)
                             )
