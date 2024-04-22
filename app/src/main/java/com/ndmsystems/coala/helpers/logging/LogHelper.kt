@@ -73,6 +73,11 @@ object LogHelper {
         return stackTraceEntry.fileName + "." + stackTraceEntry.methodName + ":" + stackTraceEntry.lineNumber
     }
 
+    @JvmStatic
+    fun getShortStackTraceString(throwable: Exception): String {
+        return throwable.stackTrace.map { it.fileName + "." + it.methodName + ":" + it.lineNumber }.joinToString()
+    }
+
     enum class LogLevel {
         VERBOSE, DEBUG, INFO, WARNING, ERROR
     }

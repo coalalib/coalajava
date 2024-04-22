@@ -1,8 +1,9 @@
 package com.ndmsystems.coala
 
 import com.ndmsystems.coala.layers.arq.states.LoggableState
+import java.net.InetSocketAddress
 
-data class MessageDeliveryInfo(var retransmitCount: Int, var viaProxyAttempts: Int, var directAttempts: Int) {
+data class MessageDeliveryInfo(var retransmitCount: Int, var viaProxyAttempts: Int, var directAttempts: Int, val address: InetSocketAddress) {
     var timeDiff: Int? = null
     var dataSize: Int? = null
     var numberOfReceiveArqBlockAlreadyReceived: Int? = null

@@ -108,7 +108,7 @@ class CoAPMessagePool(
 
                     var currentMessageDeliveryInfo = messageDeliveryInfo[hexToken]
                     if (currentMessageDeliveryInfo == null) {
-                        currentMessageDeliveryInfo = MessageDeliveryInfo(0, 0, 0)
+                        currentMessageDeliveryInfo = MessageDeliveryInfo(0, 0, 0, next.message.address)
                     }
                     if (next.message.proxy != null) {
                         currentMessageDeliveryInfo.viaProxyAttempts += 1
