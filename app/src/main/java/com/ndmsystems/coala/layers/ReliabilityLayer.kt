@@ -24,7 +24,7 @@ class ReliabilityLayer(
         if (handler != null) {
             var responseError: String? = null
             if (message.type == CoAPMessageType.RST) {
-                responseError = "Request has been reset!"
+                responseError = "Request has been reset, RL!"
             } else if (message.code.codeClass != 2 && message.code != CoAPMessageCode.CoapCodeEmpty) {
                 responseError = message.code.name
                 if (message.payload != null) responseError += ", " + message.payload.toString()
