@@ -53,7 +53,7 @@ class CoAPMessageOption : Comparable<CoAPMessageOption> {
             CoAPMessageOptionCode.OptionURIHost, CoAPMessageOptionCode.OptionEtag, CoAPMessageOptionCode.OptionLocationPath, CoAPMessageOptionCode.OptionURIPath, CoAPMessageOptionCode.OptionURIQuery, CoAPMessageOptionCode.OptionLocationQuery, CoAPMessageOptionCode.OptionProxyScheme, CoAPMessageOptionCode.OptionProxyURI -> value =
                 String(data)
 
-            CoAPMessageOptionCode.OptionCookie, CoAPMessageOptionCode.OptionCoapsURI -> value = data
+            CoAPMessageOptionCode.OptionCookie, CoAPMessageOptionCode.OptionCoapsURI, CoAPMessageOptionCode.OptionWindowChangeable -> value = data
             else -> {
                 e("Try from byte unknown option: " + this.code)
                 value = data

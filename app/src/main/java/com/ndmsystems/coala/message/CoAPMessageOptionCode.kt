@@ -22,7 +22,7 @@ enum class CoAPMessageOptionCode
     OptionContentFormat(12), OptionMaxAge(14), OptionURIQuery(15), OptionAccept(17), OptionLocationQuery(20), OptionBlock2(23), OptionBlock1(27), OptionSize2(
         28
     ),
-    OptionProxyURI(35), OptionProxyScheme(39), OptionSize1(60), OptionURIScheme(2111), OptionSelectiveRepeatWindowSize(3001), OptionProxySecurityID(
+    OptionProxyURI(35), OptionProxyScheme(39), OptionSize1(60), OptionURIScheme(2111), OptionSelectiveRepeatWindowSize(3001), OptionWindowChangeable(3002), OptionProxySecurityID(
         3004
     ),
     OptionCookie(3036), OptionHandshakeType(3999), OptionSessionNotFound(4001), OptionSessionExpired(4003), OptionCoapsURI(4005), DefaultOption(999999);
@@ -53,6 +53,7 @@ enum class CoAPMessageOptionCode
                 60 -> OptionSize1
                 2111 -> OptionURIScheme
                 3001 -> OptionSelectiveRepeatWindowSize
+                3002 -> OptionWindowChangeable //Dont used in apps, but sending by routers, add for now parsing warnings https://ndm.atlassian.net/browse/NDM-3098?focusedCommentId=38983&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-38983
                 3004 -> OptionProxySecurityID
                 3036 -> OptionCookie
                 3999 -> OptionHandshakeType
