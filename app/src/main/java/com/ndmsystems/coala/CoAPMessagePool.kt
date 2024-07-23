@@ -28,6 +28,11 @@ class CoAPMessagePool(
     init {
         pool = ConcurrentLinkedHashMap.Builder<Int, QueueElement>().maximumWeightedCapacity(1000)
             .build()
+        LogHelper.d("Params resendPeriod = ${params.resendPeriod}")
+        LogHelper.d("Params resendLongPeriod = ${params.resendLongPeriod}")
+        LogHelper.d("Params expirationPeriod = ${params.expirationPeriod}")
+        LogHelper.d("Params garbagePeriod = ${params.garbagePeriod}")
+        LogHelper.d("Params maxPickAttempts = ${params.maxPickAttempts}")
     }
 
     companion object {
