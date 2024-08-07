@@ -69,4 +69,6 @@ class ProxyLayer(private val client: CoAPClient, private val messagePool: CoAPMe
         responseMessage.setURIScheme(message.getURIScheme())
         client.send(responseMessage, null)
     }
+
+    override fun onStop() { }
 }

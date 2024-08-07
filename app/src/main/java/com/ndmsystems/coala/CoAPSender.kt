@@ -52,6 +52,7 @@ class CoAPSender(
             sendingThread!!.interrupt()
             sendingThread = null
         }
+        layersStack.onStop()
         connection = null
     }
 

@@ -347,4 +347,9 @@ class ArqLayer(
         private const val WINDOW_SIZE = 70
         private const val MAX_PAYLOAD_SIZE = 1024
     }
+
+    override fun onStop() {
+        receiveStates.clear()
+        sendStates.clear()
+    }
 }

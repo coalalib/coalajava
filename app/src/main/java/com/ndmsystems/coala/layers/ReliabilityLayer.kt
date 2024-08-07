@@ -40,4 +40,6 @@ class ReliabilityLayer(
         }
         return LayerResult(true, null)
     }
+
+    override fun onStop() { }
 }

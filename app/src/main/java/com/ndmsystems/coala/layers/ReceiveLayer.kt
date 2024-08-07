@@ -7,4 +7,6 @@ import java.net.InetSocketAddress
 
 interface ReceiveLayer {
     fun onReceive(message: CoAPMessage, senderAddressReference: Reference<InetSocketAddress>): LayersStack.LayerResult
+
+    fun onStop()
 }

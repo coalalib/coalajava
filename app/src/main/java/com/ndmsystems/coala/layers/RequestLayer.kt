@@ -84,4 +84,6 @@ class RequestLayer(private val resourceRegistry: ResourceRegistry, private val c
         // Validate message scheme
         responseMessage.setURIScheme(message.getURIScheme())
     }
+
+    override fun onStop() { }
 }

@@ -50,6 +50,8 @@ class LogLayer : ReceiveLayer, SendLayer {
         return option != null && option.value as Int == 40 || "224.0.0.187" == dist
     }
 
+    override fun onStop() { }
+
     companion object {
         @JvmStatic
         fun getStringToPrintSendingMessage(message: CoAPMessage, receiverAddress: Reference<InetSocketAddress>): String {

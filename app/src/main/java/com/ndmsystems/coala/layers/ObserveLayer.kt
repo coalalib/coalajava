@@ -177,6 +177,8 @@ class ObserveLayer(
         client.send(responseMessage, null)
     }
 
+    override fun onStop() { }
+
     companion object {
         private const val REGISTER = 0
         private const val DEREGISTER = 1

@@ -77,4 +77,8 @@ class ResponseLayer : ReceiveLayer, SendLayer {
     private fun keyForMessage(message: CoAPMessage): String {
         return encodeHexString(message.token)
     }
+
+    override fun onStop() {
+        requests.clear()
+    }
 }

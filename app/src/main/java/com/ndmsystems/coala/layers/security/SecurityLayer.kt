@@ -328,4 +328,9 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         LogHelper.v("removeSessionForAddress $hashAddress")
         sessionPool.remove(hashAddress)
     }
+
+    override fun onStop() {
+        LogHelper.d("SecurityLayer onStop")
+        sessionPool.clear()
+    }
 }

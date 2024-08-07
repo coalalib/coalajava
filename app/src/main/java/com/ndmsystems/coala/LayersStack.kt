@@ -53,4 +53,9 @@ class LayersStack(
     fun getArqReceivedStateForToken(token: ByteArray): LoggableState? {
         return (receiveStack?.find { it is ArqLayer } as ArqLayer?)?.getArqReceivingStateForToken(token)
     }
+
+    fun onStop() {
+        receiveStack?.forEach { it.onStop() }
+        sendStack?.forEach { it.onStop() }
+    }
 }
