@@ -1,5 +1,6 @@
 package com.ndmsystems.coala
 
+import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.helpers.logging.LogHelper.e
@@ -107,7 +108,7 @@ class CoAPSender(
                             if (destinationAddressReference.get() == null) {
                                 e("Destination is null, but need to sending, message = " + getStringToPrintSendingMessage(messageForSend, destinationAddressReference))
                             } else {
-                                v("message id ${message.id}, token ${message.token} actual sending")
+                                v("message id ${message.id}, token ${Hex.encodeHexString(message.token)} actual sending")
                                 sendMessageToAddress(destinationAddressReference.get(), messageForSend)
                             }
                         }
