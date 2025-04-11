@@ -41,7 +41,7 @@ class LocalPeerDiscoverer(
                 resourceDiscoveryHelper.addResult(
                     ResourceDiscoveryResult(
                         if (message.payload != null) message.payload.toString() else "",
-                        message.address!!
+                        message.address
                     )
                 )
             }

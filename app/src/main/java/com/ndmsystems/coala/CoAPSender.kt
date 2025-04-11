@@ -1,7 +1,6 @@
 package com.ndmsystems.coala
 
 import com.ndmsystems.coala.helpers.Hex
-import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.helpers.logging.LogHelper.e
 import com.ndmsystems.coala.helpers.logging.LogHelper.i
@@ -29,11 +28,11 @@ class CoAPSender(
         v("CoAPSender start")
         if (connection == null) connectionProvider.waitForConnection()
             .subscribe( { newConnection: MulticastSocket? ->
-                LogHelper.d("CoAPSender started, socket: $newConnection")
+                d("CoAPSender started, socket: $newConnection")
                 connection = newConnection
                 startSendingThread()
             }, {
-                LogHelper.i("Can't start CoAPSender: $it")
+                i("Can't start CoAPSender: $it")
             })
     }
 
@@ -90,7 +89,7 @@ class CoAPSender(
                             e.printStackTrace()
                             continue
                         } catch (ex: Exception) {
-                            LogHelper.i("Exception: ${ex.message}")
+                            i("Exception: ${ex.message}")
                             ex.printStackTrace()
                             continue
                         }

@@ -10,7 +10,7 @@ class ResourceDiscoveryResult(payload: String, host: InetSocketAddress) {
     val host: InetSocketAddress
 
     init {
-        this.payload = payload ?: ""
+        this.payload = payload
         this.host = host
     }
 

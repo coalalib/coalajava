@@ -76,7 +76,7 @@ class CoAPReceiver(private val connectionProvider: ConnectionProvider, private v
                     }
                 } catch (e: IOException) {
                     e.printStackTrace()
-                    LogHelper.d("IOException when try to receive message: ${e.message}")
+                    d("IOException when try to receive message: ${e.message}")
                     continue
                 }
                 if (isInterrupted || !isStarted) {

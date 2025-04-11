@@ -4,7 +4,7 @@ package com.ndmsystems.coala.layers.arq.data
  * Created by Владимир on 16.08.2017.
  */
 class InMemoryData(private var bytes: ByteArray) : IData {
-    override fun get(from: Int, to: Int): ByteArray? {
+    override fun get(from: Int, to: Int): ByteArray {
         return bytes.copyOfRange(from, to)
     }
 

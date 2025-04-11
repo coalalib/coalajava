@@ -46,7 +46,7 @@ class LogLayer : ReceiveLayer, SendLayer {
     private fun isResourceDiscoveryMessage(message: CoAPMessage): Boolean {
         val option = message.getOption(CoAPMessageOptionCode.OptionContentFormat)
         var dist: String? = null
-        if (message.address != null && message.address!!.address.hostAddress != null) dist = message.address!!.address.hostAddress
+        if (message.address.address.hostAddress != null) dist = message.address.address.hostAddress
         return option != null && option.value as Int == 40 || "224.0.0.187" == dist
     }
 
@@ -56,7 +56,7 @@ class LogLayer : ReceiveLayer, SendLayer {
         @JvmStatic
         fun getStringToPrintSendingMessage(message: CoAPMessage, receiverAddress: Reference<InetSocketAddress>): String {
             var stringForPrint =
-                """Send data to Peer, id ${message.id}, payload: '${if (message.payload != null) message.payload.toString() else ""}', destination host: ${message.getURI()}${if (receiverAddress?.get() == null || receiverAddress.get() == message.address) "" else " real destination: " + receiverAddress.get()} type ${message.type} code ${message.code.name} token ${
+                """Send data to Peer, id ${message.id}, payload: '${if (message.payload != null) message.payload.toString() else ""}', destination host: ${message.getURI()}${if (receiverAddress.get() == null || receiverAddress.get() == message.address) "" else " real destination: " + receiverAddress.get()} type ${message.type} code ${message.code.name} token ${
                     encodeHexString(message.token)
                 }
 Options: ${getMessageOptionsString(message)}"""
