@@ -58,11 +58,4 @@ class AckHandlersPool {
         } else LogHelper.d("Message with null handler error: " + error + " for id: " + message.id)
     }
 
-    fun print() {
-        LogHelper.w("Printing pool:")
-        for (id in pool.keys) {
-            LogHelper.w("Printing pool, id: $id")
-        }
-    }
-
 }

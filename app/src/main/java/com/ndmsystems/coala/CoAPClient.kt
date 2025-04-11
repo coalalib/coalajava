@@ -11,8 +11,4 @@ interface CoAPClient {
     fun sendRequest(message: CoAPMessage): Observable<ResponseData>
     fun cancel(message: CoAPMessage)
     fun getMessageDeliveryInfo(message: CoAPMessage): MessageDeliveryInfo?
-    interface ResponseListener {
-        fun onSuccess(response: String)
-        fun onError(error: String)
-    }
 }

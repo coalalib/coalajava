@@ -29,18 +29,6 @@ class CoAPObservableResource(
         observers.remove(observer.key())
     }
 
-    /*fun notifyObservers() {
-        sequenceNumber++
-        val coAPResourceOutput = handler.onReceive(CoAPResourceInput(null, null))
-        for (oneObserver in observers.values) {
-            send(coAPResourceOutput, oneObserver)
-        }
-    }*/
-
-    fun observersCount(): Int {
-        return observers.size
-    }
-
     fun send(resourceOutput: CoAPResourceOutput, observer: Observer) {
         val responseMessage = CoAPMessage(CoAPMessageType.CON, resourceOutput.code)
         addOptions(responseMessage, observer.registerMessage, observer.address)

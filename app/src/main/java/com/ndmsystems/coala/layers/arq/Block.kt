@@ -19,10 +19,6 @@ class Block private constructor(val number: Int, val isMoreComing: Boolean, priv
         return rawBlockNumber or rawMoreBlocks or blockSize.ordinal
     }
 
-    fun getSzx(): Int {
-        return blockSize.ordinal
-    }
-
     override fun toString(): String {
         return number.toString() + "|" + (if (isMoreComing) 1 else 0) + "|" + blockSize.value
     }

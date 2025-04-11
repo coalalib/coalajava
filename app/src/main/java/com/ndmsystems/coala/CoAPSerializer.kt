@@ -158,7 +158,7 @@ object CoAPSerializer {
     @Throws(DeserializeException::class)
     private fun raiseDeserializeException(messageId: Int?, exceptionString: String?) {
         e(exceptionString!!)
-        throw DeserializeException(messageId, exceptionString)
+        throw DeserializeException(exceptionString)
     }
 
     /**
@@ -374,5 +374,5 @@ object CoAPSerializer {
         buffer.write(rawOptionValue, 0, optionLength)
     }
 
-    class DeserializeException(val messageId: Int?, message: String?) : Exception(message)
+    class DeserializeException(message: String?) : Exception(message)
 }

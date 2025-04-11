@@ -173,18 +173,6 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
         return join(pathParts, "/")
     }
 
-    fun getURIQueryString(): String {
-        val queryOptions = this.getOptions(CoAPMessageOptionCode.OptionURIQuery)
-        if (queryOptions.isEmpty()) {
-            return ""
-        }
-        val queryParts: MutableList<String?> = java.util.ArrayList()
-        for (queryElem in queryOptions) {
-            queryParts.add(queryElem.value as String?)
-        }
-        return join(queryParts, "&")
-    }
-
     fun getURIQuery(key: String): String {
         val queryOptions = this.getOptions(CoAPMessageOptionCode.OptionURIQuery)
         for (queryElem in queryOptions) {
@@ -335,20 +323,6 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
         }
 
         companion object {
-            fun fromInt(value: Int?): MediaType? {
-                return when (value) {
-                    0 -> TextPlain
-                    40 -> LinkFormat
-                    41 -> Xml
-                    42 -> OctetStream
-                    47 -> Exi
-                    50 -> Json
-                    else -> {
-                        e("Unknown MediaType")
-                        null
-                    }
-                }
-            }
         }
     }
 

@@ -6,9 +6,6 @@ import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult
 import io.reactivex.Single
 
 interface CoAPServer {
-    interface OnResourcesDiscovered {
-        fun onResourcesDiscovered(resourceDiscoveryResults: List<ResourceDiscoveryResult?>?)
-    }
 
     fun getObservableResource(path: String): CoAPObservableResource?
     fun addObservableResource(path: String, handler: CoAPResourceHandler)

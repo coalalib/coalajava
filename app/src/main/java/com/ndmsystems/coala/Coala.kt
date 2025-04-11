@@ -103,10 +103,6 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         resourceRegistry!!.removeResource(path, method)
     }
 
-    fun getResourcesForPath(path: String): CoAPResourcesGroupForPath? {
-        return resourceRegistry!!.getResourcesForPath(path)
-    }
-
     /**
      * Find all available to discovery coap resourceRegistry in local network.
      *
@@ -226,14 +222,6 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
                 }
             })
         }
-    }
-
-    /**
-     * Try to unregister observer by given uri.
-     */
-    fun unregisterObserver(uri: String) {
-        d("unregisterObserver $uri")
-        registryOfObservingResources!!.unregisterObserver(uri)
     }
 
     fun start() {
