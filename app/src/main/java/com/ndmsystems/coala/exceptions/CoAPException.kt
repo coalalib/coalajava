@@ -8,10 +8,12 @@ import com.ndmsystems.coala.message.CoAPMessageCode
 open class CoAPException : BaseCoalaThrowable {
     val code: CoAPMessageCode
     val payloadErrorCode: Int?
+    val srcMessage: String
 
     constructor(code: CoAPMessageCode, message: String?) : super("Code: $code, $message") {
         this.code = code
         payloadErrorCode = null
+        srcMessage = message ?: ""
     }
 
     constructor(
@@ -21,6 +23,7 @@ open class CoAPException : BaseCoalaThrowable {
     ) : super(if (!message.isNullOrEmpty()) "Code: $code, $message, $payloadErrorCode" else "Handle payload error: code $code, $payloadErrorCode") {
         this.code = code
         this.payloadErrorCode = payloadErrorCode
+        srcMessage = message ?: ""
     }
 
     val payloadError: PayloadError
