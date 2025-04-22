@@ -248,7 +248,7 @@ object CoAPSerializer {
         // encode payload (if any)
         if (message.payload != null && message.payload!!.content != null) {
             val rawPayload = message.payload!!.content
-            if (rawPayload.size > 0) {
+            if (rawPayload.isNotEmpty()) {
                 // add END-OF-OPTIONS marker only if there is payload
                 buffer.write(COAP_PAYLOAD_MARKER)
                 // add payload
@@ -272,7 +272,7 @@ object CoAPSerializer {
         buffer.write(encodedHeader and 0x000000FF)
 
         // Write token
-        if (token != null && token.size > 0) {
+        if (token != null && token.isNotEmpty()) {
             buffer.write(token, 0, token.size)
         }
     }
@@ -280,7 +280,7 @@ object CoAPSerializer {
     @Throws(Exception::class)
     private fun encodeOptions(buffer: ByteArrayOutputStream, message: CoAPMessage) {
         val options = message.getOptions()
-        if (options == null || options.size == 0) {
+        if (options == null || options.isEmpty()) {
             return
         }
 
@@ -311,14 +311,14 @@ object CoAPSerializer {
             throw Exception("Previous option $previousNumber must not be larger then current option no $optionNumber")
         }
         val rawOptionValue = option.toBytes()
-        if (rawOptionValue.size == 0) w("Option with null length: $optionNumber")
+        if (rawOptionValue.isEmpty()) w("Option with null length: $optionNumber")
         val optionDelta = optionNumber - previousNumber
         val optionLength = Math.min(rawOptionValue.size, option.maxSizeInBytes)
         if (optionLength > MAX_OPTION_LENGTH) {
-            throw Exception("Option no. " + optionNumber + " exceeds maximum option length: " + optionLength + " vs " + MAX_OPTION_LENGTH)
+            throw Exception("Option no. $optionNumber exceeds maximum option length: $optionLength vs $MAX_OPTION_LENGTH")
         }
         if (optionDelta > MAX_OPTION_DELTA) {
-            throw Exception("Option no. " + optionNumber + " exceeds maximum option delta: " + optionDelta + " vs " + MAX_OPTION_DELTA)
+            throw Exception("Option no. $optionNumber exceeds maximum option delta: $optionDelta vs $MAX_OPTION_DELTA")
         }
         if (optionNumber == CoAPMessageOptionCode.OptionContentFormat.value) {
             d("encodeOption, length: $optionLength, delta: $optionDelta")

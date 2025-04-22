@@ -11,7 +11,7 @@ class Block private constructor(val number: Int, val isMoreComing: Boolean, priv
         ), data
     )
 
-    constructor(value: Int, data: ByteArray?) : this(value shr 0x4, value shr 0x3 and 0x1 == 1, BlockSize.values()[value and 7], data)
+    constructor(value: Int, data: ByteArray?) : this(value shr 0x4, value shr 0x3 and 0x1 == 1, BlockSize.entries[value and 7], data)
 
     fun toInt(): Int {
         val rawBlockNumber = number shl 4
@@ -37,7 +37,7 @@ class Block private constructor(val number: Int, val isMoreComing: Boolean, priv
                     BLOCK_SIZE_16
                 } else {
                     val maxOneBit = Integer.highestOneBit(blockSize)
-                    values()[Integer.numberOfTrailingZeros(maxOneBit) - 4]
+                    entries[Integer.numberOfTrailingZeros(maxOneBit) - 4]
                 }
             }
         }

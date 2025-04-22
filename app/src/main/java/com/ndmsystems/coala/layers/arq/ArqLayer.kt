@@ -108,7 +108,7 @@ class ArqLayer(
         windowSize: Int,
         ackMessage: CoAPMessage
     ): LayersStack.LayerResult {
-        var mutableIncomingMessage: CoAPMessage = incomingMessage
+        val mutableIncomingMessage: CoAPMessage = incomingMessage
         val token = encodeHexString(mutableIncomingMessage.token)
         when (mutableIncomingMessage.type) {
             CoAPMessageType.ACK, CoAPMessageType.RST -> {
