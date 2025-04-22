@@ -22,7 +22,7 @@ object Hex {
         return out
     }
 
-    internal fun toDigit(ch: Char, index: Int): Int {
+    private fun toDigit(ch: Char, index: Int): Int {
         return ch.digitToIntOrNull(16) ?: -1
     }
 
@@ -31,7 +31,7 @@ object Hex {
         return encodeHex(data, if (toLowerCase) DIGITS_LOWER else DIGITS_UPPER)
     }
 
-    internal fun encodeHex(data: ByteArray, toDigits: CharArray): CharArray {
+    private fun encodeHex(data: ByteArray, toDigits: CharArray): CharArray {
         val l = data.size
         val out = CharArray(l shl 1)
         var i = 0

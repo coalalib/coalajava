@@ -16,7 +16,7 @@ import javax.crypto.spec.SecretKeySpec
  */
 class AesGcm(key: ByteArray) {
     private val key: Key
-    var cipher: Cipher? = null
+    private var cipher: Cipher? = null
 
     init {
         this.key = SecretKeySpec(key, "AES")

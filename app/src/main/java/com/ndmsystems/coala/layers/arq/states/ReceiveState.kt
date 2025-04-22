@@ -8,7 +8,7 @@ import com.ndmsystems.coala.message.CoAPMessageCode
 /**
  * Created by Владимир on 16.08.2017.
  */
-class ReceiveState(val initiatingMessage: CoAPMessage?) : LoggableState() {
+class ReceiveState(private val initiatingMessage: CoAPMessage?) : LoggableState() {
     private val accumulator = HashMap<Int, ByteArray?>()
     private var lastBlockNumber = Int.MAX_VALUE
     private var numberOfReceivedBlocks = 0

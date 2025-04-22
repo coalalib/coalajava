@@ -65,7 +65,7 @@ import com.ndmsystems.coala.helpers.RBGHelper
 
     companion object {
         /* key size */
-        const val KEY_SIZE = 32
+        private const val KEY_SIZE = 32
 
         /* 0 */
         val ZERO = byteArrayOf(
@@ -110,7 +110,7 @@ import com.ndmsystems.coala.helpers.RBGHelper
         )
 
         /* group order (a prime near 2^252+2^124) */
-        val ORDER = byteArrayOf(
+        private val ORDER = byteArrayOf(
             237.toByte(),
             211.toByte(),
             245.toByte(),
