@@ -77,7 +77,6 @@ object CoAPSerializer {
     /**
      * @param data
      * @return
-     * @TODO: optimize memory consumption
      */
     @JvmStatic
     @Throws(DeserializeException::class)
