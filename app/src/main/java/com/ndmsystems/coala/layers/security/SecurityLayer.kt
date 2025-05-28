@@ -104,25 +104,25 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                                 } else {
                                     LogHelper.i("Error then try to client hello, session removed, error is nul, securedSession is null")
                                     removeSessionForAddress(message)
-                                    removePendingMessagesByAddress(receiverAddress)
+                                    removePendingMessagesByAddress(receiverAddress, "client hello, session removed")
                                 }
                             } else {
                                 LogHelper.w("Expected key: " + Hex.encodeHexString(message.peerPublicKey) + ", actual key: " + Hex.encodeHexString(publicKey))
                                 removeSessionForAddress(message)
                                 throwMismatchKeysError(message, receiverAddress)
-                                removePendingMessagesByAddress(receiverAddress)
+                                removePendingMessagesByAddress(receiverAddress, "Client hello keys mismatch")
                             }
                         } else {
                             LogHelper.i("Error then try to client hello: $error")
                             removeSessionForAddress(message)
-                            removePendingMessagesByAddress(receiverAddress)
+                            removePendingMessagesByAddress(receiverAddress, "Error then try to client hello: $error")
                         }
                     }
 
                     override fun onAckError(error: String) {
                         LogHelper.i("Error then try to client hello: $error")
                         removeSessionForAddress(message)
-                        removePendingMessagesByAddress(receiverAddress)
+                        removePendingMessagesByAddress(receiverAddress, "Error then try to client hello: $error")
                     }
                 })
                 addMessageToPending(message)
@@ -173,14 +173,14 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         synchronized(pendingMessages) { pendingMessages.add(message) }
     }
 
-    private fun removePendingMessagesByAddress(address: InetSocketAddress?) {
+    private fun removePendingMessagesByAddress(address: InetSocketAddress?, error: String) {
         LogHelper.d("removePendingMessagesByAddress $address")
         synchronized(pendingMessages) {
             val it = pendingMessages.iterator()
             while (it.hasNext()) {
                 val message = it.next()
                 if (address == null || message.address == address) {
-                    val errorText = "Can't create session with: " + (address?.toString() ?: "null")
+                    val errorText = "Can't create session with: " + (address?.toString() ?: "null") + ", $error"
                     CoroutineScope(IO).launch {
                         ackHandlersPool.raiseAckError(message, errorText)
                         val responseHandler = message.responseHandler
