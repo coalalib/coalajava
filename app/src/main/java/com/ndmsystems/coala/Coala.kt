@@ -1,5 +1,6 @@
 package com.ndmsystems.coala
 
+import android.os.Handler
 import com.ndmsystems.coala.CoAPHandler.AckError
 import com.ndmsystems.coala.CoAPResource.CoAPResourceHandler
 import com.ndmsystems.coala.di.CoalaComponent
@@ -27,6 +28,9 @@ import javax.inject.Inject
 
 class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage, params: CoAPMessagePool.Companion.Params? = CoAPMessagePool.Companion.Params()) :
     CoAPTransport() {
+    enum class TransportMode { UDP, TCP }
+    private var transportMode: TransportMode = TransportMode.UDP
+
     @JvmField
     @Inject
     var connectionProvider: ConnectionProvider? = null
@@ -228,6 +232,10 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         i("Coala start")
         receiver!!.start()
         sender!!.start()
+
+        Handler().postDelayed({
+            setTransportMode(TransportMode.TCP)
+        }, 5000)
     }
 
     val isStarted: Boolean
@@ -251,6 +259,22 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
 
     fun getReceivedStateForToken(tokenForDownload: ByteArray): LoggableState? {
         return receiver!!.getReceivedStateForToken(tokenForDownload)
+    }
+
+    fun setTransportMode(mode: TransportMode) {
+        if (transportMode == mode) return
+
+        val wasSenderStarted = sender?.isStarted == true
+        val wasReceiverStarted = receiver?.isStarted == true
+        sender?.stop()
+        receiver?.stop()
+
+        connectionProvider?.setTransportMode(TransportMode.TCP)
+        sender?.setTransportMode(mode)
+        receiver?.setTransportMode(mode)
+        transportMode = mode
+        if (wasSenderStarted) sender?.start()
+        if (wasReceiverStarted) receiver?.start()
     }
 
     interface OnPortIsBusyHandler {

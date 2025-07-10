@@ -2,6 +2,7 @@ package com.ndmsystems.coala
 
 import com.ndmsystems.coala.Coala.OnPortIsBusyHandler
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
+import com.ndmsystems.coala.helpers.logging.LogHelper.e
 import com.ndmsystems.coala.helpers.logging.LogHelper.i
 import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.helpers.logging.LogHelper.w
@@ -13,6 +14,7 @@ import java.io.IOException
 import java.net.Inet4Address
 import java.net.InetSocketAddress
 import java.net.MulticastSocket
+import java.net.Socket
 import java.net.SocketException
 import java.net.UnknownHostException
 
@@ -24,21 +26,31 @@ class ConnectionProvider(private val port: Int) {
     private var connection: MulticastSocket? = null
     private var subject: AsyncSubject<MulticastSocket>? = null
     private var timerSubscription: Disposable? = null
+    private var tcpSocket: Socket? = null
+    private var transportMode: Coala.TransportMode = Coala.TransportMode.UDP
 
     @Synchronized
-    fun waitForConnection(): Observable<MulticastSocket> {
-        v("waitForConnection")
-        return if (connection != null) {
-            v("waitForConnection return connection")
-            Observable.just(connection)
-        } else {
-            if (subject == null) {
-                v("waitForConnection initConnection")
-                subject = AsyncSubject.create()
-                initConnection()
+    fun waitForUdpConnection(): Observable<MulticastSocket> {
+        v("waitForUdpConnection")
+        if (transportMode == Coala.TransportMode.UDP) {
+            return if (connection != null) {
+                v("waitForUdpConnection return connection")
+                Observable.just(connection)
+            } else {
+                if (subject == null) {
+                    v("waitForUdpConnection initConnection")
+                    subject = AsyncSubject.create()
+                    initConnection()
+                }
+                v("waitForUdpConnection return subject")
+                subject!!
             }
-            v("waitForConnection return subject")
-            subject!!
+        } else if (transportMode == Coala.TransportMode.TCP) {
+            i("waitForUdpConnection called in TCP mode — returning error Observable")
+            return Observable.error(NotImplementedError("UDP socket not available in TCP mode"))
+        } else {
+            e("waitForUdpConnection: Unknown transport mode: $transportMode")
+            throw IllegalStateException("Unknown transport mode")
         }
     }
 
@@ -52,6 +64,10 @@ class ConnectionProvider(private val port: Int) {
             connection!!.close()
         }
         connection = null
+        if (tcpSocket != null && !tcpSocket!!.isClosed) {
+            tcpSocket!!.close()
+        }
+        tcpSocket = null
         if (timerSubscription != null &&
             !timerSubscription!!.isDisposed
         ) {
@@ -163,6 +179,22 @@ class ConnectionProvider(private val port: Int) {
     fun setOnPortIsBusyHandler(onPortIsBusyHandler: OnPortIsBusyHandler?) {
         d("setOnPortIsBusyHandler")
         this.onPortIsBusyHandler = onPortIsBusyHandler
+    }
+
+    @Synchronized
+    fun getOrCreateTcpSocket(): Socket {
+        if (transportMode != Coala.TransportMode.TCP) throw IllegalStateException("Not in TCP mode")
+        if (tcpSocket == null || tcpSocket!!.isClosed) {
+            tcpSocket = Socket()
+            tcpSocket!!.connect(InetSocketAddress("95.213.181.251", 16666), 2000)
+        }
+        return tcpSocket!!
+    }
+
+    @Synchronized
+    fun setTransportMode(transportMode: Coala.TransportMode) {
+        this.transportMode = transportMode
+        close()
     }
 
     companion object {

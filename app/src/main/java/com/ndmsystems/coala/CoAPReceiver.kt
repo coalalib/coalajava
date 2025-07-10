@@ -15,23 +15,35 @@ import java.net.DatagramPacket
 import java.net.InetSocketAddress
 import java.net.MulticastSocket
 
-class CoAPReceiver(private val connectionProvider: ConnectionProvider, private val receiveLayerStack: LayersStack) {
+class CoAPReceiver(
+    private val connectionProvider: ConnectionProvider,
+    private val receiveLayerStack: LayersStack
+) {
     var isStarted = false
         private set
     private var receivingThread: ReceivingThread? = null
     private var connection: MulticastSocket? = null
+    private var tcpReceivingThread: Thread? = null
+    private var transportMode: Coala.TransportMode = Coala.TransportMode.UDP
+
     @Synchronized
     fun start() {
         v("CoAPReceiver start")
-        if (connection == null) connectionProvider.waitForConnection()
-            .subscribe( { newConnection: MulticastSocket? ->
-                v("CoAPReceiver started, socket: $newConnection")
-                connection = newConnection
+        if (transportMode == Coala.TransportMode.UDP) {
+            if (connection == null) connectionProvider.waitForUdpConnection()
+                .subscribe( { newConnection: MulticastSocket? ->
+                    v("CoAPReceiver started, socket: $newConnection")
+                    connection = newConnection
+                    startReceivingThread()
+                }, {
+                    e("Can't start CoAPReceiver: $it")
+                })
+            else {
                 startReceivingThread()
-            }, {
-            i("Can't start CoAPReceiver: $it")
-        }) else {
-            startReceivingThread()
+            }
+        } else if (transportMode == Coala.TransportMode.TCP) {
+            i("CoAPReceiver TCP mode start")
+            startTcpReceivingThread()
         }
     }
 
@@ -140,6 +152,68 @@ class CoAPReceiver(private val connectionProvider: ConnectionProvider, private v
             return null
         }
         return message
+    }
+
+    private fun startTcpReceivingThread() {
+        if (tcpReceivingThread == null || tcpReceivingThread?.state == Thread.State.TERMINATED) {
+            tcpReceivingThread = Thread {
+                try {
+                    val socket = connectionProvider.getOrCreateTcpSocket()
+                    val input = socket.getInputStream()
+                    while (!Thread.currentThread().isInterrupted && isStarted) {
+                        // Читаем фрейм: M (1B) | IP (4B) | PORT (2B) | SIZE (2B) | MESSAGE (SIZE B)
+                        val header = ByteArray(9)
+                        var read = 0
+                        while (read < 9) {
+                            val r = input.read(header, read, 9 - read)
+                            if (r == -1) throw java.io.EOFException()
+                            read += r
+                        }
+                        if (header[0] != 77.toByte()) continue // не наш фрейм
+                        val ip = java.net.InetAddress.getByAddress(header.sliceArray(1..4))
+                        val port = ((header[5].toInt() and 0xFF) shl 8) or (header[6].toInt() and 0xFF)
+                        val size = ((header[7].toInt() and 0xFF) shl 8) or (header[8].toInt() and 0xFF)
+                        val messageBytes = ByteArray(size)
+                        var mRead = 0
+                        while (mRead < size) {
+                            val r = input.read(messageBytes, mRead, size - mRead)
+                            if (r == -1) throw java.io.EOFException()
+                            mRead += r
+                        }
+                        val address = InetSocketAddress(ip, port)
+                        val message = try {
+                            fromBytes(messageBytes, address)
+                        } catch (e: Exception) {
+                            e("TCP frame parse error: ${e.message}")
+                            null
+                        }
+                        d("Received from tcp socket $message")
+                        if (message != null) {
+                            val senderAddressReference = Reference(address)
+                            message.address = senderAddressReference.get()
+                            receiveLayerStack.onReceive(message, senderAddressReference)
+                        }
+                    }
+                } catch (e: LayersStack.InterruptedException) {
+                    d("TCP receiving thread interrupted")
+                    e.printStackTrace()
+                } catch (e: Exception) {
+                    LogHelper.e("TCP receiving thread error: ${e.message}")
+                    e.printStackTrace()
+                }
+            }
+            isStarted = true
+            tcpReceivingThread!!.start()
+        }
+    }
+
+    fun setTransportMode(mode: Coala.TransportMode) {
+        if (transportMode == mode) return
+        stop()
+
+        transportMode = mode
+        // Если был запущен — запускаем снова
+        start()
     }
 
     companion object {

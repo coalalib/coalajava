@@ -17,23 +17,30 @@ import java.net.MulticastSocket
 class CoAPSender(
     private val connectionProvider: ConnectionProvider,
     private val messagePool: CoAPMessagePool,
-    private val layersStack: LayersStack
+    private val layersStack: LayersStack,
 ) {
     var isStarted = false
         private set
     private var sendingThread: SendingThread? = null
     private var connection: MulticastSocket? = null
+    private var transportMode: Coala.TransportMode = Coala.TransportMode.UDP
     @Synchronized
     fun start() {
         v("CoAPSender start")
-        if (connection == null) connectionProvider.waitForConnection()
-            .subscribe( { newConnection: MulticastSocket? ->
-                d("CoAPSender started, socket: $newConnection")
-                connection = newConnection
-                startSendingThread()
-            }, {
-                i("Can't start CoAPSender: $it")
-            })
+
+        if (transportMode == Coala.TransportMode.UDP) {
+            if (connection == null) connectionProvider.waitForUdpConnection()
+                .subscribe({ newConnection: MulticastSocket? ->
+                    d("CoAPSender started, socket: $newConnection")
+                    connection = newConnection
+                    startSendingThread()
+                }, {
+                    e("Can't start CoAPSender: $it")
+                })
+        } else {
+            i("CoAPSender TCP mode start")
+            startSendingThread()
+        }
     }
 
     private fun startSendingThread() {
@@ -164,18 +171,47 @@ class CoAPSender(
     @Throws(IOException::class)
     private fun sendMessageToAddress(address: InetSocketAddress?, message: CoAPMessage) {
         val messageData = CoAPSerializer.toBytes(message)
-        var udpPacket: DatagramPacket? = null
-        if (messageData != null) {
-            try {
-                udpPacket = DatagramPacket(messageData, messageData.size, address)
-            } catch (exception: IllegalArgumentException) {
-                e("sendMessageToAddress IllegalArgumentException, address: " + address.toString())
+        if (transportMode == Coala.TransportMode.UDP) {
+            var udpPacket: DatagramPacket? = null
+            if (messageData != null) {
+                try {
+                    udpPacket = DatagramPacket(messageData, messageData.size, address)
+                } catch (exception: IllegalArgumentException) {
+                    e("sendMessageToAddress IllegalArgumentException, address: " + address.toString())
+                }
+            }
+            // Send data!
+            if (connection != null && udpPacket != null) {
+                connection!!.send(udpPacket)
+            }
+        } else if (transportMode == Coala.TransportMode.TCP) {
+            i("CoAPSender: sending via TCP socket")
+            // Реализуем отправку через TCP с нужным фреймингом
+            // Формат: M (1B) | IP (4B) | PORT (2B) | SIZE (2B) | MESSAGE (SIZE B)
+            if (messageData != null && address != null) {
+                val socket = connectionProvider.getOrCreateTcpSocket()
+                val out = socket.getOutputStream()
+                val ipBytes = address.address.address // 4B
+                val portBytes = byteArrayOf(((address.port ushr 8) and 0xFF).toByte(), (address.port and 0xFF).toByte()) // 2B
+                val sizeBytes = byteArrayOf(((messageData.size ushr 8) and 0xFF).toByte(), (messageData.size and 0xFF).toByte()) // 2B
+                val frame = ByteArray(1 + 4 + 2 + 2 + messageData.size)
+                frame[0] = 77 // 'M'
+                System.arraycopy(ipBytes, 0, frame, 1, 4)
+                System.arraycopy(portBytes, 0, frame, 5, 2)
+                System.arraycopy(sizeBytes, 0, frame, 7, 2)
+                System.arraycopy(messageData, 0, frame, 9, messageData.size)
+                d("CoAPSender: sending via TCP socket $frame")
+                out.write(frame)
+                out.flush()
             }
         }
+    }
 
-        // Send data!
-        if (connection != null && udpPacket != null) {
-            connection!!.send(udpPacket)
-        }
+    fun setTransportMode(mode: Coala.TransportMode) {
+        if (transportMode == mode) return
+        stop()
+        // Пересоздаём sender/receiver с новым режимом, но connectionProvider тот же
+        transportMode = mode
+        start()
     }
 }
