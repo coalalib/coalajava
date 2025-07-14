@@ -1,6 +1,5 @@
 package com.ndmsystems.coala
 
-import android.os.Handler
 import com.ndmsystems.coala.CoAPHandler.AckError
 import com.ndmsystems.coala.CoAPResource.CoAPResourceHandler
 import com.ndmsystems.coala.di.CoalaComponent
@@ -24,6 +23,7 @@ import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.Single
+import java.net.InetSocketAddress
 import javax.inject.Inject
 
 class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage, params: CoAPMessagePool.Companion.Params? = CoAPMessagePool.Companion.Params()) :
@@ -232,10 +232,6 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         i("Coala start")
         receiver!!.start()
         sender!!.start()
-
-        Handler().postDelayed({
-            setTransportMode(TransportMode.TCP)
-        }, 5000)
     }
 
     val isStarted: Boolean
@@ -257,11 +253,13 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         return infoForReturn
     }
 
+    override fun isUdpMode(): Boolean = transportMode == TransportMode.UDP
+
     fun getReceivedStateForToken(tokenForDownload: ByteArray): LoggableState? {
         return receiver!!.getReceivedStateForToken(tokenForDownload)
     }
 
-    fun setTransportMode(mode: TransportMode) {
+    fun setTransportMode(mode: TransportMode, tcpProxyAddress: InetSocketAddress? = null) {
         if (transportMode == mode) return
 
         val wasSenderStarted = sender?.isStarted == true
@@ -269,7 +267,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         sender?.stop()
         receiver?.stop()
 
-        connectionProvider?.setTransportMode(TransportMode.TCP)
+        connectionProvider?.setTransportMode(TransportMode.TCP, tcpProxyAddress)
         sender?.setTransportMode(mode)
         receiver?.setTransportMode(mode)
         transportMode = mode

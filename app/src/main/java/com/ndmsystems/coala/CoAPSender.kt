@@ -26,7 +26,7 @@ class CoAPSender(
     private var transportMode: Coala.TransportMode = Coala.TransportMode.UDP
     @Synchronized
     fun start() {
-        v("CoAPSender start")
+        v("CoAPSender start with mode $transportMode")
 
         if (transportMode == Coala.TransportMode.UDP) {
             if (connection == null) connectionProvider.waitForUdpConnection()
@@ -38,11 +38,12 @@ class CoAPSender(
                     e("Can't start CoAPSender: $it")
                 })
         } else {
-            i("CoAPSender TCP mode start")
+            i("CoAPSender TCP mode try to start if needed")
             startSendingThread()
         }
     }
 
+    @Synchronized
     private fun startSendingThread() {
         if (!isStarted || sendingThread != null && sendingThread!!.state == Thread.State.TERMINATED) {
             v("SendingAsyncTask try to start")
@@ -185,7 +186,7 @@ class CoAPSender(
                 connection!!.send(udpPacket)
             }
         } else if (transportMode == Coala.TransportMode.TCP) {
-            i("CoAPSender: sending via TCP socket")
+            d("CoAPSender: sending via TCP socket")
             // Реализуем отправку через TCP с нужным фреймингом
             // Формат: M (1B) | IP (4B) | PORT (2B) | SIZE (2B) | MESSAGE (SIZE B)
             if (messageData != null && address != null) {
@@ -200,7 +201,6 @@ class CoAPSender(
                 System.arraycopy(portBytes, 0, frame, 5, 2)
                 System.arraycopy(sizeBytes, 0, frame, 7, 2)
                 System.arraycopy(messageData, 0, frame, 9, messageData.size)
-                d("CoAPSender: sending via TCP socket $frame")
                 out.write(frame)
                 out.flush()
             }

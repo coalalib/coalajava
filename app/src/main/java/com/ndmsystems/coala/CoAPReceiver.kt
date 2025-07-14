@@ -28,7 +28,7 @@ class CoAPReceiver(
 
     @Synchronized
     fun start() {
-        v("CoAPReceiver start")
+        v("CoAPReceiver start with mode $transportMode")
         if (transportMode == Coala.TransportMode.UDP) {
             if (connection == null) connectionProvider.waitForUdpConnection()
                 .subscribe( { newConnection: MulticastSocket? ->
@@ -42,11 +42,12 @@ class CoAPReceiver(
                 startReceivingThread()
             }
         } else if (transportMode == Coala.TransportMode.TCP) {
-            i("CoAPReceiver TCP mode start")
+            d("CoAPReceiver TCP mode start if needed")
             startTcpReceivingThread()
         }
     }
 
+    @Synchronized
     private fun startReceivingThread() {
         if (!isStarted || receivingThread != null && receivingThread!!.state == Thread.State.TERMINATED) {
             v("ReceivingAsyncTask try to start, state is ${receivingThread?.state}")
@@ -156,6 +157,7 @@ class CoAPReceiver(
 
     private fun startTcpReceivingThread() {
         if (tcpReceivingThread == null || tcpReceivingThread?.state == Thread.State.TERMINATED) {
+            d("startTcpReceivingThread, make new thread")
             tcpReceivingThread = Thread {
                 try {
                     val socket = connectionProvider.getOrCreateTcpSocket()

@@ -22,8 +22,12 @@ class LocalPeerDiscoverer(
         resourceDiscoveryHelper.clear()
         return Single.just(0)
             .doOnSubscribe {
-                sendDiscoveryMulticast()
-                sendDiscoveryMulticast()//Old hack for better stability
+                if (client.isUdpMode()) {
+                    sendDiscoveryMulticast()
+                    sendDiscoveryMulticast()//Old hack for better stability
+                } else {
+                    LogHelper.v("Not udp mode not need send")
+                }
             }
             .delay(500, TimeUnit.MILLISECONDS)
             .map {

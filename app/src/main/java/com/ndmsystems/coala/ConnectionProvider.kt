@@ -21,13 +21,14 @@ import java.net.UnknownHostException
 /**
  * Created by Владимир on 19.07.2017.
  */
-class ConnectionProvider(private val port: Int) {
+class ConnectionProvider(private val udpPort: Int) {
     private var onPortIsBusyHandler: OnPortIsBusyHandler? = null
     private var connection: MulticastSocket? = null
     private var subject: AsyncSubject<MulticastSocket>? = null
     private var timerSubscription: Disposable? = null
     private var tcpSocket: Socket? = null
     private var transportMode: Coala.TransportMode = Coala.TransportMode.UDP
+    private var tcpProxyAddress: InetSocketAddress? = null
 
     @Synchronized
     fun waitForUdpConnection(): Observable<MulticastSocket> {
@@ -118,7 +119,7 @@ class ConnectionProvider(private val port: Int) {
     @Throws(IOException::class)
     private fun createConnection(): MulticastSocket? {
         return try {
-            val connection = MulticastSocket(port)
+            val connection = MulticastSocket(udpPort)
             connection.joinGroup(Inet4Address.getByName("224.0.0.187"))
             connection.receiveBufferSize = 1048576
             connection.trafficClass = IPTOS_RELIABILITY or IPTOS_THROUGHPUT or IPTOS_LOWDELAY
@@ -140,7 +141,7 @@ class ConnectionProvider(private val port: Int) {
     private fun tryToReuseSocket(): MulticastSocket? {
         d("tryToReuseSocket")
         return try {
-            val srcAddress = InetSocketAddress(port)
+            val srcAddress = InetSocketAddress(udpPort)
             val connection = MulticastSocket(null)
             connection.reuseAddress = true
             connection.trafficClass = IPTOS_RELIABILITY or IPTOS_THROUGHPUT or IPTOS_LOWDELAY
@@ -184,16 +185,18 @@ class ConnectionProvider(private val port: Int) {
     @Synchronized
     fun getOrCreateTcpSocket(): Socket {
         if (transportMode != Coala.TransportMode.TCP) throw IllegalStateException("Not in TCP mode")
+        if (tcpProxyAddress == null) throw IllegalStateException("Tcp proxy address is null")
         if (tcpSocket == null || tcpSocket!!.isClosed) {
             tcpSocket = Socket()
-            tcpSocket!!.connect(InetSocketAddress("95.213.181.251", 16666), 2000)
+            tcpSocket!!.connect(tcpProxyAddress, 2000)
         }
         return tcpSocket!!
     }
 
     @Synchronized
-    fun setTransportMode(transportMode: Coala.TransportMode) {
+    fun setTransportMode(transportMode: Coala.TransportMode, tcpProxyAddress: InetSocketAddress?) {
         this.transportMode = transportMode
+        this.tcpProxyAddress = tcpProxyAddress
         close()
     }
 
