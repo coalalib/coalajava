@@ -234,4 +234,8 @@ class CoAPMessagePool(
     fun getMessageDeliveryInfo(messageToken: String): MessageDeliveryInfo? {
         return messageDeliveryInfo[messageToken]
     }
+
+    fun size(): Int {
+        return pool.size
+    }
 }

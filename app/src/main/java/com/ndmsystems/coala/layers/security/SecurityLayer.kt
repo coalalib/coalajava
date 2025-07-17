@@ -332,5 +332,8 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
     override fun onStop() {
         LogHelper.d("SecurityLayer onStop")
         sessionPool.clear()
+        synchronized(pendingMessages) {
+            pendingMessages.clear()
+        }
     }
 }
