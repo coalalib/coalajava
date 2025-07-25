@@ -66,7 +66,7 @@ class CoAPSender(
 
     private inner class SendingThread : Thread() {
         override fun run() {
-            v("SendingAsyncTask start")
+            v("SendingAsyncTask start, number in pool: ${messagePool.size()}")
             var message: CoAPMessage?
             while (true) {
                 // Check if we need to Quit!
