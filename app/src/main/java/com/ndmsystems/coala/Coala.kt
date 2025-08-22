@@ -23,10 +23,14 @@ import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.Single
+import java.net.InetSocketAddress
 import javax.inject.Inject
 
 class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage, params: CoAPMessagePool.Companion.Params? = CoAPMessagePool.Companion.Params()) :
     CoAPTransport() {
+    enum class TransportMode { UDP, TCP }
+    private var transportMode: TransportMode = TransportMode.UDP
+
     @JvmField
     @Inject
     var connectionProvider: ConnectionProvider? = null
@@ -249,8 +253,26 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         return infoForReturn
     }
 
+    override fun isUdpMode(): Boolean = transportMode == TransportMode.UDP
+
     fun getReceivedStateForToken(tokenForDownload: ByteArray): LoggableState? {
         return receiver!!.getReceivedStateForToken(tokenForDownload)
+    }
+
+    fun setTransportMode(mode: TransportMode, tcpProxyAddress: InetSocketAddress? = null) {
+        if (transportMode == mode) return
+
+        val wasSenderStarted = sender?.isStarted == true
+        val wasReceiverStarted = receiver?.isStarted == true
+        sender?.stop()
+        receiver?.stop()
+
+        connectionProvider?.setTransportMode(TransportMode.TCP, tcpProxyAddress)
+        sender?.setTransportMode(mode)
+        receiver?.setTransportMode(mode)
+        transportMode = mode
+        if (wasSenderStarted) sender?.start()
+        if (wasReceiverStarted) receiver?.start()
     }
 
     interface OnPortIsBusyHandler {
@@ -258,7 +280,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
     }
 
     companion object {
-        const val DEFAULT_PORT = 5685
+        const val DEFAULT_PORT = 5683
         lateinit var dependencyGraph: CoalaComponent
             private set
     }
