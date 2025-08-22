@@ -29,21 +29,25 @@ class CoAPReceiver(
     @Synchronized
     fun start() {
         v("CoAPReceiver start with mode $transportMode")
-        if (transportMode == Coala.TransportMode.UDP) {
-            if (connection == null) connectionProvider.waitForUdpConnection()
-                .subscribe( { newConnection: MulticastSocket? ->
-                    v("CoAPReceiver started, socket: $newConnection")
-                    connection = newConnection
+        when (transportMode) {
+            Coala.TransportMode.UDP -> {
+                if (connection == null) connectionProvider.waitForUdpConnection()
+                    .subscribe({ newConnection: MulticastSocket? ->
+                        v("CoAPReceiver started, socket: $newConnection")
+                        connection = newConnection
+                        startReceivingThread()
+                    }, {
+                        e("Can't start CoAPReceiver: $it")
+                    })
+                else {
                     startReceivingThread()
-                }, {
-                    e("Can't start CoAPReceiver: $it")
-                })
-            else {
-                startReceivingThread()
+                }
             }
-        } else if (transportMode == Coala.TransportMode.TCP) {
-            d("CoAPReceiver TCP mode start if needed")
-            startTcpReceivingThread()
+
+            Coala.TransportMode.TCP -> {
+                d("CoAPReceiver TCP mode start if needed")
+                startTcpReceivingThread()
+            }
         }
     }
 
@@ -98,7 +102,7 @@ class CoAPReceiver(
                 }
 
                 val socketAddress = try {
-                     udpPacket.socketAddress as InetSocketAddress
+                    udpPacket.socketAddress as InetSocketAddress
                 } catch (e: IllegalArgumentException) {
                     LogHelper.w("IllegalArgumentException when try to get message address: ${e.message}")
                     continue

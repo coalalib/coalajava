@@ -24,23 +24,29 @@ class CoAPSender(
     private var sendingThread: SendingThread? = null
     private var connection: MulticastSocket? = null
     private var transportMode: Coala.TransportMode = Coala.TransportMode.UDP
+
     @Synchronized
     fun start() {
         v("CoAPSender start with mode $transportMode")
 
         if (transportMode == Coala.TransportMode.UDP) {
             if (connection == null) connectionProvider.waitForUdpConnection()
-                .subscribe({ newConnection: MulticastSocket? ->
-                    d("CoAPSender started, socket: $newConnection")
-                    connection = newConnection
-                    startSendingThread()
-                }, {
-                    e("Can't start CoAPSender: $it")
-                })
+                .subscribe(::onUdpSocketStarted, ::onUdpSocketStartedFail)
         } else {
             i("CoAPSender TCP mode try to start if needed")
             startSendingThread()
         }
+    }
+
+    private fun onUdpSocketStartedFail(throwable: Throwable?) {
+        e("Can't start CoAPSender: $throwable")
+    }
+
+    private fun onUdpSocketStarted(newConnection: MulticastSocket?) {
+        d("CoAPSender started, socket: $newConnection")
+        connection = newConnection
+        startSendingThread()
+
     }
 
     @Synchronized
@@ -103,7 +109,12 @@ class CoAPSender(
                         }
                         val messageForSend = layerResult.message ?: message
                         if (destinationAddressReference.get() == null) {
-                            e("Destination is null!! isNeedToSend = " + layerResult.shouldContinue + ", message = " + getStringToPrintSendingMessage(messageForSend, destinationAddressReference))
+                            e(
+                                "Destination is null!! isNeedToSend = " + layerResult.shouldContinue + ", message = " + getStringToPrintSendingMessage(
+                                    messageForSend,
+                                    destinationAddressReference
+                                )
+                            )
                         } else {
                             if (destinationAddressReference.get().toString().contains("local")) {
                                 e("Try to send to localhost!!!")
@@ -113,7 +124,12 @@ class CoAPSender(
                         // send it now!
                         if (layerResult.shouldContinue) {
                             if (destinationAddressReference.get() == null) {
-                                e("Destination is null, but need to sending, message = " + getStringToPrintSendingMessage(messageForSend, destinationAddressReference))
+                                e(
+                                    "Destination is null, but need to sending, message = " + getStringToPrintSendingMessage(
+                                        messageForSend,
+                                        destinationAddressReference
+                                    )
+                                )
                             } else {
                                 v("message id ${message.id}, token ${Hex.encodeHexString(message.token)} actual sending")
                                 sendMessageToAddress(destinationAddressReference.get(), messageForSend)
