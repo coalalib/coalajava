@@ -12,7 +12,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.21"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21"
         classpath "de.mannodermaus.gradle.plugins:android-junit5:$android_junit5_version"
 
     }
@@ -27,7 +27,7 @@ ext {
 
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-kapt'
+apply plugin: 'com.google.devtools.ksp'
 apply plugin: 'de.mannodermaus.android-junit5'
 
 android {
@@ -86,7 +86,7 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
     implementation "com.google.dagger:dagger:$daggerVersion"
-    kapt "com.google.dagger:dagger-compiler:$daggerVersion"
+    ksp "com.google.dagger:dagger-compiler:$daggerVersion"
 
     implementation 'com.squareup.okhttp3:okhttp:4.5.0'
     implementation "com.google.code.gson:gson:$gsonVersion"
