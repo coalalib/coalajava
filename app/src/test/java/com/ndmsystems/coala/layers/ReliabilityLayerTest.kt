@@ -140,7 +140,7 @@ object ReliabilityLayerTest: Spek( {
             }
 
             And("send error in handler"){
-                verify { msgHandler.onMessage(msg, "Request has been reset!") }
+                verify { msgHandler.onMessage(msg, "Request has been reset, RL!") }
             }
 
             And("remove handler from pool"){
