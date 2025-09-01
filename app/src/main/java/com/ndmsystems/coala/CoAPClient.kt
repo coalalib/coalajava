@@ -11,4 +11,5 @@ interface CoAPClient {
     fun sendRequest(message: CoAPMessage): Observable<ResponseData>
     fun cancel(message: CoAPMessage)
     fun getMessageDeliveryInfo(message: CoAPMessage): MessageDeliveryInfo?
+    fun isUdpMode(): Boolean
 }
