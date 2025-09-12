@@ -2,6 +2,7 @@ package com.ndmsystems.coala
 
 import com.ndmsystems.coala.CoAPSerializer.DeserializeException
 import com.ndmsystems.coala.CoAPSerializer.fromBytes
+import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.helpers.logging.LogHelper.e
@@ -117,6 +118,7 @@ class CoAPReceiver(
 
                 // Run Layers Chain
                 try {
+                    v("message id ${message.id}, token ${Hex.encodeHexString(message.token)} actual received, send to layers")
                     val senderAddressReference = Reference(socketAddress)
                     message.address = senderAddressReference.get()
                     if (message.address == null) {

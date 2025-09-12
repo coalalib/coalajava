@@ -95,7 +95,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                             val publicKey = clientHelloResponseMessage.payload!!.content
                             if (message.peerPublicKey == null
                                     || Arrays.equals(message.peerPublicKey, publicKey)) {
-                                LogHelper.d("Session with " + message.address + " started, publicKey = " + Hex.encodeHexString(publicKey))
+                                LogHelper.d("Session with " + message.address + " started, publicKey = " + Hex.encodeHexString(publicKey) + "clientHelloResponseMessage, id ${clientHelloResponseMessage.id} token ${clientHelloResponseMessage.hexToken}" )
                                 val securedSession = getSessionForAddress(message)
                                 if (securedSession != null) {
                                     securedSession.start(publicKey)
