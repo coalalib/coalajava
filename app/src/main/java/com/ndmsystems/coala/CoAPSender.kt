@@ -131,7 +131,7 @@ class CoAPSender(
                                     )
                                 )
                             } else {
-                                v("message id ${message.id}, token ${Hex.encodeHexString(message.token)} actual sending")
+                                v("message id ${message.id}, token ${Hex.encodeHexString(message.token)} actual sending to ${destinationAddressReference.get()}")
                                 sendMessageToAddress(destinationAddressReference.get(), messageForSend)
                             }
                         }

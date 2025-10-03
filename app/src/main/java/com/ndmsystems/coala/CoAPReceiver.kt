@@ -118,7 +118,7 @@ class CoAPReceiver(
 
                 // Run Layers Chain
                 try {
-                    v("message id ${message.id}, token ${Hex.encodeHexString(message.token)} actual received, send to layers")
+                    v("message id ${message.id}, token ${Hex.encodeHexString(message.token)} actual received from ${socketAddress}, send to layers")
                     val senderAddressReference = Reference(socketAddress)
                     message.address = senderAddressReference.get()
                     if (message.address == null) {
