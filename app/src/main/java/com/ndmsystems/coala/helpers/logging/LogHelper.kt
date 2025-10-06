@@ -74,7 +74,7 @@ object LogHelper {
     }
 
     @JvmStatic
-    fun getShortStackTraceString(throwable: Exception): String {
+    fun getShortStackTraceString(throwable: Throwable): String {
         return throwable.stackTrace.joinToString { it.fileName + "." + it.methodName + ":" + it.lineNumber }
     }
 

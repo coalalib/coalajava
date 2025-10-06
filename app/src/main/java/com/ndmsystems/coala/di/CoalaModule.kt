@@ -1,5 +1,6 @@
 package com.ndmsystems.coala.di
 
+import android.net.ConnectivityManager
 import com.ndmsystems.coala.AckHandlersPool
 import com.ndmsystems.coala.CoAPClient
 import com.ndmsystems.coala.CoAPMessagePool
@@ -32,7 +33,7 @@ import javax.inject.Singleton
  * Created by Владимир on 06.07.2017.
  */
 @Module
-class CoalaModule(private val coala: Coala, private val port: Int, private val params: CoAPMessagePool.Companion.Params) {
+class CoalaModule(private val coala: Coala, private val port: Int, private val params: CoAPMessagePool.Companion.Params, private val connectivityManager: ConnectivityManager) {
     @Provides
     @Singleton
     fun provideResourceRegistry(client: CoAPClient): ResourceRegistry {
@@ -48,7 +49,7 @@ class CoalaModule(private val coala: Coala, private val port: Int, private val p
     @Provides
     @Singleton
     fun provideConnectionProvider(): ConnectionProvider {
-        return ConnectionProvider(port)
+        return ConnectionProvider(port, connectivityManager)
     }
 
     @Provides

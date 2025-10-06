@@ -1,5 +1,7 @@
 package com.ndmsystems.coala
 
+import android.net.ConnectivityManager
+import android.os.Build
 import com.ndmsystems.coala.Coala.OnPortIsBusyHandler
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.helpers.logging.LogHelper.e
@@ -12,6 +14,7 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.AsyncSubject
 import java.io.IOException
+import java.net.DatagramSocket
 import java.net.InetSocketAddress
 import java.net.MulticastSocket
 import java.net.Socket
@@ -21,7 +24,7 @@ import java.net.UnknownHostException
 /**
  * Created by Владимир on 19.07.2017.
  */
-class ConnectionProvider(private val udpPort: Int) {
+class ConnectionProvider(private val udpPort: Int, private val connectivityManager: ConnectivityManager) {
     private var onPortIsBusyHandler: OnPortIsBusyHandler? = null
     private var connection: MulticastSocket? = null
     private var subject: AsyncSubject<MulticastSocket>? = null
@@ -47,7 +50,7 @@ class ConnectionProvider(private val udpPort: Int) {
                 subject!!.singleOrError()
             }
         } else if (transportMode == Coala.TransportMode.TCP) {
-            i("waitForUdpConnection called in TCP mode — returning error Observable")
+            w("waitForUdpConnection called in TCP mode — returning error Observable")
             return Single.error(NotImplementedError("UDP socket not available in TCP mode"))
         } else {
             e("waitForUdpConnection: Unknown transport mode: $transportMode")
@@ -119,14 +122,29 @@ class ConnectionProvider(private val udpPort: Int) {
     @Throws(IOException::class)
     private fun createConnection(): MulticastSocket? {
         return try {
-            val connection = MulticastSocket(udpPort)
-            connection.receiveBufferSize = 1048576
-            connection.trafficClass = IPTOS_RELIABILITY or IPTOS_THROUGHPUT or IPTOS_LOWDELAY
-            d("createConnection, port = ${connection.port}, localPort = ${connection.localPort}. ")
-            connection
+            val s = MulticastSocket(udpPort)
+            // ВАЖНО: сокет ещё не connected → можно привязать к сети
+            bindToActiveNetwork(s)
+            s.receiveBufferSize = 1048576
+            s.trafficClass = IPTOS_RELIABILITY or IPTOS_THROUGHPUT or IPTOS_LOWDELAY
+            d("createConnection, port = ${s.port}, localPort = ${s.localPort}. ")
+            s
         } catch (ex: SocketException) {
             i("MulticastSocket can't be created, try to reuse: " + ex.javaClass + " " + ex.localizedMessage)
             tryToReuseSocket()
+        }
+    }
+
+    private fun bindToActiveNetwork(socket: DatagramSocket) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                val net = connectivityManager?.activeNetwork ?: return
+                // Требование платформы: сокет не должен быть connected. Bound — ок. :contentReference[oaicite:1]{index=1}
+                net.bindSocket(socket)
+                d("Socket bound to active network: $net")
+            } catch (t: Throwable) {
+                w("bindToActiveNetwork failed: ${t.javaClass.simpleName} ${t.message}")
+            }
         }
     }
 
@@ -157,14 +175,14 @@ class ConnectionProvider(private val udpPort: Int) {
             invokeResultAndCompleteSubject(connection)
             connection
         } catch (ex: SocketException) {
-            i("MulticastSocket can't be created, and can't be reused: " + ex.javaClass + " " + ex.localizedMessage)
+            w("MulticastSocket can't be created, and can't be reused: " + ex.javaClass + " " + ex.localizedMessage)
             null
         } catch (e: UnknownHostException) {
-            i("MulticastSocket can't be created, and can't be reuse UnknownHostException: " + e.localizedMessage)
+            w("MulticastSocket can't be created, and can't be reuse UnknownHostException: " + e.localizedMessage)
             e.printStackTrace()
             null
         } catch (e: IOException) {
-            i("MulticastSocket can't be created, and can't be reuse IOException: " + e.localizedMessage)
+            w("MulticastSocket can't be created, and can't be reuse IOException: " + e.localizedMessage)
             e.printStackTrace()
             null
         }

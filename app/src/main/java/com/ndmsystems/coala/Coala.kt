@@ -1,5 +1,6 @@
 package com.ndmsystems.coala
 
+import android.net.ConnectivityManager
 import com.ndmsystems.coala.CoAPHandler.AckError
 import com.ndmsystems.coala.CoAPResource.CoAPResourceHandler
 import com.ndmsystems.coala.di.CoalaComponent
@@ -26,7 +27,7 @@ import io.reactivex.Single
 import java.net.InetSocketAddress
 import javax.inject.Inject
 
-class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage, params: CoAPMessagePool.Companion.Params? = CoAPMessagePool.Companion.Params()) :
+class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage, params: CoAPMessagePool.Companion.Params? = CoAPMessagePool.Companion.Params(), connectivityManager: ConnectivityManager) :
     CoAPTransport() {
     enum class TransportMode { UDP, TCP }
     private var transportMode: TransportMode = TransportMode.UDP
@@ -73,7 +74,8 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
             CoalaModule(
                 this,
                 port!!,
-                params!!
+                params!!,
+                connectivityManager
             )
         ).build()
         dependencyGraph.inject(this)
