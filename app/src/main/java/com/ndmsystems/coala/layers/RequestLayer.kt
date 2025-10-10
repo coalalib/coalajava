@@ -4,6 +4,7 @@ import com.ndmsystems.coala.CoAPClient
 import com.ndmsystems.coala.CoAPResourceInput
 import com.ndmsystems.coala.LayersStack.LayerResult
 import com.ndmsystems.coala.ResourceRegistry
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogHelper.e
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
@@ -17,6 +18,7 @@ class RequestLayer(private val resourceRegistry: ResourceRegistry, private val c
     override fun onReceive(message: CoAPMessage, senderAddressReference: Reference<InetSocketAddress>): LayerResult {
         if (message.type != CoAPMessageType.ACK && message.code.isRequest) {
             val resourcesForPath = resourceRegistry.getResourcesForPath(message.getURIPathString())
+            LogHelper.d("RequestLayer get resource for path ${message.getURIPathString()}, result is $resourcesForPath")
             if (resourcesForPath != null) {
                 val resource = resourcesForPath.getResourceByMethod(message.method)
                 if (resource != null) {
