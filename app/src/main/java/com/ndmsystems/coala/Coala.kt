@@ -282,7 +282,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
     }
 
     companion object {
-        const val DEFAULT_PORT = 5683
+        const val DEFAULT_PORT = 0
         lateinit var dependencyGraph: CoalaComponent
             private set
     }

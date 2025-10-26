@@ -122,15 +122,18 @@ class ConnectionProvider(private val udpPort: Int, private val connectivityManag
     @Throws(IOException::class)
     private fun createConnection(): MulticastSocket? {
         return try {
-            val s = MulticastSocket(udpPort)
+            val s = MulticastSocket(udpPort) //Don't change to 5683 or Samsung on wifi stop working!
             // ВАЖНО: сокет ещё не connected → можно привязать к сети
             bindToActiveNetwork(s)
             s.receiveBufferSize = 1048576
             s.trafficClass = IPTOS_RELIABILITY or IPTOS_THROUGHPUT or IPTOS_LOWDELAY
-            d("createConnection, port = ${s.port}, localPort = ${s.localPort}. ")
+            d("createConnection, 'udpPort' is $udpPort, port = ${s.port}, localPort = ${s.localPort}. ")
             s
         } catch (ex: SocketException) {
-            i("MulticastSocket can't be created, try to reuse: " + ex.javaClass + " " + ex.localizedMessage)
+            i("MulticastSocket can't be created, SocketException, try to reuse: " + ex.javaClass + " " + ex.localizedMessage)
+            tryToReuseSocket()
+        } catch (ex: Exception) {
+            e("MulticastSocket can't be created: " + ex.javaClass + " " + ex.localizedMessage)
             tryToReuseSocket()
         }
     }
