@@ -11,15 +11,13 @@ import java.util.concurrent.TimeUnit
 
 class AckHandlersPool {
     private val pool: ExpiringMap<Int, CoAPHandler> = ExpiringMap.builder()
-        .expirationPolicy(ExpirationPolicy.ACCESSED)
-        .expiration(5, TimeUnit.MINUTES)
+        .expirationPolicy(ExpirationPolicy.CREATED)
+        .expiration(20, TimeUnit.MINUTES)
         .build()
 
     fun add(id: Int, handler: CoAPHandler) {
         LogHelper.v("Add handler for message: $id to pool")
-        synchronized(pool) {
-            pool[id] = handler
-        }
+        pool[id] = handler
     }
 
     operator fun get(id: Int): CoAPHandler? {
@@ -28,19 +26,14 @@ class AckHandlersPool {
 
     fun remove(id: Int) {
         LogHelper.v("Remove handler for message: $id from pool")
-        synchronized(pool) {
-            pool.remove(id)
-        }
+        pool.remove(id)
     }
 
     fun clear(exception: Throwable) {
-        LogHelper.v("Clear handlers pool")
+        LogHelper.d("Clear handlers pool, current pool size: ${pool.size}")
         CoroutineScope(IO).launch {
-            var poolCopy: List<CoAPHandler?>
-            synchronized(pool) {
-                poolCopy = pool.values.toList()
-                pool.clear()
-            }
+            val poolCopy: List<CoAPHandler?> = pool.values.toList()
+            pool.clear()
             val iter = poolCopy.iterator()
             while (iter.hasNext()) {
                 val handler = iter.next()

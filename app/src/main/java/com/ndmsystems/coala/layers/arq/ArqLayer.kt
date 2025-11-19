@@ -38,8 +38,8 @@ class ArqLayer(
     private val messagePool: CoAPMessagePool
 ) : ReceiveLayer, SendLayer {
     private val receiveStates: MutableMap<String, ReceiveState> = ExpiringMap.builder()
-        .expirationPolicy(ExpirationPolicy.ACCESSED)
-        .expiration(10, TimeUnit.SECONDS)
+        .expirationPolicy(ExpirationPolicy.CREATED)
+        .expiration(10, TimeUnit.MINUTES)
         .build()
     private val sendStates: MutableMap<String, SendState> = ConcurrentHashMap()
     private fun isBlockedMessage(message: CoAPMessage): Boolean {

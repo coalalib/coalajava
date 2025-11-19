@@ -21,8 +21,8 @@ class CoAPMessagePool(
     private val pool: ConcurrentLinkedHashMap<Int, QueueElement>
     private val messageIdForToken = ConcurrentHashMap<String, Int>()
     private val messageDeliveryInfo = ExpiringMap.builder()
-        .expirationPolicy(ExpirationPolicy.ACCESSED)
-        .expiration(5, TimeUnit.MINUTES)
+        .expirationPolicy(ExpirationPolicy.CREATED)
+        .expiration(20, TimeUnit.MINUTES)
         .build<String, MessageDeliveryInfo>()
 
     init {
@@ -174,7 +174,7 @@ class CoAPMessagePool(
 
     fun clear(exception: BaseCoalaThrowable) {
         CoroutineScope(IO).launch {
-            LogHelper.v("Clear message pool")
+            LogHelper.d("Clear message pool, current pool size: ${pool.size}")
             for (queueElement in pool.values) {
                 if (queueElement.message.responseHandler != null) {
                     queueElement.message.responseHandler?.onError(exception)
