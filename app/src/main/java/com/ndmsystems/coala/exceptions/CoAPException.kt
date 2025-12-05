@@ -9,21 +9,25 @@ open class CoAPException : BaseCoalaThrowable {
     val code: CoAPMessageCode
     val payloadErrorCode: Int?
     private val srcMessage: String
+    val additionalInfo: String?
 
     constructor(code: CoAPMessageCode, message: String?) : super("Code: $code, $message") {
         this.code = code
         payloadErrorCode = null
         srcMessage = message ?: ""
+        additionalInfo = null
     }
 
     constructor(
         message: String?,
         code: CoAPMessageCode,
-        payloadErrorCode: Int
+        payloadErrorCode: Int,
+        additionalInfo: String? = null
     ) : super(if (!message.isNullOrEmpty()) "Code: $code, $message, $payloadErrorCode" else "Handle payload error: code $code, $payloadErrorCode") {
         this.code = code
         this.payloadErrorCode = payloadErrorCode
         srcMessage = message ?: ""
+        this.additionalInfo = additionalInfo
     }
 
     val payloadError: PayloadError

@@ -9,7 +9,7 @@ import org.json.JSONException
 import org.json.JSONObject
 
 class ResponseErrorFactory {
-    fun proceed(message: CoAPMessage): CoAPException? {
+    fun proceed(message: CoAPMessage, request: CoAPMessage? = null): CoAPException? {
         if (message.type == CoAPMessageType.RST) {
             return CoAPException(message.code, if (message.payload == null || message.payload.toString() == "null") "Request has been reset, REF!" else message.payload.toString())
         } else if (message.code.codeClass != 2) {
@@ -17,7 +17,7 @@ class ResponseErrorFactory {
             if (message.payload.toString() == "Wrong login or password") {
                 return WrongAuthDataException(message.code, CoAPMessageCode.CoapCodeUnauthorized.name)
             } else if (message.payload.toString().contains("code")) {
-                return proceedByResponsePayloadErrorCode(message)
+                return proceedByResponsePayloadErrorCode(message, request)
             }
             return proceedByResponseCode(message)
         }
@@ -31,13 +31,13 @@ class ResponseErrorFactory {
         }
     }
 
-    private fun proceedByResponsePayloadErrorCode(message: CoAPMessage): CoAPException? {
+    private fun proceedByResponsePayloadErrorCode(message: CoAPMessage, request: CoAPMessage? = null): CoAPException? {
         var coAPException: CoAPException? = null
         try {
             val errorObject = JSONObject(message.payload.toString())
             val errorMessage = if (errorObject.has("message")) errorObject.getString("message") else ""
             val payloadErrorCode = if (errorObject.has("code")) errorObject.getInt("code") else 0
-            coAPException = CoAPException(errorMessage, message.code, payloadErrorCode)
+            coAPException = CoAPException(errorMessage, message.code, payloadErrorCode, request.toString())
         } catch (e: JSONException) {
             e.printStackTrace()
         }

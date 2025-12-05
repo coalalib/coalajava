@@ -47,7 +47,7 @@ class ResponseLayer : ReceiveLayer, SendLayer {
         ) return LayerResult(false, null)
         val key = keyForMessage(message)
         val request = requests[key] ?: return LayerResult(true, null)
-        val responseError = errorFactory.proceed(message)
+        val responseError = errorFactory.proceed(message, request)
         if (responseError != null) {
             request.responseHandler?.onError(responseError.setMessageDeliveryInfo(client.getMessageDeliveryInfo(message)))
         } else {
