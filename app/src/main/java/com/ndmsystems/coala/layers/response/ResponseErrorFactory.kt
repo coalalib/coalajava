@@ -37,7 +37,7 @@ class ResponseErrorFactory {
             val errorObject = JSONObject(message.payload.toString())
             val errorMessage = if (errorObject.has("message")) errorObject.getString("message") else ""
             val payloadErrorCode = if (errorObject.has("code")) errorObject.getInt("code") else 0
-            coAPException = CoAPException(errorMessage, message.code, payloadErrorCode, request.toString())
+            coAPException = CoAPException(errorMessage, message.code, payloadErrorCode, "req payload: ${request?.payload.toString()}, req path: ${request?.getURIPathString()}")
         } catch (e: JSONException) {
             e.printStackTrace()
         }
