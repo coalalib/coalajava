@@ -30,7 +30,9 @@ enum class PayloadError(val code: Int) {
     CODE_2023(code = 2023),
     CODE_2030(code = 2030),
     CODE_2032(code = 2032),
-    CODE_3000(code = 3000);
+    CODE_3000(code = 3000),
+    // weak password
+    CODE_3001(code = 3001);
 
     companion object {
         fun getByCode(code: Int?): PayloadError = entries.firstOrNull { it.code == code } ?: UNKNOWN
