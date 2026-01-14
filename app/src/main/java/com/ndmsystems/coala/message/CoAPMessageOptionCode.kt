@@ -16,16 +16,36 @@ enum class CoAPMessageOptionCode
      */
     val value: Int
 ) {
-    OptionIfMatch(1), OptionURIHost(3), OptionEtag(4), OptionIfNoneMatch(5), OptionObserve(6), OptionURIPort(7), OptionLocationPath(8), OptionURIPath(
-        11
-    ),
-    OptionContentFormat(12), OptionMaxAge(14), OptionURIQuery(15), OptionAccept(17), OptionLocationQuery(20), OptionBlock2(23), OptionBlock1(27), OptionSize2(
-        28
-    ),
-    OptionProxyURI(35), OptionProxyScheme(39), OptionSize1(60), OptionURIScheme(2111), OptionSelectiveRepeatWindowSize(3001), OptionWindowChangeable(3002), OptionProxySecurityID(
-        3004
-    ),
-    OptionCookie(3036), OptionHandshakeType(3999), OptionSessionNotFound(4001), OptionSessionExpired(4003), OptionCoapsURI(4005), DefaultOption(999999);
+    OptionIfMatch(1),
+    OptionURIHost(3),
+    OptionEtag(4),
+    OptionIfNoneMatch(5),
+    OptionObserve(6),
+    OptionURIPort(7),
+    OptionLocationPath(8),
+    OptionURIPath(11),
+    OptionContentFormat(12),
+    OptionMaxAge(14),
+    OptionURIQuery(15),
+    OptionAccept(17),
+    OptionLocationQuery(20),
+    OptionBlock2(23),
+    OptionBlock1(27),
+    OptionSize2(28),
+    OptionProxyURI(35),
+    OptionProxyScheme(39),
+    OptionSize1(60),
+    OptionURIScheme(2111),
+    OptionSelectiveRepeatWindowSize(3001),
+    OptionWindowChangeable(3002),
+    OptionProxySecurityID(3004),
+    OptionCookie(3036),
+    OptionHandshakeType(3999),
+    OptionSessionNotFound(4001),
+    OptionSessionExpired(4003),
+    OptionCoapsURI(4005),
+    OptionChecksum(4006),
+    DefaultOption(999999);
 
     //For errors
     companion object {
@@ -60,6 +80,7 @@ enum class CoAPMessageOptionCode
                 4001 -> OptionSessionNotFound
                 4003 -> OptionSessionExpired
                 4005 -> OptionCoapsURI
+                4006 -> OptionChecksum
                 else -> {
                     e("Unknown CoAP Option Code $value")
                     DefaultOption
