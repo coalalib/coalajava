@@ -54,6 +54,9 @@ class CoAPMessageOption : Comparable<CoAPMessageOption> {
                 String(data)
 
             CoAPMessageOptionCode.OptionCookie, CoAPMessageOptionCode.OptionCoapsURI, CoAPMessageOptionCode.OptionWindowChangeable -> value = data
+            CoAPMessageOptionCode.OptionChecksum -> {
+                // tbd
+            }
             else -> {
                 e("Try from byte unknown option: " + this.code)
                 value = data
