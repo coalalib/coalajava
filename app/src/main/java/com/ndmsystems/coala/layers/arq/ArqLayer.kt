@@ -115,22 +115,23 @@ class ArqLayer(
                 // Transmit ACK
                 didTransmit(block.number, token)
                 messagePool.remove(mutableIncomingMessage)
+
                 val sendState = sendStates[token]
                 if (sendState != null && sendState.isCompleted) {
-                    v("ARQ: Sending completed, pushing to message pool original message" + sendState.originalMessage.id)
-                    val originalMessage = sendState.originalMessage
-                    return if (mutableIncomingMessage.code == CoAPMessageCode.CoapCodeEmpty
-                        && mutableIncomingMessage.type == CoAPMessageType.ACK
-                    ) {
-                        messagePool.add(originalMessage)
-                        messagePool.setNoNeededSending(originalMessage)
-                        sendStates.remove(token)
-                        LayersStack.LayerResult(false)
+                    v("ARQ: Sending completed, pushing to message pool original message ${sendState.originalMessage.id}")
+
+
+                    // Условие завершения должно быть по коду ответа, не только по CoapCodeEmpty
+                    if (mutableIncomingMessage.code == CoAPMessageCode.CoapCodeContinue) {
+                        // Это продолжение — не удаляем состояние, чтобы ждать финального ответа
+                        return LayersStack.LayerResult(false)
                     } else {
+                        // Это финальный ответ — можно удалить состояние
+                        val originalMessage = sendState.originalMessage
                         messagePool.add(originalMessage)
                         messagePool.setNoNeededSending(originalMessage)
                         sendStates.remove(token)
-                        LayersStack.LayerResult(true)
+                        return LayersStack.LayerResult(true)
                     }
                 }
             }
