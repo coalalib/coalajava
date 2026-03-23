@@ -91,7 +91,7 @@ class CoAPSender(
                             break
                         }
                         val destinationAddressReference = Reference(message.address)
-                        //Этот мерзкий хак нужен для того чтобы сохранить исходный адрес назначения, не измененный слоями
+                        // Hack to preserve original destination address before layers rewrite it
                         message.address = destinationAddressReference.get()
                         if (message.address == null) {
                             e("Message address == null in SendingThread")
@@ -203,8 +203,8 @@ class CoAPSender(
             }
         } else if (transportMode == Coala.TransportMode.TCP) {
             d("CoAPSender: sending via TCP socket")
-            // Реализуем отправку через TCP с нужным фреймингом
-            // Формат: M (1B) | IP (4B) | PORT (2B) | SIZE (2B) | MESSAGE (SIZE B)
+            // TCP send with framing
+            // Format: M (1B) | IP (4B) | PORT (2B) | SIZE (2B) | MESSAGE (SIZE B)
             if (messageData != null && address != null) {
                 val socket = connectionProvider.getOrCreateTcpSocket()
                 val out = socket.getOutputStream()
@@ -226,7 +226,7 @@ class CoAPSender(
     fun setTransportMode(mode: Coala.TransportMode) {
         if (transportMode == mode) return
         stop()
-        // Пересоздаём sender/receiver с новым режимом, но connectionProvider тот же
+        // Recreate sender/receiver for new mode; same connectionProvider
         transportMode = mode
         start()
     }

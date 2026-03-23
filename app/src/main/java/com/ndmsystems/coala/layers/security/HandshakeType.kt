@@ -2,9 +2,6 @@ package com.ndmsystems.coala.layers.security
 
 import com.ndmsystems.coala.helpers.logging.LogHelper.e
 
-/**
- * Created by Владимир on 26.06.2017.
- */
 enum class HandshakeType(private val value: Int) {
     ClientHello(1), PeerHello(2), ClientSignature(3), PeerSignature(4);
 

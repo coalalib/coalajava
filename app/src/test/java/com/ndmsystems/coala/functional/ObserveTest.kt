@@ -22,9 +22,6 @@ import org.junit.Before
 import org.junit.Test
 import java.util.concurrent.atomic.AtomicBoolean
 
-/**
- * Created by bas on 16.11.16.
- */
 class ObserveTest : BaseAsyncTest() {
     private var client: Coala? = null
     private var server: Coala? = null

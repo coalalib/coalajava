@@ -5,9 +5,6 @@ import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.message.CoAPRequestMethod
 import java.util.Collections
 
-/**
- * Created by Владимир on 26.06.2017.
- */
 class ResourceRegistry(private val client: CoAPClient) {
     private val resources = Collections.synchronizedMap(HashMap<String, CoAPResourcesGroupForPath>())
     fun getResources(): Map<String, CoAPResourcesGroupForPath> {

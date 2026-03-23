@@ -2,9 +2,6 @@ package com.ndmsystems.coala.layers
 
 import com.ndmsystems.coala.CoAPClient
 
-/**
- * Created by Владимир on 01.06.2017.
- */
 class ProxyLayerTest {
     private val proxyLayer: ProxyLayer? = null
     private val client: CoAPClient? = null //private CoAPMessagePool messagePool;

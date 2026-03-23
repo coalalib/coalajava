@@ -238,7 +238,6 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
 
     private fun processIncomingHandshake(handshakeType: HandshakeType, message: CoAPMessage, senderAddress: InetSocketAddress) {
 
-
         if (message.payload == null) return
         if (handshakeType == HandshakeType.ClientHello) {
             LogHelper.d("Received HANDSHAKE Client Public Key")

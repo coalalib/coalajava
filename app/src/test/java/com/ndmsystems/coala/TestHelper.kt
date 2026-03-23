@@ -2,9 +2,6 @@ package com.ndmsystems.coala
 
 import com.ndmsystems.coala.helpers.logging.ILogger
 
-/**
- * Created by bas on 16.12.16.
- */
 class TestHelper : ILogger {
     override fun v(message: String) {
         println(message)

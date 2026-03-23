@@ -6,9 +6,7 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.gherkin.Feature
 import kotlin.test.assertEquals
 
-
 /*
- * Created by Evgenii Stepanov on 04.09.19
  */
 
 object InMemoryDataTest : Spek({

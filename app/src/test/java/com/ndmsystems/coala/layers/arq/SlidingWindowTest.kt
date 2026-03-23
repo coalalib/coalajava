@@ -5,13 +5,10 @@ import org.spekframework.spek2.style.specification.describe
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-
 /*
- * Created by Evgenii Stepanov on 04.09.19
  */
 
 object SlidingWindowTest : Spek({
-
 
     describe("testing simple sliding window") {
         val size = 10
@@ -21,7 +18,6 @@ object SlidingWindowTest : Spek({
             val dummyData = ByteArray(size).mapIndexed { index, _ -> index.toByte() }
             dummyData.forEachIndexed { index, byte -> slidingWindow.set(index, byte) }
         }
-
 
         context("test boundary elements to expected values") {
 
@@ -113,6 +109,5 @@ object SlidingWindowTest : Spek({
         }
 
     }
-
 
 })

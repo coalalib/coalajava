@@ -25,7 +25,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /*
- * Created by Evgenii Stepanov on 05.09.19
  */
 
 object ArqLayerTest : Spek({
@@ -106,7 +105,6 @@ object ArqLayerTest : Spek({
                 passNext = arqLayer.onReceive(message, senderAddressReference).shouldContinue
             }
 
-
             Then("verify ack has sent") {
                 verify { coala.send(message, isNull()) }
             }
@@ -120,7 +118,6 @@ object ArqLayerTest : Spek({
                 assertEquals(false, passNext)
             }
         }
-
 
         Scenario("onSend() CoAP message which is too small to be split") {
 
@@ -215,7 +212,6 @@ object ArqLayerTest : Spek({
                     assertTrue(it.hasOption(CoAPMessageOptionCode.OptionBlock2))
                 }
             }
-
 
         }
 

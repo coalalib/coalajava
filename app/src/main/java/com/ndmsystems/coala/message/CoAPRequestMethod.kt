@@ -1,8 +1,5 @@
 package com.ndmsystems.coala.message
 
-/**
- * Created by Владимир on 26.06.2017.
- */
 enum class CoAPRequestMethod
 /**
  * Instantiates a new type with the specified integer value.

@@ -2,9 +2,6 @@ package com.ndmsystems.coala.exceptions
 
 import com.ndmsystems.coala.message.CoAPMessageCode
 
-/**
- * Created by Владимир on 21.07.2017.
- */
 open class CoAPException : BaseCoalaThrowable {
     val code: CoAPMessageCode
     val payloadErrorCode: Int?

@@ -2,9 +2,6 @@ package com.ndmsystems.coala.message
 
 import com.ndmsystems.coala.helpers.logging.LogHelper.e
 
-/**
- * Created by Владимир on 26.06.2017.
- */
 enum class CoAPMessageOptionCode
 /**
  * Instantiates a new type with the specified integer value.

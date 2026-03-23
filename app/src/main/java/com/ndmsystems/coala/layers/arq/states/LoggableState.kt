@@ -4,9 +4,6 @@ import com.ndmsystems.coala.helpers.TimeHelper.timeForMeasurementInMilliseconds
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.message.CoAPMessage.ResendHandler
 
-/**
- * Created by bas on 25.08.17.
- */
 abstract class LoggableState internal constructor() : ResendHandler {
     private val startTime: Long = timeForMeasurementInMilliseconds
     var diffTime: Int? = null

@@ -29,9 +29,6 @@ import dagger.Provides
 import javax.inject.Named
 import javax.inject.Singleton
 
-/**
- * Created by Владимир on 06.07.2017.
- */
 @Module
 class CoalaModule(private val coala: Coala, private val port: Int, private val params: CoAPMessagePool.Companion.Params, private val connectivityManager: ConnectivityManager) {
     @Provides

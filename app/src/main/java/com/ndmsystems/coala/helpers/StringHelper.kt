@@ -1,8 +1,5 @@
 package com.ndmsystems.coala.helpers
 
-/**
- * Created by bas on 18.10.16.
- */
 object StringHelper {
     @JvmStatic
     fun join(list: List<String?>, delim: String?): String {

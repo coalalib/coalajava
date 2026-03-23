@@ -30,9 +30,6 @@ import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
-/**
- * Created by bas on 02.08.17.
- */
 class ArqLayer(
     private val client: CoAPClient,
     private val messagePool: CoAPMessagePool
@@ -120,13 +117,12 @@ class ArqLayer(
                 if (sendState != null && sendState.isCompleted) {
                     v("ARQ: Sending completed, pushing to message pool original message ${sendState.originalMessage.id}")
 
-
-                    // Условие завершения должно быть по коду ответа, не только по CoapCodeEmpty
+                    // Completion should depend on response code, not only CoapCodeEmpty
                     if (mutableIncomingMessage.code == CoAPMessageCode.CoapCodeContinue) {
-                        // Это продолжение — не удаляем состояние, чтобы ждать финального ответа
+                        // Continuation — keep state until the final response
                         return LayersStack.LayerResult(false)
                     } else {
-                        // Это финальный ответ — можно удалить состояние
+                        // Final response — state can be removed
                         val originalMessage = sendState.originalMessage
                         messagePool.add(originalMessage)
                         messagePool.setNoNeededSending(originalMessage)

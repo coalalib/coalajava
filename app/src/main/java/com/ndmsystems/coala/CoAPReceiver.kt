@@ -77,7 +77,7 @@ class CoAPReceiver(
         return receiveLayerStack.getArqReceivedStateForToken(token!!)
     }
 
-    //это не окончательный вариант, но NPE баг закрывает
+    // Not final, but avoids NPE
     private inner class ReceivingThread : Thread() {
         override fun run() {
             v("ReceivingAsyncTask start")
@@ -169,7 +169,7 @@ class CoAPReceiver(
                     val socket = connectionProvider.getOrCreateTcpSocket()
                     val input = socket.getInputStream()
                     while (!Thread.currentThread().isInterrupted && isStarted) {
-                        // Читаем фрейм: M (1B) | IP (4B) | PORT (2B) | SIZE (2B) | MESSAGE (SIZE B)
+                        // Read frame: M (1B) | IP (4B) | PORT (2B) | SIZE (2B) | MESSAGE (SIZE B)
                         val header = ByteArray(9)
                         var read = 0
                         while (read < 9) {
@@ -177,7 +177,7 @@ class CoAPReceiver(
                             if (r == -1) throw java.io.EOFException()
                             read += r
                         }
-                        if (header[0] != 77.toByte()) continue // не наш фрейм
+                        if (header[0] != 77.toByte()) continue // not our frame
                         val ip = java.net.InetAddress.getByAddress(header.sliceArray(1..4))
                         val port = ((header[5].toInt() and 0xFF) shl 8) or (header[6].toInt() and 0xFF)
                         val size = ((header[7].toInt() and 0xFF) shl 8) or (header[8].toInt() and 0xFF)
@@ -220,7 +220,7 @@ class CoAPReceiver(
         stop()
 
         transportMode = mode
-        // Если был запущен — запускаем снова
+        // If it was running — start again
         start()
     }
 

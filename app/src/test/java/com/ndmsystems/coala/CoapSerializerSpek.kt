@@ -12,11 +12,10 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
 /*
- * Created by Evgenii Stepanov on 02.09.19
  */
 object CoapSerializerSpek : Spek({
 
-    val loremText = "Съешь ещё этих мягких французских булок, да выпей же чаю."
+    val loremText = "The quick brown fox jumps over the lazy dog."
     /**
      * The smallest CoAP message is 4 bytes in length
      * 1 byte - [0..1] - protocol version
@@ -206,7 +205,6 @@ object CoapSerializerSpek : Spek({
         //done
         describe("testing token") {
 
-
             it("successfully serialize and deserialize token") {
                 val source = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.GET)
                 source.token = byteArrayOf(125, 27, 117, 127, -76, 2, 0, -41)
@@ -220,8 +218,6 @@ object CoapSerializerSpek : Spek({
                 assertArrayEquals(byteArrayOf(125, 27, 117, 127, -76, 2, 0, -41), result.token)
             }
 
-
-
             it("deserialization successfully with well-formed token") {
                 val binaryCoAPSimpleMessageWithToken = byteArrayOf(
                         120, 1, 0, 0,
@@ -229,7 +225,6 @@ object CoapSerializerSpek : Spek({
                 val result = CoAPSerializer.fromBytes(binaryCoAPSimpleMessageWithToken)
                 assertArrayEquals(byteArrayOf(125, 27, 117, 127, -76, 2, 0, -41), result!!.token)
             }
-
 
         }
 
@@ -246,7 +241,6 @@ object CoapSerializerSpek : Spek({
             }
 
         }
-
 
         describe("testing options") {
 
@@ -271,14 +265,12 @@ object CoapSerializerSpek : Spek({
 
         }
 
-
         describe("all possible") {
             it("should have valid options") {
                 val msg = CoAPSerializer.fromBytes(DummyData.OptionsAllPossible.read())
                 assertEquals(25, msg!!.getOptions().size)
             }
         }
-
 
         describe("given option value") {
             it("of Int") {

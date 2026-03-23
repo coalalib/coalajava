@@ -16,9 +16,6 @@ import java.net.InetSocketAddress
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-/**
- * Created by Toukhvatullin Marat on 05.09.2019.
- */
 object ResponseLayerTest: Spek({
     val mockCoAPClient = mockk<CoAPClient>(relaxed = true)
     val mockResponseLayer = ResponseLayer(mockCoAPClient)

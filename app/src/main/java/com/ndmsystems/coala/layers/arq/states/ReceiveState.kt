@@ -5,9 +5,6 @@ import com.ndmsystems.coala.layers.arq.Block
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 
-/**
- * Created by Владимир on 16.08.2017.
- */
 class ReceiveState(private val initiatingMessage: CoAPMessage?) : LoggableState() {
     private val accumulator = HashMap<Int, ByteArray?>()
     private var lastBlockNumber = Int.MAX_VALUE

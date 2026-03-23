@@ -102,7 +102,6 @@ object SecurityLayerTest: Spek({
                 Hex.decodeHex("b3efe5ce".toCharArray())
         ))
 
-
         val secSession = mockk<SecuredSession>(relaxed = true)
         every { secSession.aead } returns Aead(
                 Hex.decodeHex("aaa1cf3e4a5d0d1c009be633da60a372".toCharArray()),
@@ -177,10 +176,6 @@ object SecurityLayerTest: Spek({
             assertTrue { securityLayer.onReceive(msg, mockRefAddress).shouldContinue }
         }
     }
-
-
-
-
 
     describe("Check onSend return false by secured protocol without stored session"){
         val msg = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.POST)

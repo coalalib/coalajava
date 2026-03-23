@@ -5,9 +5,6 @@ import org.apache.commons.collections4.queue.CircularFifoQueue
 import java.text.SimpleDateFormat
 import java.util.Date
 
-/**
- * Created by Владимир on 17.07.2017.
- */
 class LogsCollector private constructor() : ILogger {
     private val queue = CircularFifoQueue<LogEntry>(300)
     fun clearLogs() {

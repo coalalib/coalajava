@@ -22,9 +22,6 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-/**
- * Created by Владимир on 23.08.2017.
- */
 class RequestTest {
     private var lock: CountDownLatch? = null
     @Test

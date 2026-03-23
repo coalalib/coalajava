@@ -39,7 +39,6 @@ object ObserveLayerTest : Spek({
         val registryOfObservingResources by memoized { mockk<RegistryOfObservingResources>(relaxed = true, relaxUnitFun = true) }
         val observeLayer by memoized { ObserveLayer(registryOfObservingResources, client, server, ackHandlersPool) }
 
-
         Scenario("onSend() message with OptionObserve value: register (0)") {
             lateinit var message: CoAPMessage
             val addressReference = Reference<InetSocketAddress>(mockk())
@@ -124,7 +123,6 @@ object ObserveLayerTest : Spek({
             }
         }
 
-
         Scenario("onReceive() message with OptionObserve value: register (0)") {
             lateinit var message: CoAPMessage
             val addressReference = Reference<InetSocketAddress>(mockk())
@@ -174,7 +172,6 @@ object ObserveLayerTest : Spek({
             And("response sent") {
                 verify(exactly = 1) { resource.send(eq(coapResourceOutput), eq(observer.captured)) }
             }
-
 
         }
 
@@ -284,7 +281,6 @@ object ObserveLayerTest : Spek({
 
         }
 
-
         Scenario("onReceive() non ACK notification that expected") {
             val SEQUENCE_NUM = 31
             lateinit var message: CoAPMessage
@@ -317,7 +313,6 @@ object ObserveLayerTest : Spek({
             And("notification should be processed") {
                 verify { registryOfObservingResources.processNotification(message, ObserveLayer.DEFAULT_MAX_AGE, SEQUENCE_NUM) }
             }
-
 
         }
 
@@ -353,7 +348,6 @@ object ObserveLayerTest : Spek({
                 assertEquals(false, result)
             }
 
-
             And("send ACK message") {
                 verify { client.send(any(), any()) }
             }
@@ -381,7 +375,6 @@ object ObserveLayerTest : Spek({
             And("ACK message have proper code") {
                 assertEquals(CoAPMessageCode.CoapCodeEmpty, ackMessage.captured.code)
             }
-
 
         }
 
@@ -415,7 +408,6 @@ object ObserveLayerTest : Spek({
             And("should remove observing resource") {
                 verify(exactly = 1) { registryOfObservingResources.removeObservingResource(message.token) }
             }
-
 
         }
 
@@ -512,7 +504,6 @@ object ObserveLayerTest : Spek({
                 assertEquals(CoAPMessageCode.CoapCodeEmpty, sentMessage.captured.code)
             }
 
-
         }
 
         Scenario("onReceive() notification without token should send RESET") {
@@ -573,14 +564,12 @@ object ObserveLayerTest : Spek({
                 assertEquals(CoAPMessageCode.CoapCodeEmpty, sentMessage.captured.code)
             }
 
-
         }
 
         Scenario("onReceive() notification without token shouldn't be processed") {
 
             lateinit var message: CoAPMessage
             val addressReference = Reference<InetSocketAddress>(mockk())
-
 
             var result: Boolean? = null
 
@@ -612,7 +601,6 @@ object ObserveLayerTest : Spek({
             lateinit var message: CoAPMessage
             val address = InetSocketAddress(IP_ADDRESS, 5683)
             val addressReference = Reference(address)
-
 
             var result: Boolean? = null
 

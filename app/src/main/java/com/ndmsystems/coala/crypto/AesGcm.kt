@@ -11,9 +11,6 @@ import javax.crypto.IllegalBlockSizeException
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-/**
- * Created by bas on 01.11.16.
- */
 class AesGcm(key: ByteArray) {
     private val key: Key
     private var cipher: Cipher? = null
@@ -32,7 +29,7 @@ class AesGcm(key: ByteArray) {
         }
     }
 
-    //TODO: сделать поддержку additionalAuthenticatedData
+    // TODO: support additionalAuthenticatedData
     @Throws(InvalidAlgorithmParameterException::class, InvalidKeyException::class, BadPaddingException::class, IllegalBlockSizeException::class)
     fun seal(plainText: ByteArray?, nonce: ByteArray?, additionalAuthenticatedData: ByteArray?): ByteArray = synchronized(key) {
         cipher!!.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(TAG_LENGTH * 8, nonce))
@@ -45,7 +42,7 @@ class AesGcm(key: ByteArray) {
     }
 
     // the input comes from users
-    //TODO: сделать поддержку additionalAuthenticatedData
+    // TODO: support additionalAuthenticatedData
     @Throws(Exception::class)
     fun open(cipherText: ByteArray, nonce: ByteArray, authData: ByteArray?): ByteArray = synchronized(key) {
 

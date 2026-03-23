@@ -1,11 +1,9 @@
 package com.ndmsystems.coala.layers.arq.data
 
 /**
- * Created by Владимир on 16.08.2017.
- * Интерфейс создан для возможности подмены реализации доступа к содержимому передаваемых данных.
- * Одна из возможных реализаций - хранение данных в оперативной памяти, но она недопустима при
- * передаче больших объемов данных, к примеру видео. Поэтому сделана абстракция за которой в
- * будущем можно будет спрятать реализацию экономичную в плане затрат оперативной памяти.
+ * Abstraction so the payload access implementation can be swapped.
+ * One option is keeping data in RAM, which is unacceptable for very large payloads (e.g. video).
+ * This interface can later back a more memory-efficient implementation.
  */
 interface IData {
     /**

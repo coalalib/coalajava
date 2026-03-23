@@ -1,8 +1,5 @@
 package com.ndmsystems.coala.helpers
 
-/**
- * Created by bas on 25.10.16.
- */
 object Hex {
     private val DIGITS_LOWER: CharArray
     private val DIGITS_UPPER: CharArray

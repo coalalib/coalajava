@@ -7,7 +7,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /*
- * Created by Evgenii Stepanov on 05.09.19
  */
 
 object BlockTest : Spek({
@@ -79,9 +78,7 @@ object BlockTest : Spek({
                 }
             }
 
-
         }
-
 
         Scenario("test getBlockSizeByData return next smaller szx value") {
             val testCases = mapOf(
@@ -109,7 +106,6 @@ object BlockTest : Spek({
 
                 }
             }
-
 
         }
     }

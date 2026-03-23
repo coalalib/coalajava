@@ -6,9 +6,6 @@ import org.hamcrest.core.IsNot
 import org.junit.Assert
 import org.junit.Test
 
-/**
- * Created by bas on 15.11.16.
- */
 class RandomGeneratorTest {
     @Test
     fun differentToken() {

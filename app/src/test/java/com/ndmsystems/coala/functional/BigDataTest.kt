@@ -21,9 +21,6 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-/**
- * Created by Владимир on 21.08.2017.
- */
 class BigDataTest {
     private var lock: CountDownLatch? = null
     @Test
@@ -158,7 +155,6 @@ class BigDataTest {
     }
 
     companion object {
-        private const val bigData =
-            "Вышла Саша в Шоссе и пососала сушку, выйду на холм куль поправлю, лавировали лавировали да не вылавировали. Вышла Саша в Шоссе и пососала сушку, выйду на холм куль поправлю, лавировали лавировали да не вылавировали. Вышла Саша в Шоссе и пососала сушку, выйду на холм куль поправлю, лавировали лавировали да не вылавировали. Вышла Саша в Шоссе и пососала сушку, выйду на холм куль поправлю, лавировали лавировали."
+        private val bigData = "The quick brown fox jumps over the lazy dog. ".repeat(80)
     }
 }

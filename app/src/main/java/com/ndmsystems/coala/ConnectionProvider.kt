@@ -21,9 +21,6 @@ import java.net.Socket
 import java.net.SocketException
 import java.net.UnknownHostException
 
-/**
- * Created by Владимир on 19.07.2017.
- */
 class ConnectionProvider(private val udpPort: Int, private val connectivityManager: ConnectivityManager) {
     private var onPortIsBusyHandler: OnPortIsBusyHandler? = null
     private var connection: MulticastSocket? = null
@@ -123,7 +120,7 @@ class ConnectionProvider(private val udpPort: Int, private val connectivityManag
     private fun createConnection(): MulticastSocket? {
         return try {
             val s = MulticastSocket(udpPort) //Don't change to 5683 or Samsung on wifi stop working!
-            // ВАЖНО: сокет ещё не connected → можно привязать к сети
+            // IMPORTANT: socket is not connected yet → can bind to network
             bindToActiveNetwork(s)
             s.receiveBufferSize = 1048576
             s.trafficClass = IPTOS_RELIABILITY or IPTOS_THROUGHPUT or IPTOS_LOWDELAY
@@ -142,7 +139,7 @@ class ConnectionProvider(private val udpPort: Int, private val connectivityManag
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             try {
                 val net = connectivityManager?.activeNetwork ?: return
-                // Требование платформы: сокет не должен быть connected. Bound — ок. :contentReference[oaicite:1]{index=1}
+                // Platform requirement: socket must not be connected; bound is OK.
                 net.bindSocket(socket)
                 d("Socket bound to active network: $net")
             } catch (t: Throwable) {

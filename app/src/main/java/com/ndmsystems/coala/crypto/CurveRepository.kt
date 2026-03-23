@@ -2,9 +2,6 @@ package com.ndmsystems.coala.crypto
 
 import com.ndmsystems.coala.ICoalaStorage
 
-/**
- * Created by bas on 26.10.17.
- */
 class CurveRepository(private val storage: ICoalaStorage) {
     val curve: Curve25519
         get() {

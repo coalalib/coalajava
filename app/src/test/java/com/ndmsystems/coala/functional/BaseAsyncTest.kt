@@ -4,9 +4,6 @@ import org.junit.Assert
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-/**
- * Created by bas on 05.12.16.
- */
 open class BaseAsyncTest {
     private var isTestSuccesfull: Boolean? = null
     private var lock = CountDownLatch(1)

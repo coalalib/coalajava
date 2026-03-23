@@ -8,7 +8,7 @@ import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.utils.Reference
 import java.net.InetSocketAddress
 
-//TODO стоит разделить класс на два - ReceiveLayerStack и SendLayerStack т.к. их функции не пересекаются, методы onReceive и onSend никак не связаны, зачем они находятся в одном классе? Основной критерий объединения методов в классы - их сильная связность. Но здесь связность нулевая
+// TODO: split into ReceiveLayerStack and SendLayerStack — onReceive/onSend are unrelated; cohesion is zero here
 class LayersStack(
     private val sendStack: Array<SendLayer>?,
     private val receiveStack: Array<ReceiveLayer>?

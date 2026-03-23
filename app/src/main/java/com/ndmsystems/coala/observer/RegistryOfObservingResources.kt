@@ -16,9 +16,6 @@ import com.ndmsystems.coala.message.CoAPMessageType
 import java.util.Timer
 import java.util.TimerTask
 
-/**
- * Created by bas on 14.11.16.
- */
 class RegistryOfObservingResources(private val client: CoAPClient) {
     private val observingResources = HashMap<String, ObservingResource>()
     private var timer: Timer? = null

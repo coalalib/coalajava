@@ -1,8 +1,5 @@
 package com.ndmsystems.coala.layers.response
 
-/**
- * Created by bas on 11.10.17.
- */
 class ResponseData(val bytePayload: ByteArray) {
     var peerPublicKey: ByteArray? = null
 

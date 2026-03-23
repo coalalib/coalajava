@@ -2,9 +2,6 @@ package com.ndmsystems.coala.resource_discovery
 
 import java.net.InetSocketAddress
 
-/**
- * Created by bas on 19.09.16.
- */
 class ResourceDiscoveryResult(payload: String, host: InetSocketAddress) {
     val payload: String
     val host: InetSocketAddress

@@ -7,9 +7,6 @@ import org.junit.Assert
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.dsl.Skip
 
-/**
- * Created by bas on 02.11.16.
- */
 class HkdfTest: Spek({
     test("testCase1", skip = Skip.Yes("Strange not found error")) {
         LogHelper.setLogLevel(LogHelper.LogLevel.WARNING)

@@ -10,9 +10,6 @@ import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult
 import io.reactivex.Single
 import java.util.concurrent.TimeUnit
 
-/**
- * Created by Владимир on 26.06.2017.
- */
 class LocalPeerDiscoverer(
     private val resourceDiscoveryHelper: ResourceDiscoveryHelper,
     private val client: CoAPClient, private val port: Int

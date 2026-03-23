@@ -9,7 +9,6 @@ import org.spekframework.spek2.style.gherkin.Feature
 import kotlin.test.assertEquals
 
 /*
- * Created by Evgenii Stepanov on 06.09.19
  */
 
 object ReceiveStateTest : Spek({
@@ -46,6 +45,5 @@ object ReceiveStateTest : Spek({
         }
 
     }
-
 
 })

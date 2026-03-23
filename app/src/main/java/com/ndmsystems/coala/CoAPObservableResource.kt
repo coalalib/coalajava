@@ -9,9 +9,6 @@ import com.ndmsystems.coala.message.CoAPRequestMethod
 import com.ndmsystems.coala.observer.Observer
 import java.net.InetSocketAddress
 
-/**
- * Created by bas on 28.11.16.
- */
 class CoAPObservableResource(
     method: CoAPRequestMethod,
     path: String,

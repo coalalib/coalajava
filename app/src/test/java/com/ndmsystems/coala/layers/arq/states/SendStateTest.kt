@@ -15,9 +15,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-
 /*
- * Created by Evgenii Stepanov on 06.09.19
  */
 
 object SendStateTest : Spek({

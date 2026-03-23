@@ -10,9 +10,6 @@ import com.ndmsystems.coala.layers.arq.data.IData
 import com.ndmsystems.coala.message.CoAPMessage
 import kotlin.math.min
 
-/**
- * Created by Владимир on 16.08.2017.
- */
 class SendState(data: IData?, windowSize: Int, blockSize: Int, originalMessage: CoAPMessage) : LoggableState() {
     private val blockSize: Int
     private val data: IData?

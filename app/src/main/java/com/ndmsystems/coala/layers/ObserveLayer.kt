@@ -85,7 +85,7 @@ class ObserveLayer(
             d("Remove observer")
             val observer = Observer(message, senderAddress)
             resource.removeObserver(observer)
-            //Есть подозрение что не отправляется стандартный ответ на get запрос
+            // Suspected missing default response for GET
             return LayerResult(true, null)
         }
         return LayerResult(true, null)

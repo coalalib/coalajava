@@ -18,9 +18,6 @@ import java.net.InetSocketAddress
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-/**
- * Created by Toukhvatullin Marat on 13.09.2019.
- */
 object RequestLayerTest: Spek({
 
     Feature("RequestLayer receive test"){
@@ -230,7 +227,6 @@ object RequestLayerTest: Spek({
                 assertFalse(result)
             }
         }*/
-
 
         Scenario("Message with non empty resource handler output then send ack msg and return false"){
 

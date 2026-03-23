@@ -298,7 +298,6 @@ import com.ndmsystems.coala.helpers.RBGHelper
             mul_small(s[0], s[0], 1) /* reduce s[0] */
             mul_small(s[1], s[1], 1) /* reduce s[1] */
 
-
             /* prepare the chain  */i = 0
             while (i < 32) {
                 vi = vi shr 8 xor (v[i].toInt() and 0xFF) xor (v[i].toInt() and 0xFF shl 1)

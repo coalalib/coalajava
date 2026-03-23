@@ -1,8 +1,5 @@
 package com.ndmsystems.coala.layers.arq
 
-/**
- * Created by bas on 04.08.17.
- */
 class Block private constructor(val number: Int, val isMoreComing: Boolean, private val blockSize: BlockSize, val data: ByteArray?) {
 
     constructor(number: Int, data: ByteArray?, isMoreComing: Boolean) : this(

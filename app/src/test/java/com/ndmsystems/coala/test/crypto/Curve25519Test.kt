@@ -4,9 +4,6 @@ import com.ndmsystems.coala.crypto.Curve25519
 import org.junit.Assert
 import org.junit.Test
 
-/**
- * Created by bas on 31.10.16.
- */
 class Curve25519Test {
     @Test
     fun curveTest() {

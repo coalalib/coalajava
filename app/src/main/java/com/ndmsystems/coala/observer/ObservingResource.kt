@@ -5,9 +5,6 @@ import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.message.CoAPMessage
 
-/**
- * Created by bas on 14.11.16.
- */
 class ObservingResource(val initiatingMessage: CoAPMessage, val handler: CoAPHandler?) {
     private var validUntil = System.currentTimeMillis() + 30000
     var sequenceNumber = -1

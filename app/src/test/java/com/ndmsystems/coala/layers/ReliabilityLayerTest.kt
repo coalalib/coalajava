@@ -19,9 +19,6 @@ import org.spekframework.spek2.style.gherkin.Feature
 import java.net.InetSocketAddress
 import kotlin.test.assertTrue
 
-/**
- * Created by Toukhvatullin Marat on 17.09.2019.
- */
 object ReliabilityLayerTest: Spek( {
 
     Feature("RequestLayer receive test") {

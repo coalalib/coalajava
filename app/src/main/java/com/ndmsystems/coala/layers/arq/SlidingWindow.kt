@@ -3,9 +3,6 @@ package com.ndmsystems.coala.layers.arq
 import com.ndmsystems.coala.helpers.logging.LogHelper.e
 import kotlin.math.min
 
-/**
- * Created by Владимир on 16.08.2017.
- */
 class SlidingWindow<T> @JvmOverloads constructor(size: Int, var offset: Int = 0) {
     private var values: Array<Any?>
     private var size = 0

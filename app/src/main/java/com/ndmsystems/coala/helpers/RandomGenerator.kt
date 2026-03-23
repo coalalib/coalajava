@@ -3,9 +3,6 @@ package com.ndmsystems.coala.helpers
 import java.util.Random
 import java.util.concurrent.ThreadLocalRandom
 
-/**
- * Created by bas on 15.11.16.
- */
 object RandomGenerator {
     private const val MAX_UINT = 4294967296L
     private val random = Random()

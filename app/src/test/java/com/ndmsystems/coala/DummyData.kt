@@ -2,9 +2,6 @@ package com.ndmsystems.coala
 
 import java.io.File
 
-/**
- * Created by Toukhvatullin Marat on 21.10.2019.
- */
 enum class DummyData(private val fileName: String) {
     CoapUrl("coapMessages/CoAPMessageDummyCoapUrl.bin"),
     CoapsUrl("coapMessages/CoAPMessageDummyCoapsUrl.bin"),

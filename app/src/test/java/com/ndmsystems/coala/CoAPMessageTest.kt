@@ -8,9 +8,6 @@ import org.junit.Assert
 import org.junit.Test
 import java.net.InetSocketAddress
 
-/**
- * Created by Владимир on 02.06.2017.
- */
 class CoAPMessageTest {
     @Test
     fun onSetProxy_shouldAddProxyUriOption() {
