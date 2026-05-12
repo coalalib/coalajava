@@ -21,7 +21,7 @@ import java.net.Socket
 import java.net.SocketException
 import java.net.UnknownHostException
 
-class ConnectionProvider(private val udpPort: Int, private val connectivityManager: ConnectivityManager) {
+class ConnectionProvider(private val udpPort: Int, private val connectivityManager: ConnectivityManager?) {
     private var onPortIsBusyHandler: OnPortIsBusyHandler? = null
     private var connection: MulticastSocket? = null
     private var subject: AsyncSubject<MulticastSocket>? = null

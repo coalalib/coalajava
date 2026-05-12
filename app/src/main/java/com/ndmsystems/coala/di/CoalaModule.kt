@@ -30,7 +30,7 @@ import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
-class CoalaModule(private val coala: Coala, private val port: Int, private val params: CoAPMessagePool.Companion.Params, private val connectivityManager: ConnectivityManager) {
+class CoalaModule(private val coala: Coala, private val port: Int, private val params: CoAPMessagePool.Companion.Params, private val connectivityManager: ConnectivityManager?) {
     @Provides
     @Singleton
     fun provideResourceRegistry(client: CoAPClient): ResourceRegistry {

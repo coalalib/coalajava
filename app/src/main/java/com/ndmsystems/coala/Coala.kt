@@ -27,7 +27,7 @@ import io.reactivex.Single
 import java.net.InetSocketAddress
 import javax.inject.Inject
 
-class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage, params: CoAPMessagePool.Companion.Params? = CoAPMessagePool.Companion.Params(), connectivityManager: ConnectivityManager) :
+class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage, params: CoAPMessagePool.Companion.Params? = CoAPMessagePool.Companion.Params(), connectivityManager: ConnectivityManager? = null) :
     CoAPTransport() {
     enum class TransportMode { UDP, TCP }
     private var transportMode: TransportMode = TransportMode.UDP

@@ -51,7 +51,7 @@ class CoAPMessageOption : Comparable<CoAPMessageOption> {
             }
 
             CoAPMessageOptionCode.OptionURIHost, CoAPMessageOptionCode.OptionEtag, CoAPMessageOptionCode.OptionLocationPath, CoAPMessageOptionCode.OptionURIPath, CoAPMessageOptionCode.OptionURIQuery, CoAPMessageOptionCode.OptionLocationQuery, CoAPMessageOptionCode.OptionProxyScheme, CoAPMessageOptionCode.OptionProxyURI -> value =
-                String(data)
+                String(data, StandardCharsets.UTF_8)
 
             CoAPMessageOptionCode.OptionCookie, CoAPMessageOptionCode.OptionCoapsURI, CoAPMessageOptionCode.OptionWindowChangeable -> value = data
             CoAPMessageOptionCode.OptionChecksum -> {

@@ -13,6 +13,7 @@ import java.net.InetSocketAddress
 import java.net.URI
 import java.net.URISyntaxException
 import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.util.StringTokenizer
 
 class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code: CoAPMessageCode, var id: Int = generateId()) {
@@ -91,9 +92,9 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
 
     fun setStringPayload(payload: String): CoAPMessage {
         if (this.payload == null) {
-            this.payload = CoAPMessagePayload(payload.toByteArray())
+            this.payload = CoAPMessagePayload(payload.toByteArray(StandardCharsets.UTF_8))
         } else {
-            this.payload!!.content = payload.toByteArray()
+            this.payload!!.content = payload.toByteArray(StandardCharsets.UTF_8)
         }
         return this
     }
