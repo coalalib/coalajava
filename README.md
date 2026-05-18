@@ -359,6 +359,15 @@ Large payloads are split into Block1/Block2 segments. For Coala peers, the stack
 also uses selective-repeat ARQ with option `OptionSelectiveRepeatWindowSize`
 (`3001`) to send a window of blocks and reassemble the payload on the receiver.
 
+Android layer order is intentional:
+
+- receive: `proxy -> security -> log -> ARQ -> reliability -> observe -> request -> response`;
+- send: `response -> ARQ -> log -> observe -> proxy -> security`.
+
+`ARQ` runs before `Reliability` on receive so block acknowledgements and
+reassembly are handled before the generic ACK/RST response handler. This is the
+normal Android/Kotlin pipeline, not an ordering bug.
+
 Delivery and ARQ state can be inspected after a request:
 
 ```kotlin
