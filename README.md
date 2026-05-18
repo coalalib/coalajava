@@ -237,6 +237,7 @@ Exact semantics are defined by the server-side handler, as in CoAP.
 | `token`, `hexToken` | Token bytes and hex representation. |
 | `responseHandler` | Optional response handler for `sendRequest`. |
 | `peerPublicKey` | Expected peer key for validation, or received peer key on responses. |
+| `addChecksumOnSend` | When `true`, send adds/refreshes `OptionChecksum` (`4006`) before serialization. |
 | `setProxy(proxyAddress)` | Sets proxy address and Proxy-Uri option. |
 | `addOption`, `removeOption`, `getOption`, `getOptions()` | Mutates and reads options. |
 | `ackTo(...)`, `resetTo(...)` | Builds ACK/RST messages for an incoming message. |
@@ -431,6 +432,10 @@ Key differences:
   `OptionHandshakeType` (`3999`), `OptionSessionNotFound` (`4001`),
   `OptionSessionExpired` (`4003`), `OptionCoapsURI` (`4005`), and
   `OptionChecksum` (`4006`).
+- `OptionChecksum` is not added automatically by default. Set
+  `message.addChecksumOnSend = true` to add/refresh it during send; incoming
+  deserialization verifies the CRC32 checksum over the serialized message with
+  `OptionChecksum` removed.
 - Large messages can use Coala selective-repeat ARQ on top of Block1/Block2,
   not only basic CoAP blockwise exchange.
 - TCP transport uses a Coala proxy frame format, not RFC 8323 CoAP-over-TCP

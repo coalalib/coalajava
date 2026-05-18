@@ -244,6 +244,7 @@ class ArqLayer(
         blockMessage.token = decodeHex(token.toCharArray())
         blockMessage.payload = CoAPMessagePayload(block.data ?: ByteArray(0))
         blockMessage.setURI(originalMessage.getURI())
+        blockMessage.addChecksumOnSend = originalMessage.addChecksumOnSend
         if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI)) {
             blockMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI)!!)
         }

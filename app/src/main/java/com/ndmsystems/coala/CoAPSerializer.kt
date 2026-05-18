@@ -13,7 +13,10 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.net.InetSocketAddress
+import java.nio.charset.StandardCharsets
 import java.util.Collections
+import java.util.Locale
+import java.util.zip.CRC32
 
 /**
  * CoAP message starts with a fixed-size 4-byte header.
@@ -151,6 +154,7 @@ object CoAPSerializer {
                 }
             }
         }
+        verifyChecksumIfPresent(message)
         return message
     }
 
@@ -158,6 +162,35 @@ object CoAPSerializer {
     private fun raiseDeserializeException(messageId: Int?, exceptionString: String?) {
         e(exceptionString!!)
         throw DeserializeException(exceptionString)
+    }
+
+    @JvmStatic
+    @Throws(DeserializeException::class)
+    fun checksumForMessage(message: CoAPMessage): String {
+        val checksumMessage = CoAPMessage(message.type, message.code, message.id)
+        checksumMessage.token = message.token?.copyOf()
+        if (message.payload != null) {
+            checksumMessage.payload = CoAPMessagePayload(message.payload!!.content.copyOf())
+        }
+        checksumMessage.setOptions(
+            message.getOptions().filter { it.code != CoAPMessageOptionCode.OptionChecksum }
+        )
+
+        val serialized = toBytes(checksumMessage)
+            ?: throw DeserializeException("Could not serialize message for checksum")
+        val checksum = CRC32()
+        checksum.update(serialized)
+        return String.format(Locale.US, "%08x", checksum.value)
+    }
+
+    @Throws(DeserializeException::class)
+    private fun verifyChecksumIfPresent(message: CoAPMessage) {
+        val option = message.getOption(CoAPMessageOptionCode.OptionChecksum) ?: return
+        val expected = option.value as? String ?: String(option.toBytes(), StandardCharsets.UTF_8)
+        val computed = checksumForMessage(message)
+        if (expected != computed) {
+            raiseDeserializeException(message.id, "Checksum mismatch: expected $expected got $computed")
+        }
     }
 
     /**
@@ -224,13 +257,27 @@ object CoAPSerializer {
         }
     }
 
-    fun toBytes(message: CoAPMessage): ByteArray? {
+    @JvmStatic
+    @JvmOverloads
+    fun toBytes(message: CoAPMessage, addChecksumIfNeeded: Boolean = false): ByteArray? {
+        val messageToEncode = if (addChecksumIfNeeded && message.addChecksumOnSend) {
+            CoAPMessage(message.type, message.code, message.id).also {
+                it.token = message.token?.copyOf()
+                if (message.payload != null) {
+                    it.payload = CoAPMessagePayload(message.payload!!.content.copyOf())
+                }
+                it.setOptions(message.getOptions())
+                it.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionChecksum, checksumForMessage(message)))
+            }
+        } else {
+            message
+        }
         // start encoding
         val buffer = ByteArrayOutputStream()
 
         // encode HEADER and TOKEN
         try {
-            encodeHeader(buffer, message)
+            encodeHeader(buffer, messageToEncode)
         } catch (e: IOException) {
             e(e.message!!)
             return null
@@ -238,15 +285,15 @@ object CoAPSerializer {
 
         // encode OPTIONS (if any)
         try {
-            encodeOptions(buffer, message)
+            encodeOptions(buffer, messageToEncode)
         } catch (e: Exception) {
             e(e.message!!)
             return null
         }
 
         // encode payload (if any)
-        if (message.payload != null && message.payload!!.content != null) {
-            val rawPayload = message.payload!!.content
+        if (messageToEncode.payload != null && messageToEncode.payload!!.content != null) {
+            val rawPayload = messageToEncode.payload!!.content
             if (rawPayload.isNotEmpty()) {
                 // add END-OF-OPTIONS marker only if there is payload
                 buffer.write(COAP_PAYLOAD_MARKER)

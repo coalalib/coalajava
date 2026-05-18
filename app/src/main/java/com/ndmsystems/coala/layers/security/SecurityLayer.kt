@@ -241,12 +241,11 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         if (message.payload == null) return
         if (handshakeType == HandshakeType.ClientHello) {
             LogHelper.d("Received HANDSHAKE Client Public Key")
-            /*val peerSession = SecuredSession(true)
+            val peerSession = SecuredSession(true)
+            peerSession.peerProxySecurityId = message.getProxySecurityId()
             setSessionForAddress(peerSession, message)
-            // Update peer public key and send my public key to peer
             peerSession.startPeer(message.payload!!.content)
-            sendPeerHello(senderAddress, peerSession.publicKey, message)*/
-            //TODO: Disabled before server fixed
+            sendPeerHello(senderAddress, peerSession.publicKey, message)
             return
         } else { //TODO: Realize!
             LogHelper.e("Received Client signature")
@@ -284,9 +283,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
 
     private fun sendPeerHello(address: InetSocketAddress, publicKey: ByteArray, message: CoAPMessage) {
         LogHelper.d("sendPeerHello")
-        val responseMessage = CoAPMessage(CoAPMessageType.ACK, CoAPMessageCode.CoapCodeContent, message.id)
-        responseMessage.address = address
-        responseMessage.setURIScheme(message.getURIScheme())
+        val responseMessage = CoAPMessage.ackTo(message, address, CoAPMessageCode.CoapCodeContent)
         responseMessage.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionHandshakeType, HandshakeType.PeerHello.toInt()))
         responseMessage.payload = CoAPMessagePayload(publicKey)
         client.send(responseMessage, null)
@@ -303,8 +300,9 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
     }
 
     private fun getHashAddressString(mainMessage: CoAPMessage): String {
-        return (if (mainMessage.address.address?.hostAddress != null)
-            mainMessage.address.address.hostAddress + ":" + mainMessage.address.port
+        val hostAddress = mainMessage.address.address?.hostAddress
+        return (if (hostAddress != null)
+            hostAddress + ":" + mainMessage.address.port
         else mainMessage.getURI()) +
                 if (mainMessage.proxy == null) "" else mainMessage.proxy.toString()
     }

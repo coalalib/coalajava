@@ -31,6 +31,7 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
     }
     var peerPublicKey: ByteArray? = null
     var isRequestWithLongTimeNoAnswer = false
+    var addChecksumOnSend = false
 
     constructor(message: CoAPMessage) : this(message.type, message.code, message.id) {
         if (message.payload != null) {
@@ -47,6 +48,7 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
         resendHandler = message.resendHandler
         if (message.peerPublicKey != null) peerPublicKey = message.peerPublicKey
         isRequestWithLongTimeNoAnswer = message.isRequestWithLongTimeNoAnswer
+        addChecksumOnSend = message.addChecksumOnSend
     }
 
     val isRequest: Boolean

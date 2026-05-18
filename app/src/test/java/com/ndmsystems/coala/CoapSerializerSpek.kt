@@ -433,6 +433,59 @@ object CoapSerializerSpek : Spek({
                 assertEquals("text={\"value\":\"ещё\"}", result.getOption(CoAPMessageOptionCode.OptionURIQuery)!!.value)
             }
 
+            it("verifies checksum option when present") {
+                val source = CoAPMessage(CoAPMessageType.NON, CoAPMessageCode.POST, 0x1234)
+                source.token = byteArrayOf(0x01, 0x02, 0x03)
+                source.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionURIPath, "checksum"))
+                source.payload = CoAPMessagePayload("checksum payload")
+
+                val checksum = CoAPSerializer.checksumForMessage(source)
+                source.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionChecksum, checksum))
+
+                val sourceBytes = CoAPSerializer.toBytes(source)
+                assertNotNull(sourceBytes)
+
+                val result = CoAPSerializer.fromBytes(sourceBytes)
+                assertNotNull(result)
+
+                assertEquals(checksum, result.getOption(CoAPMessageOptionCode.OptionChecksum)!!.value)
+                assertEquals("checksum payload", result.payload.toString())
+            }
+
+            it("rejects checksum mismatch when checksum option is present") {
+                val source = CoAPMessage(CoAPMessageType.NON, CoAPMessageCode.POST, 0x1234)
+                source.token = byteArrayOf(0x01, 0x02, 0x03)
+                source.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionURIPath, "checksum"))
+                source.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionChecksum, "00000000"))
+                source.payload = CoAPMessagePayload("checksum payload")
+
+                val sourceBytes = CoAPSerializer.toBytes(source)
+                assertNotNull(sourceBytes)
+
+                val exception = assertFailsWith(CoAPSerializer.DeserializeException::class) {
+                    CoAPSerializer.fromBytes(sourceBytes)
+                }
+                assertEquals(true, exception.message!!.contains("Checksum mismatch"))
+            }
+
+            it("adds checksum option when send flag is enabled") {
+                val source = CoAPMessage(CoAPMessageType.NON, CoAPMessageCode.POST, 0x1234)
+                source.token = byteArrayOf(0x01, 0x02, 0x03)
+                source.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionURIPath, "checksum"))
+                source.payload = CoAPMessagePayload("checksum payload")
+                source.addChecksumOnSend = true
+
+                val sourceBytes = CoAPSerializer.toBytes(source, addChecksumIfNeeded = true)
+                assertNotNull(sourceBytes)
+
+                val result = CoAPSerializer.fromBytes(sourceBytes)
+                assertNotNull(result)
+
+                val checksum = result.getOption(CoAPMessageOptionCode.OptionChecksum)!!.value as String
+                assertEquals(CoAPSerializer.checksumForMessage(result), checksum)
+                assertEquals("checksum payload", result.payload.toString())
+            }
+
             it("successfully serialize and deserialize uri string") {
                 val source = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.GET)
 
