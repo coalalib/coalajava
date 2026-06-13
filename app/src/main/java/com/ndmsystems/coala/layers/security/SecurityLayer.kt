@@ -24,7 +24,8 @@ import com.ndmsystems.coala.message.CoAPMessagePayload
 import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.utils.Reference
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.net.InetSocketAddress
 import java.util.Arrays
@@ -35,6 +36,10 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                     private val client: CoAPClient,
                     private val sessionPool: SecuredSessionPool) : ReceiveLayer, SendLayer {
     private val pendingMessages = Collections.synchronizedSet(HashSet<CoAPMessage>())
+
+    // One long-lived scope instead of a new CoroutineScope per pending message
+    // when a session fails (handshake errors can fan out to many queued messages)
+    private val pendingErrorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     override fun onReceive(message: CoAPMessage, senderAddressReference: Reference<InetSocketAddress>): LayersStack.LayerResult {
         val senderAddress = senderAddressReference.get()
         val mainMessage = messagePool.getSourceMessageByToken(message.hexToken)
@@ -181,7 +186,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                 val message = it.next()
                 if (address == null || message.address == address) {
                     val errorText = "Can't create session with: " + (address?.toString() ?: "null") + ", $error"
-                    CoroutineScope(IO).launch {
+                    pendingErrorScope.launch {
                         ackHandlersPool.raiseAckError(message, errorText)
                         val responseHandler = message.responseHandler
                         if (responseHandler != null) {
@@ -207,8 +212,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                         it.remove()
                     }
                 } catch (e: Exception) {
-                    LogHelper.e("Exception: $e")
-                    e.printStackTrace()
+                    LogHelper.e("Exception in sendPendingMessage: $e, ${LogHelper.getShortStackTraceString(e)}")
                 }
             }
         }
