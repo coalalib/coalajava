@@ -21,7 +21,7 @@ import java.net.Socket
 import java.net.SocketException
 import java.net.UnknownHostException
 
-class ConnectionProvider(private val udpPort: Int, private val connectivityManager: ConnectivityManager) {
+class ConnectionProvider(private val udpPort: Int, private val connectivityManager: ConnectivityManager?) {
     private var onPortIsBusyHandler: OnPortIsBusyHandler? = null
     private var connection: MulticastSocket? = null
     private var subject: AsyncSubject<MulticastSocket>? = null
@@ -179,11 +179,9 @@ class ConnectionProvider(private val udpPort: Int, private val connectivityManag
             null
         } catch (e: UnknownHostException) {
             w("MulticastSocket can't be created, and can't be reuse UnknownHostException: " + e.localizedMessage)
-            e.printStackTrace()
             null
         } catch (e: IOException) {
             w("MulticastSocket can't be created, and can't be reuse IOException: " + e.localizedMessage)
-            e.printStackTrace()
             null
         }
     }

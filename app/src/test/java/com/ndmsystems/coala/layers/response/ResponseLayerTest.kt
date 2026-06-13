@@ -84,7 +84,7 @@ object ResponseLayerTest: Spek({
         val coAPException = CoAPException(CoAPMessageCode.CoapCodeBadGateway, "bad gw")
 
         val errorFactory = mockk<ResponseErrorFactory>(relaxed = true)
-        every { errorFactory.proceed(msg) } returns coAPException
+        every { errorFactory.proceed(msg, any()) } returns coAPException
 
         val reqMsgResponseHandler = mockk<ResponseHandler>(relaxed = true)
         val requests = mockk<MutableMap<String, CoAPMessage>>(relaxed = true)
@@ -110,7 +110,7 @@ object ResponseLayerTest: Spek({
         msg.setStringPayload("Hello")
 
         val errorFactory = mockk<ResponseErrorFactory>(relaxed = true)
-        every { errorFactory.proceed(msg) } returns null
+        every { errorFactory.proceed(msg, any()) } returns null
 
         val reqMsgResponseHandler = mockk<ResponseHandler>(relaxed = true)
         val requests = mockk<MutableMap<String, CoAPMessage>>(relaxed = true)

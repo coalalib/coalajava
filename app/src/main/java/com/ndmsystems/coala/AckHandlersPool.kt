@@ -3,7 +3,8 @@ package com.ndmsystems.coala
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.message.CoAPMessage
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import net.jodah.expiringmap.ExpirationPolicy
 import net.jodah.expiringmap.ExpiringMap
@@ -14,6 +15,9 @@ class AckHandlersPool {
         .expirationPolicy(ExpirationPolicy.CREATED)
         .expiration(20, TimeUnit.MINUTES)
         .build()
+
+    // Long-lived scope so clear() doesn't allocate a fresh CoroutineScope each call
+    private val clearScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     fun add(id: Int, handler: CoAPHandler) {
         LogHelper.v("Add handler for message: $id to pool")
@@ -31,7 +35,7 @@ class AckHandlersPool {
 
     fun clear(exception: Throwable) {
         LogHelper.d("Clear handlers pool, current pool size: ${pool.size}")
-        CoroutineScope(IO).launch {
+        clearScope.launch {
             val poolCopy: List<CoAPHandler?> = pool.values.toList()
             pool.clear()
             val iter = poolCopy.iterator()
