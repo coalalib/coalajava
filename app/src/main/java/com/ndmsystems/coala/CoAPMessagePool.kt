@@ -7,7 +7,8 @@ import com.ndmsystems.coala.helpers.TimeHelper
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.message.CoAPMessage
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import net.jodah.expiringmap.ExpirationPolicy
 import net.jodah.expiringmap.ExpiringMap
@@ -18,6 +19,10 @@ class CoAPMessagePool(
     private val ackHandlersPool: AckHandlersPool,
     private val params: Params,
 ) {
+    // One long-lived scope instead of allocating a new CoroutineScope on every
+    // clear()/raiseAckError() — raiseAckError fires per timed-out message, a hot path.
+    // SupervisorJob so one failing handler callback doesn't tear down the others.
+    private val errorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val pool: ConcurrentLinkedHashMap<Int, QueueElement>
     private val messageIdForToken = ConcurrentHashMap<String, Int>()
     private val messageDeliveryInfo = ExpiringMap.builder()
@@ -173,7 +178,7 @@ class CoAPMessagePool(
     }
 
     fun clear(exception: BaseCoalaThrowable) {
-        CoroutineScope(IO).launch {
+        errorScope.launch {
             LogHelper.d("Clear message pool, current pool size: ${pool.size}")
             for (queueElement in pool.values) {
                 if (queueElement.message.responseHandler != null) {
@@ -200,7 +205,7 @@ class CoAPMessagePool(
         LogHelper.v("raiseAckError: ${message?.id}")
 
         message?.let {
-            CoroutineScope(IO).launch {
+            errorScope.launch {
                 ackHandlersPool.raiseAckError(message, error)
                 message.responseHandler?.onError(
                     AckError("raiseAckError").setMessageDeliveryInfo(

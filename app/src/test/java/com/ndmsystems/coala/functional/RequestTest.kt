@@ -4,7 +4,6 @@ import com.ndmsystems.coala.CoAPHandler
 import com.ndmsystems.coala.CoAPResource.CoAPResourceHandler
 import com.ndmsystems.coala.CoAPResourceInput
 import com.ndmsystems.coala.CoAPResourceOutput
-import com.ndmsystems.coala.Coala
 import com.ndmsystems.coala.exceptions.BaseCoalaThrowable
 import com.ndmsystems.coala.helpers.CoalaHelper
 import com.ndmsystems.coala.helpers.logging.LogHelper.addLogger
@@ -30,9 +29,9 @@ class RequestTest {
         addLogger(SystemOutLogger(""))
         lock = CountDownLatch(1)
         val expectedResponse = "response!"
-        val client = Coala(3333, CoalaHelper.storage)
+        val client = CoalaHelper.coala(3333)
         client.start()
-        val server = Coala(2222, CoalaHelper.storage)
+        val server = CoalaHelper.coala(2222)
         server.addResource("path", CoAPRequestMethod.GET, object : CoAPResourceHandler() {
             override fun onReceive(inputData: CoAPResourceInput): CoAPResourceOutput {
                 val payload = CoAPMessagePayload("response!")
@@ -70,9 +69,9 @@ class RequestTest {
         addLogger(SystemOutLogger(""))
         lock = CountDownLatch(1)
         val expectedResponse = "response!"
-        val client = Coala(3333, CoalaHelper.storage)
+        val client = CoalaHelper.coala(3333)
         client.start()
-        val server = Coala(2222, CoalaHelper.storage)
+        val server = CoalaHelper.coala(2222)
         server.addResource("path", CoAPRequestMethod.GET, object : CoAPResourceHandler() {
             override fun onReceive(inputData: CoAPResourceInput): CoAPResourceOutput {
                 val payload = CoAPMessagePayload("response!")

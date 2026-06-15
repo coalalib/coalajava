@@ -2,6 +2,7 @@ package com.ndmsystems.coala.layers.response
 
 import com.ndmsystems.coala.exceptions.CoAPException
 import com.ndmsystems.coala.exceptions.WrongAuthDataException
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageType
@@ -39,7 +40,7 @@ class ResponseErrorFactory {
             val payloadErrorCode = if (errorObject.has("code")) errorObject.getInt("code") else 0
             coAPException = CoAPException(errorMessage, message.code, payloadErrorCode, "req payload: ${request?.payload.toString()}, req path: ${request?.getURIPathString()}")
         } catch (e: JSONException) {
-            e.printStackTrace()
+            LogHelper.w("ResponseErrorFactory: can't parse error payload '${message.payload}': ${e.message}")
         }
         return coAPException
     }
