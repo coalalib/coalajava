@@ -93,7 +93,6 @@ class CoAPReceiver(
                         interrupt()
                     }
                 } catch (e: IOException) {
-                    e.printStackTrace()
                     d("IOException when try to receive message: ${e.message}")
                     continue
                 }
@@ -126,10 +125,9 @@ class CoAPReceiver(
                     }
                     receiveLayerStack.onReceive(message, senderAddressReference)
                 } catch (e: LayersStack.InterruptedException) {
-                    e.printStackTrace()
+                    d("ReceivingThread interrupted while running layers: ${e.message}")
                 } catch (ex: Exception) {
-                    i("Exception: ${ex.message}")
-                    ex.printStackTrace()
+                    i("Exception in ReceivingThread layers: ${ex.message}, ${LogHelper.getShortStackTraceString(ex)}")
                     continue
                 }
             }
@@ -140,7 +138,7 @@ class CoAPReceiver(
                 try {
                     sleep(500)
                 } catch (e: InterruptedException) {
-                    e.printStackTrace()
+                    d("ReceivingThread interrupted during restart delay: ${e.message}")
                 }
                 d("Try to start receiving thread")
                 this@CoAPReceiver.start()
@@ -203,11 +201,9 @@ class CoAPReceiver(
                         }
                     }
                 } catch (e: LayersStack.InterruptedException) {
-                    d("TCP receiving thread interrupted")
-                    e.printStackTrace()
+                    d("TCP receiving thread interrupted: ${e.message}")
                 } catch (e: Exception) {
-                    LogHelper.e("TCP receiving thread error: ${e.message}")
-                    e.printStackTrace()
+                    LogHelper.e("TCP receiving thread error: ${e.message}, ${LogHelper.getShortStackTraceString(e)}")
                 }
             }
             isStarted = true

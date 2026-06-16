@@ -269,7 +269,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         sender?.stop()
         receiver?.stop()
 
-        connectionProvider?.setTransportMode(TransportMode.TCP, tcpProxyAddress)
+        connectionProvider?.setTransportMode(mode, tcpProxyAddress)
         sender?.setTransportMode(mode)
         receiver?.setTransportMode(mode)
         transportMode = mode

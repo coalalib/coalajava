@@ -179,11 +179,9 @@ class ConnectionProvider(private val udpPort: Int, private val connectivityManag
             null
         } catch (e: UnknownHostException) {
             w("MulticastSocket can't be created, and can't be reuse UnknownHostException: " + e.localizedMessage)
-            e.printStackTrace()
             null
         } catch (e: IOException) {
             w("MulticastSocket can't be created, and can't be reuse IOException: " + e.localizedMessage)
-            e.printStackTrace()
             null
         }
     }

@@ -100,11 +100,10 @@ class CoAPSender(
                         try {
                             layerResult = layersStack.onSend(message, destinationAddressReference)
                         } catch (e: LayersStack.InterruptedException) {
-                            e.printStackTrace()
+                            d("SendingThread interrupted while running layers: ${e.message}")
                             continue
                         } catch (ex: Exception) {
-                            i("Exception: ${ex.message}")
-                            ex.printStackTrace()
+                            i("Exception in SendingThread layers: ${ex.message}, ${Hex.encodeHexString(message.token)}")
                             continue
                         }
                         val messageForSend = layerResult.message ?: message
@@ -167,7 +166,7 @@ class CoAPSender(
                 try {
                     sleep(500)
                 } catch (e: InterruptedException) {
-                    e.printStackTrace()
+                    d("SendingThread interrupted during restart delay: ${e.message}")
                 }
                 d("Try to start sending thread")
                 this@CoAPSender.start()
