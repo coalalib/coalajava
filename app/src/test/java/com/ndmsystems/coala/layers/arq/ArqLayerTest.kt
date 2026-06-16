@@ -67,6 +67,8 @@ object ArqLayerTest : Spek({
             lateinit var message: CoAPMessage
 
             var passNext: Boolean? = null
+            var passedType: CoAPMessageType? = null
+            var passedCode: CoAPMessageCode? = null
 
             Given("CoAP messages with divided payload") {
                 senderReference = Reference(InetSocketAddress("8.8.8.8", 5008))
@@ -76,10 +78,17 @@ object ArqLayerTest : Spek({
 
             When("receive message") {
                 passNext = arqLayer.onReceive(message, senderReference).shouldContinue
+                passedType = message.type
+                passedCode = message.code
             }
 
             Then("message should be passed to next layers") {
                 assertEquals(true, passNext)
+            }
+
+            And("request should keep its request semantics") {
+                assertEquals(CoAPMessageType.CON, passedType)
+                assertEquals(CoAPMessageCode.POST, passedCode)
             }
         }
 

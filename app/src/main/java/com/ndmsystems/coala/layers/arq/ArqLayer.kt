@@ -178,8 +178,10 @@ class ArqLayer(
 
                     //mutableIncomingMessage = messagePool.getSourceMessageByToken(mutableIncomingMessage.getHexToken());
                     mutableIncomingMessage.payload = CoAPMessagePayload(receiveState.data ?: ByteArray(0))
-                    mutableIncomingMessage.code = CoAPMessageCode.CoapCodeContent
-                    mutableIncomingMessage.type = CoAPMessageType.ACK
+                    if (blockOptionCode == CoAPMessageOptionCode.OptionBlock2) {
+                        mutableIncomingMessage.code = CoAPMessageCode.CoapCodeContent
+                        mutableIncomingMessage.type = CoAPMessageType.ACK
+                    }
                     return LayersStack.LayerResult(true, mutableIncomingMessage)
                 } else {
                     if (BuildConfig.DEBUG) { //For no slowing prod version, so many logs, what don't showing anymore
@@ -242,6 +244,7 @@ class ArqLayer(
         blockMessage.token = decodeHex(token.toCharArray())
         blockMessage.payload = CoAPMessagePayload(block.data ?: ByteArray(0))
         blockMessage.setURI(originalMessage.getURI())
+        blockMessage.addChecksumOnSend = originalMessage.addChecksumOnSend
         if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI)) {
             blockMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI)!!)
         }

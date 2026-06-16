@@ -2,9 +2,11 @@ package com.ndmsystems.coala.layers.security
 
 import com.ndmsystems.coala.AckHandlersPool
 import com.ndmsystems.coala.CoAPClient
+import com.ndmsystems.coala.Coala
 import com.ndmsystems.coala.CoAPMessagePool
 import com.ndmsystems.coala.crypto.Aead
 import com.ndmsystems.coala.helpers.EncryptionHelper
+import com.ndmsystems.coala.helpers.CoalaHelper
 import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.layers.security.session.SecuredSession
 import com.ndmsystems.coala.layers.security.session.SecuredSessionPool
@@ -12,16 +14,21 @@ import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageOption
 import com.ndmsystems.coala.message.CoAPMessageOptionCode
+import com.ndmsystems.coala.message.CoAPMessagePayload
 import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.utils.Reference
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import org.junit.Assert.assertArrayEquals
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.dsl.Skip
 import org.spekframework.spek2.style.specification.describe
 import java.net.InetSocketAddress
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -58,6 +65,50 @@ object SecurityLayerTest: Spek({
 
         it("return false"){
             assertFalse { securityLayer.onReceive(msg, mockRefAddress).shouldContinue }
+        }
+    }
+
+    describe("Check incoming ClientHello creates peer session and sends PeerHello") {
+        it("starts incoming session") {
+            Coala(0, CoalaHelper.storage)
+
+            val senderAddress = InetSocketAddress("8.8.8.8", 5683)
+            val sentMessage = slot<CoAPMessage>()
+            val client = mockk<CoAPClient>(relaxed = true)
+            val sessionPool = SecuredSessionPool()
+            every { client.send(capture(sentMessage), null) } just Runs
+
+            val layer = SecurityLayer(
+                    mockCoAPMessagePool,
+                    mockAckHandlersPool,
+                    client,
+                    sessionPool
+            )
+
+            val peerPublicKey = Coala.dependencyGraph.provideCurveRepository()!!.curve.publicKey
+            val token = byteArrayOf(1, 2, 3, 4)
+            val message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET, 12345)
+            message.address = senderAddress
+            message.token = token
+            message.payload = CoAPMessagePayload(peerPublicKey)
+            message.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionHandshakeType, HandshakeType.ClientHello.toInt()))
+            message.setProxySecurityId(42L)
+
+            val result = layer.onReceive(message, Reference(senderAddress))
+
+            assertFalse { result.shouldContinue }
+            assertTrue { sentMessage.isCaptured }
+            assertEquals(CoAPMessageType.ACK, sentMessage.captured.type)
+            assertEquals(CoAPMessageCode.CoapCodeContent, sentMessage.captured.code)
+            assertEquals(message.id, sentMessage.captured.id)
+            assertArrayEquals(token, sentMessage.captured.token)
+            assertEquals(HandshakeType.PeerHello.toInt(), sentMessage.captured.getOption(CoAPMessageOptionCode.OptionHandshakeType)?.value)
+            assertEquals(42L, sentMessage.captured.getProxySecurityId())
+            assertTrue { sentMessage.captured.payload != null }
+
+            val session = sessionPool["8.8.8.8:5683"]
+            assertTrue { session != null && session.isReady }
+            assertEquals(42L, session?.peerProxySecurityId)
         }
     }
 

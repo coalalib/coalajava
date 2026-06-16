@@ -186,7 +186,7 @@ class CoAPSender(
 
     @Throws(IOException::class)
     private fun sendMessageToAddress(address: InetSocketAddress?, message: CoAPMessage) {
-        val messageData = CoAPSerializer.toBytes(message)
+        val messageData = CoAPSerializer.toBytes(message, addChecksumIfNeeded = true)
         if (transportMode == Coala.TransportMode.UDP) {
             var udpPacket: DatagramPacket? = null
             if (messageData != null) {
