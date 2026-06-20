@@ -2,11 +2,12 @@ package com.ndmsystems.coala.layers.security
 
 import com.ndmsystems.coala.AckHandlersPool
 import com.ndmsystems.coala.CoAPClient
-import com.ndmsystems.coala.Coala
 import com.ndmsystems.coala.CoAPMessagePool
+import com.ndmsystems.coala.Coala
 import com.ndmsystems.coala.crypto.Aead
-import com.ndmsystems.coala.helpers.EncryptionHelper
+import com.ndmsystems.coala.crypto.Curve25519
 import com.ndmsystems.coala.helpers.CoalaHelper
+import com.ndmsystems.coala.helpers.EncryptionHelper
 import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.layers.security.session.SecuredSession
 import com.ndmsystems.coala.layers.security.session.SecuredSessionPool
@@ -69,9 +70,18 @@ object SecurityLayerTest: Spek({
     }
 
     describe("Check incoming ClientHello creates peer session and sends PeerHello") {
-        it("starts incoming session") {
-            Coala(0, CoalaHelper.storage)
+        lateinit var coala: Coala
 
+        beforeGroup {
+            // Heavy Dagger init must stay outside the it{} block — Spek times out slow setup.
+            coala = Coala(0, CoalaHelper.storage)
+        }
+
+        afterGroup {
+            coala.stop()
+        }
+
+        it("starts incoming session") {
             val senderAddress = InetSocketAddress("8.8.8.8", 5683)
             val sentMessage = slot<CoAPMessage>()
             val client = mockk<CoAPClient>(relaxed = true)
@@ -85,7 +95,7 @@ object SecurityLayerTest: Spek({
                     sessionPool
             )
 
-            val peerPublicKey = Coala.dependencyGraph.provideCurveRepository()!!.curve.publicKey
+            val peerPublicKey = Curve25519().publicKey
             val token = byteArrayOf(1, 2, 3, 4)
             val message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET, 12345)
             message.address = senderAddress
