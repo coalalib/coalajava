@@ -3,11 +3,11 @@ package com.ndmsystems.coala.helpers
 import com.ndmsystems.coala.layers.arq.Block
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageOptionCode
-import java.util.Random
+import java.security.SecureRandom
 
 object MessageHelper {
     private const val MAX_ID = 65535
-    private var currentMessageID = Random().nextInt(MAX_ID)
+    private var currentMessageID = SecureRandom().nextInt(MAX_ID)
     @JvmStatic
     @Synchronized
     fun generateId(): Int {
