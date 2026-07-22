@@ -65,10 +65,10 @@ object LogHelper {
     @JvmStatic
     fun getFirstOurAppEntryFromStacktrace(stackTrace: Array<StackTraceElement>, fileNameToExclude: String?): String {
         val stackTraceEntry =
-            stackTrace.first {
+            stackTrace.firstOrNull {
                 it.className.contains(".knext.")
                         && (fileNameToExclude == null || !it.fileName.contains(fileNameToExclude))
-            }
+            } ?: return "unknown"
 
         return stackTraceEntry.fileName + "." + stackTraceEntry.methodName + ":" + stackTraceEntry.lineNumber
     }
