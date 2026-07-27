@@ -15,7 +15,7 @@ plugins {
 }
 ext {
     supportLibraryVersion = '27.1.1'
-    targetSdkVersion = 35
+    targetSdkVersion = 36
     minSdkVersion = 21
 }
 

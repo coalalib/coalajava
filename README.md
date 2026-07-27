@@ -23,7 +23,7 @@ Coala Java includes:
 - Android Gradle Plugin `8.7.3`
 - Kotlin `2.0.21`
 - Java 11 source/target compatibility
-- Android `minSdkVersion 21`, `targetSdkVersion 35`, `compileSdk 35`
+- Android `minSdkVersion 21`, `targetSdkVersion 36`, `compileSdk 35`
 
 ```bash
 ./gradlew testDebugUnitTest
