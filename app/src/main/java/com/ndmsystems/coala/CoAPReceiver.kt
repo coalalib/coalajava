@@ -152,7 +152,12 @@ class CoAPReceiver(
         val message: CoAPMessage? = try {
             fromBytes(data, addressFrom)
         } catch (e: DeserializeException) {
-            e("Deserialization error: " + e.message)
+            // Debug, not error: an open UDP socket receives unsolicited internet traffic - STUN
+            // probes, scanners, stray packets - and failing to parse those says nothing about the
+            // app. The reported senders bear that out (e.g. :3478 STUN). A parse failure on the
+            // TCP path below is a different matter, since that is an established connection to our
+            // own server, and stays at error level.
+            d("Deserialization error: " + e.message)
             if (BuildConfig.DEBUG) e.printStackTrace()
             return null
         }

@@ -160,7 +160,10 @@ object CoAPSerializer {
 
     @Throws(DeserializeException::class)
     private fun raiseDeserializeException(messageId: Int?, exceptionString: String?) {
-        e(exceptionString!!)
+        // No logging here: the message travels in the exception, and both production callers
+        // (CoAPReceiver's UDP and TCP paths) already log it with their own context. Logging it
+        // here as well produced two Loggly entries for every single malformed datagram - visible
+        // as perfectly paired counts in the export, e.g. 914/914 and 363/363.
         throw DeserializeException(exceptionString)
     }
 
