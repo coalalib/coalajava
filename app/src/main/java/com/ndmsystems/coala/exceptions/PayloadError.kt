@@ -28,6 +28,8 @@ enum class PayloadError(val code: Int) {
     CODE_2021(code = 2021),
     CODE_2022(code = 2022),
     CODE_2023(code = 2023),
+    CODE_2028(code = 2028),
+    CODE_2029(code = 2029),
     CODE_2030(code = 2030),
     CODE_2032(code = 2032),
     CODE_3000(code = 3000),
