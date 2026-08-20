@@ -13,6 +13,7 @@ import com.ndmsystems.coala.helpers.RandomGenerator.getRandom
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.helpers.logging.LogHelper.i
 import com.ndmsystems.coala.helpers.logging.LogHelper.v
+import com.ndmsystems.coala.helpers.logging.LogHelper.w
 import com.ndmsystems.coala.layers.arq.states.LoggableState
 import com.ndmsystems.coala.layers.response.ResponseData
 import com.ndmsystems.coala.layers.response.ResponseHandler
@@ -31,6 +32,16 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
     CoAPTransport() {
     enum class TransportMode { UDP, TCP }
     private var transportMode: TransportMode = TransportMode.UDP
+
+    /**
+     * Set by [stop], cleared by [start]. Distinct from [isStarted], which also goes false during
+     * the sender/receiver bounce inside [setTransportMode] - there the pool can still carry a
+     * message across to the restarted sender, so only a deliberate stop should reject sends.
+     * Read from every sending thread, hence volatile.
+     */
+    @Volatile
+    var isTransportStopped = false
+        private set
 
     @JvmField
     @Inject
@@ -131,6 +142,21 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
     }
 
     override fun send(message: CoAPMessage, handler: CoAPHandler?, isNeedAddTokenForced: Boolean) {
+        // A stopped coala has no sender thread, and CoAPMessagePool only checks its expiration and
+        // garbage deadlines from inside next(), which that thread drives. A message queued now
+        // would therefore never be sent and never expire either, leaving the caller waiting
+        // forever. Fail fast instead - the same way stop() fails everything already in flight.
+        // Keyed on the explicit stop, not on isStarted: setTransportMode() bounces the sender and
+        // receiver directly, and a message caught in that sub-millisecond gap can still wait in
+        // the pool and go out on the restarted sender.
+        if (isTransportStopped) {
+            val error = CoalaStoppedException("Coala is not started")
+            w("Message ${message.id} is not sent: coala is not started")
+            message.responseHandler?.onError(error)
+            handler?.onAckError(error.message ?: "Coala is not started")
+            return
+        }
+
         if (isNeedAddTokenForced && message.token == null) {
             message.token = getRandom(8)
         }
@@ -196,6 +222,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
      */
     fun stop() {
         i("Coala stop")
+        isTransportStopped = true
         val coalaStoppedException = CoalaStoppedException("Coala stopped")
         messagePool!!.clear(coalaStoppedException)
         ackHandlersPool!!.clear(coalaStoppedException)
@@ -234,6 +261,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         i("Coala start")
         receiver!!.start()
         sender!!.start()
+        isTransportStopped = false
     }
 
     val isStarted: Boolean
