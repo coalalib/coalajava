@@ -1,7 +1,13 @@
 package com.ndmsystems.coala.helpers.logging
 
+import java.util.concurrent.CopyOnWriteArrayList
+
 object LogHelper {
-    private val loggers: MutableList<ILogger> = ArrayList()
+    // Loggers are registered during app init - which may happen off the main thread - while
+    // every other thread iterates this list on each log call. A plain ArrayList throws
+    // ConcurrentModificationException there; writes are a handful per process lifetime,
+    // so copy-on-write costs nothing and makes reads lock-free.
+    private val loggers: MutableList<ILogger> = CopyOnWriteArrayList()
     private var logLevel = LogLevel.VERBOSE
     fun setLogLevel(level: LogLevel) {
         logLevel = level
