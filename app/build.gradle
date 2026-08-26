@@ -46,7 +46,10 @@ android {
         junitPlatform {
             unitTests.all {
                 testLogging.events = ["passed", "skipped", "failed"]
-                jvmArgs '-Djava.net.preferIPv4Stack=true'
+                // RBGHelper builds a fresh SHA1PRNG per call, so every key generation reseeds from
+                // securerandom.source, which defaults to the blocking /dev/random. On CI agents with a
+                // drained entropy pool that read can stall past Spek's 10s per-test timeout.
+                jvmArgs '-Djava.net.preferIPv4Stack=true', '-Djava.security.egd=file:/dev/./urandom'
             }
 
             filters {
