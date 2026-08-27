@@ -23,8 +23,19 @@ import com.ndmsystems.coala.message.CoAPRequestMethod
 import com.ndmsystems.coala.observer.RegistryOfObservingResources
 import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult
 import io.reactivex.Observable
-import io.reactivex.ObservableEmitter
 import io.reactivex.Single
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.callbackFlow
 import java.net.InetSocketAddress
 import javax.inject.Inject
 
@@ -74,23 +85,32 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
     @JvmField
     @Inject
     var localPeerDiscoverer: LocalPeerDiscoverer? = null
+
     /**
-     * Create instance of coala with given port and resend message time
+     * This instance's object graph.
+     *
+     * Per-instance, not a global: it used to live on the companion object and be reassigned by
+     * every constructor, so a second Coala in the same process silently took the first one's
+     * collaborators over - including the key material every SecuredSession signs with.
      */
-    /**
-     * Create instance of coala with random port
-     */
+    private val dependencyGraph: CoalaComponent = DaggerCoalaComponent.builder().coalaModule(
+        CoalaModule(
+            this,
+            port!!,
+            params!!,
+            connectivityManager
+        )
+    ).build()
+
     init {
-        dependencyGraph = DaggerCoalaComponent.builder().coalaModule(
-            CoalaModule(
-                this,
-                port!!,
-                params!!,
-                connectivityManager
-            )
-        ).build()
         dependencyGraph.inject(this)
     }
+
+    /**
+     * Runs the Rx bridge coroutines. Supervisor so one failed call cannot take down another;
+     * the dispatcher is chosen per launch.
+     */
+    private val bridgeScope = CoroutineScope(SupervisorJob())
 
     override fun getObservableResource(path: String): CoAPObservableResource? {
         return resourceRegistry!!.getObservableResource(path)
@@ -123,10 +143,30 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
     /**
      * Find all available to discovery coap resourceRegistry in local network.
      *
+     * Rx wrapper kept for callers outside coala; the discovery itself is a coroutine now.
+     * Unconfined so the multicast still goes out on the subscribing thread the way `Single.defer`
+     * did, and so that disposing the Single cancels the wait and deregisters the handlers.
+     *
      * @return
      */
     override fun runResourceDiscovery(): Single<List<ResourceDiscoveryResult>> {
-        return localPeerDiscoverer!!.runResourceDiscovery()
+        return Single.create { emitter ->
+            val job = bridgeScope.launch(Dispatchers.Unconfined) {
+                try {
+                    val results = localPeerDiscoverer!!.runResourceDiscovery()
+                    // Off the coroutine timer thread: after delay() an Unconfined continuation is
+                    // running on kotlinx's singleton DefaultExecutor, and subscriber work there
+                    // would stall every delay() in the process - the sender's polls, the restart
+                    // timers, the observe renewals.
+                    withContext(Dispatchers.IO) { emitter.onSuccess(results) }
+                } catch (cancellation: CancellationException) {
+                    // Disposed: nothing to deliver.
+                } catch (error: Throwable) {
+                    emitter.tryOnError(error)
+                }
+            }
+            emitter.setCancellable { job.cancel() }
+        }
     }
 
     override fun cancel(message: CoAPMessage) {
@@ -172,48 +212,111 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         messagePool!!.add(message)
     }
 
-    override fun sendRequest(message: CoAPMessage): Observable<ResponseData> {
-        return Observable.create { emitter: ObservableEmitter<ResponseData> ->
-            val responseHandler: ResponseHandler = object : ResponseHandler {
-                override fun onResponse(responseData: ResponseData) {
-                    emitter.onNext(responseData)
-                    emitter.onComplete()
-                    v("sendRequest message: " + message.id + ", onResponse")
-                }
+    override suspend fun sendRequestAndAwait(message: CoAPMessage): ResponseData {
+        // CompletableDeferred rather than a bare continuation: the layers can call back more than
+        // once for one message (a late error after a response, most often), and complete/
+        // completeExceptionally report whether the answer landed exactly the way tryOnError did.
+        val result = CompletableDeferred<ResponseData>()
+        message.responseHandler = object : ResponseHandler {
+            override fun onResponse(responseData: ResponseData) {
+                val isDelivered = result.complete(responseData)
+                v("sendRequest message: " + message.id + ", onResponse, delivered = " + isDelivered)
+            }
 
-                override fun onError(error: BaseCoalaThrowable) {
-                    val isSuccess = emitter.tryOnError(error)
-                    v("sendRequest message: " + message.id + ", throwable " + error + ", emitted = " + isSuccess)
+            override fun onError(error: BaseCoalaThrowable) {
+                val isDelivered = result.completeExceptionally(error)
+                v("sendRequest message: " + message.id + ", throwable " + error + ", emitted = " + isDelivered)
+            }
+        }
+        send(message, null)
+        return awaitAnswer(message, result)
+    }
+
+    override suspend fun sendAndAwait(message: CoAPMessage): CoAPMessage {
+        val result = CompletableDeferred<CoAPMessage>()
+        send(message, object : CoAPHandler {
+            override fun onMessage(response: CoAPMessage, error: String?) {
+                if (error != null) {
+                    result.completeExceptionally(
+                        CoAPException(
+                            response.code ?: CoAPMessageCode.CoapCodeEmpty,
+                            error
+                        ).setMessageDeliveryInfo(
+                            getMessageDeliveryInfo(message)
+                        )
+                    )
+                } else {
+                    result.complete(response)
                 }
             }
-            message.responseHandler = responseHandler
-            send(message, null)
+
+            override fun onAckError(error: String) {
+                result.completeExceptionally(AckError(error).setMessageDeliveryInfo(getMessageDeliveryInfo(message)))
+            }
+        })
+        return awaitAnswer(message, result)
+    }
+
+    /**
+     * Waits for [result], and takes [message] back out of the pool if the caller gives up first.
+     *
+     * A caller that walks away - a `timeout` upstream in CommandDispatcher, a screen being closed,
+     * a disposed bridge subscription - otherwise leaves the message being retransmitted until it
+     * expires on its own, minutes later. On a normal answer the layers do their own bookkeeping,
+     * so nothing is removed here.
+     */
+    private suspend fun <T> awaitAnswer(message: CoAPMessage, result: CompletableDeferred<T>): T {
+        return try {
+            result.await()
+        } catch (cancellation: CancellationException) {
+            v("Caller gave up on message " + message.id + ", cancelling it")
+            cancel(message)
+            throw cancellation
+        }
+    }
+
+    /**
+     * Unconfined so the bridges keep the timing the `Observable.create` bodies had: the message
+     * goes out on the subscribing thread, and the answer is emitted on whichever thread the layers
+     * delivered it on.
+     *
+     * Hand-rolled rather than `rxSingle`: kotlinx-rx2 routes a failure that loses the race with
+     * disposal into `RxJavaPlugins.onError`, which crashes any consumer without a global handler.
+     * The old `Observable.create` bodies dropped that case silently via `tryOnError`, and these
+     * bridges keep that contract. Disposal still cancels the coroutine, so [awaitAnswer] withdraws
+     * the message.
+     */
+    override fun sendRequest(message: CoAPMessage): Observable<ResponseData> {
+        return Observable.create { emitter ->
+            val job = bridgeScope.launch(Dispatchers.Unconfined) {
+                try {
+                    val response = sendRequestAndAwait(message)
+                    emitter.onNext(response)
+                    emitter.onComplete()
+                } catch (cancellation: CancellationException) {
+                    // Disposed: nothing to deliver, and awaitAnswer already withdrew the message.
+                } catch (error: Throwable) {
+                    emitter.tryOnError(error)
+                }
+            }
+            emitter.setCancellable { job.cancel() }
         }
     }
 
     override fun send(message: CoAPMessage): Observable<CoAPMessage> {
-        return Observable.create { emitter: ObservableEmitter<CoAPMessage> ->
-            send(message, object : CoAPHandler {
-                override fun onMessage(response: CoAPMessage, error: String?) {
-                    if (error != null) {
-                        emitter.onError(
-                            CoAPException(
-                                response.code ?: CoAPMessageCode.CoapCodeEmpty,
-                                error ?: "error on send, error is null"
-                            ).setMessageDeliveryInfo(
-                                getMessageDeliveryInfo(message)
-                            )
-                        )
-                    } else {
-                        emitter.onNext(response)
-                        emitter.onComplete()
-                    }
+        return Observable.create { emitter ->
+            val job = bridgeScope.launch(Dispatchers.Unconfined) {
+                try {
+                    val answer = sendAndAwait(message)
+                    emitter.onNext(answer)
+                    emitter.onComplete()
+                } catch (cancellation: CancellationException) {
+                    // Disposed: nothing to deliver.
+                } catch (error: Throwable) {
+                    emitter.tryOnError(error)
                 }
-
-                override fun onAckError(error: String) {
-                    emitter.onError(AckError(error).setMessageDeliveryInfo(getMessageDeliveryInfo(message)))
-                }
-            })
+            }
+            emitter.setCancellable { job.cancel() }
         }
     }
 
@@ -233,29 +336,54 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
 
     /**
      * Try to register observer by given uri.
+     *
+     * Cold: every collector opens its own observation, under its own token, so collectors of the
+     * same uri do not share a registration and cancelling one cannot starve another. The flow only
+     * ends on an error, the way the Observable it replaces did - a healthy resource keeps
+     * notifying.
      */
-    fun registerObserver(uri: String): Observable<String?> {
+    fun registerObserver(uri: String): Flow<String> = callbackFlow {
         d("registerObserver $uri")
-        return Observable.create { emitter: ObservableEmitter<String?> ->
-            registryOfObservingResources!!.registerObserver(uri, object : CoAPHandler {
-                override fun onMessage(message: CoAPMessage, error: String?) {
-                    if (error != null) {
-                        emitter.onError(Throwable(error))
-                    } else {
-                        if (message.payload != null) {
-                            emitter.onNext(message.payload.toString())
-                        } else {
-                            emitter.onError(Throwable())
-                        }
-                    }
+        val registration = registryOfObservingResources!!.registerObserver(uri, object : CoAPHandler {
+            override fun onMessage(message: CoAPMessage, error: String?) {
+                if (error != null) {
+                    close(Throwable(error))
+                    return
                 }
+                val payload = message.payload
+                if (payload == null) {
+                    close(Throwable())
+                    return
+                }
+                if (trySend(payload.toString()).isFailure) {
+                    // The channel is closed but a notification still reached this handler: the
+                    // registration slipped past awaitClose - it was still in the send queue when
+                    // the collector cancelled, and ObserveLayer registered it afterwards. Clean it
+                    // up now, or the registry renews a dead observation every 10 seconds forever.
+                    registryOfObservingResources!!.removeObservingResource(message.token)
+                }
+            }
 
-                override fun onAckError(error: String) {
-                    emitter.onError(Throwable(error))
-                }
-            })
+            override fun onAckError(error: String) {
+                close(Throwable(error))
+            }
+        })
+        awaitClose {
+            // Nobody is listening any more - the collector was cancelled, or the resource reported
+            // an error. Withdraw the registration request in case it has not gone out yet, and
+            // drop the observation by its token - the token, not the uri string, because the
+            // registry stores getURI()'s canonical form and a caller's raw uri ("host/path", no
+            // port) never matches it. The peer learns when its next notification is answered with
+            // an RST.
+            d("unregisterObserver $uri")
+            cancel(registration)
+            registryOfObservingResources!!.removeObservingResource(registration.token)
         }
     }
+        // Unlimited, so a burst of notifications is never silently dropped on the way to a slow
+        // collector. Observable.create had no buffer at all - it called the subscriber on the
+        // notifying thread - and dropping is the one behaviour it could never produce.
+        .buffer(Channel.UNLIMITED)
 
     fun start() {
         i("Coala start")
@@ -311,7 +439,5 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
 
     companion object {
         const val DEFAULT_PORT = 0
-        lateinit var dependencyGraph: CoalaComponent
-            private set
     }
 }

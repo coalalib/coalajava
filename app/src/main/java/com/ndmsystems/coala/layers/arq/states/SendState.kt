@@ -7,10 +7,17 @@ import com.ndmsystems.coala.helpers.logging.LogHelper.w
 import com.ndmsystems.coala.layers.arq.Block
 import com.ndmsystems.coala.layers.arq.SlidingWindow
 import com.ndmsystems.coala.layers.arq.data.IData
+import com.ndmsystems.coala.helpers.MonotonicClock
 import com.ndmsystems.coala.message.CoAPMessage
 import kotlin.math.min
 
-class SendState(data: IData?, windowSize: Int, blockSize: Int, originalMessage: CoAPMessage) : LoggableState() {
+class SendState(
+    data: IData?,
+    windowSize: Int,
+    blockSize: Int,
+    originalMessage: CoAPMessage,
+    clock: MonotonicClock = MonotonicClock.SYSTEM
+) : LoggableState(clock) {
     private val blockSize: Int
     private val data: IData?
     private val window: SlidingWindow<Boolean>

@@ -6,6 +6,7 @@ import com.ndmsystems.coala.CoAPHandler
 import com.ndmsystems.coala.CoAPHandler.AckError
 import com.ndmsystems.coala.CoAPMessagePool
 import com.ndmsystems.coala.LayersStack
+import com.ndmsystems.coala.crypto.CurveRepository
 import com.ndmsystems.coala.exceptions.PeerPublicKeyMismatchException
 import com.ndmsystems.coala.helpers.EncryptionHelper
 import com.ndmsystems.coala.helpers.Hex
@@ -23,6 +24,7 @@ import com.ndmsystems.coala.message.CoAPMessageOptionCode
 import com.ndmsystems.coala.message.CoAPMessagePayload
 import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.utils.Reference
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -34,12 +36,15 @@ import java.util.Collections
 class SecurityLayer(private val messagePool: CoAPMessagePool,
                     private val ackHandlersPool: AckHandlersPool,
                     private val client: CoAPClient,
-                    private val sessionPool: SecuredSessionPool) : ReceiveLayer, SendLayer {
+                    private val sessionPool: SecuredSessionPool,
+                    private val curveRepository: CurveRepository,
+                    /** Seam for tests: lets a test flush the handshake-failure callbacks. */
+                    pendingErrorDispatcher: CoroutineDispatcher = Dispatchers.IO) : ReceiveLayer, SendLayer {
     private val pendingMessages = Collections.synchronizedSet(HashSet<CoAPMessage>())
 
     // One long-lived scope instead of a new CoroutineScope per pending message
     // when a session fails (handshake errors can fan out to many queued messages)
-    private val pendingErrorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val pendingErrorScope = CoroutineScope(SupervisorJob() + pendingErrorDispatcher)
     override fun onReceive(message: CoAPMessage, senderAddressReference: Reference<InetSocketAddress>): LayersStack.LayerResult {
         val senderAddress = senderAddressReference.get()
         val mainMessage = messagePool.getSourceMessageByToken(message.hexToken)
@@ -89,7 +94,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         if (message.getURIScheme() == CoAPMessage.Scheme.SECURE) {
             var session = getSessionForAddress(message)
             if (session == null) {
-                session = SecuredSession(false)
+                session = SecuredSession(false, curveRepository)
                 if (message.proxy != null) {
                     generateProxySessionSecurityIdAndAddToMessageAndSession(session, message)
                 }
@@ -245,7 +250,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         if (message.payload == null) return
         if (handshakeType == HandshakeType.ClientHello) {
             LogHelper.d("Received HANDSHAKE Client Public Key")
-            val peerSession = SecuredSession(true)
+            val peerSession = SecuredSession(true, curveRepository)
             peerSession.peerProxySecurityId = message.getProxySecurityId()
             setSessionForAddress(peerSession, message)
             peerSession.startPeer(message.payload!!.content)

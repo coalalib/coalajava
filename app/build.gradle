@@ -5,6 +5,9 @@ buildscript {
         kotlinVersion = '2.0.21'
         daggerVersion = '2.51'
         gsonVersion = '2.8.7'
+        // Matches what the app's dependency graph already resolves to, so the declared and the
+        // effective version stop drifting apart.
+        coroutinesVersion = '1.8.1'
     }
 }
 plugins {
@@ -12,6 +15,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'com.google.devtools.ksp'
     id 'de.mannodermaus.android-junit5'
+    id 'jacoco'
 }
 ext {
     supportLibraryVersion = '27.1.1'
@@ -43,6 +47,14 @@ android {
     }
 
     testOptions {
+        unitTests.all {
+            jacoco {
+                // Kotlin inline/lambda classes carry no source location; without this they are
+                // dropped from the report and coverage reads lower than it is.
+                includeNoLocationClasses = true
+                excludes = ['jdk.internal.*']
+            }
+        }
         junitPlatform {
             unitTests.all {
                 testLogging.events = ["passed", "skipped", "failed"]
@@ -83,7 +95,7 @@ dependencies {
     implementation 'net.jodah:expiringmap:0.5.8'
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
 
     implementation 'org.apache.commons:commons-collections4:4.0'
 
@@ -99,5 +111,44 @@ dependencies {
     testImplementation "org.spekframework.spek2:spek-dsl-jvm:$spek_version"
     testImplementation "org.spekframework.spek2:spek-runner-junit5:$spek_version"
     testImplementation "io.mockk:mockk:$mockk_version"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion"
+    // android.jar ships org.json as throwing stubs, so ResponseErrorFactory's payload parsing is
+    // unreachable in unit tests without the real thing. Same reason the app module pulls it in.
+    testImplementation 'org.json:json:20180813'
 
+}
+
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+/**
+ * Coverage for the unit-test suite: ./gradlew :submodules:coala:app:coverageReport
+ * HTML lands in app/build/reports/jacoco/coverageReport/html/index.html
+ */
+tasks.register('coverageReport', JacocoReport) {
+    group = 'verification'
+    description = 'Generates a JaCoCo coverage report for the debug unit tests.'
+    dependsOn 'testDebugUnitTest'
+
+    reports {
+        html.required = true
+        xml.required = true
+        csv.required = false
+    }
+
+    // Generated code says nothing about how well the transport is tested.
+    def generated = [
+            '**/di/Dagger*',
+            '**/*_Factory*',
+            '**/*_MembersInjector*',
+            '**/BuildConfig.*',
+            '**/R.class',
+            '**/R$*.class',
+    ]
+    classDirectories.setFrom(
+            fileTree(dir: layout.buildDirectory.dir('tmp/kotlin-classes/debug').get().asFile, excludes: generated)
+    )
+    sourceDirectories.setFrom(files("$projectDir/src/main/java"))
+    executionData.setFrom(fileTree(dir: layout.buildDirectory.get().asFile, includes: ['**/*.exec']))
 }

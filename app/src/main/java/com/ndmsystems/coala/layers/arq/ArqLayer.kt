@@ -32,11 +32,13 @@ import java.util.concurrent.TimeUnit
 
 class ArqLayer(
     private val client: CoAPClient,
-    private val messagePool: CoAPMessagePool
+    private val messagePool: CoAPMessagePool,
+    /** How long a half-received transfer is kept; a parameter so tests can reach expiry. */
+    receiveStateTtlMillis: Long = 10L * 60 * 1000
 ) : ReceiveLayer, SendLayer {
     private val receiveStates: MutableMap<String, ReceiveState> = ExpiringMap.builder()
         .expirationPolicy(ExpirationPolicy.CREATED)
-        .expiration(10, TimeUnit.MINUTES)
+        .expiration(receiveStateTtlMillis, TimeUnit.MILLISECONDS)
         .build()
     private val sendStates: MutableMap<String, SendState> = ConcurrentHashMap()
     private fun isBlockedMessage(message: CoAPMessage): Boolean {

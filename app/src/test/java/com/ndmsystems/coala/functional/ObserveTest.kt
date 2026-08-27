@@ -15,7 +15,14 @@ import com.ndmsystems.coala.message.CoAPMessageOption
 import com.ndmsystems.coala.message.CoAPMessageOptionCode
 import com.ndmsystems.coala.message.CoAPMessagePayload
 import com.ndmsystems.coala.message.CoAPMessageType
-import io.reactivex.functions.Consumer
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -25,13 +32,23 @@ import java.util.concurrent.atomic.AtomicBoolean
 class ObserveTest : BaseAsyncTest() {
     private var client: Coala? = null
     private var server: Coala? = null
+
+    /**
+     * Unconfined so that launching a collector registers the observer inline, the way
+     * `Observable.subscribe()` used to - these tests only allow a couple of seconds for the
+     * notification to come back.
+     */
+    private lateinit var observeScope: CoroutineScope
+
     @Before
     fun clear() {
         init()
+        observeScope = CoroutineScope(Dispatchers.Unconfined)
     }
 
     @After
     fun stop() {
+        observeScope.cancel()
         client!!.stop()
         server!!.stop()
         client = null
@@ -57,7 +74,13 @@ class ObserveTest : BaseAsyncTest() {
         })
         client!!.start()
         server!!.start()
-        client!!.registerObserver("coap://127.0.0.1:5685/msg").blockingFirst()
+        // Timeout only so a missing notification fails the test instead of hanging it; the
+        // assertion below still gives the exchange its usual 2 seconds.
+        runBlocking {
+            withTimeout(FIRST_NOTIFICATION_TIMEOUT_MS) {
+                client!!.registerObserver("coap://127.0.0.1:5685/msg").first()
+            }
+        }
         waitAndExit(2000)
     }
 
@@ -78,10 +101,11 @@ class ObserveTest : BaseAsyncTest() {
         })
         client!!.start()
         server!!.start()
-        client!!.registerObserver("coap://127.0.0.1:2222/msg").subscribe(
-            Consumer { response: String? -> onDataReceived(true) },
-            Consumer { throwable: Throwable? -> onDataReceived(false) }
-        )
+        observeScope.launch {
+            client!!.registerObserver("coap://127.0.0.1:2222/msg")
+                .catch { onDataReceived(false) }
+                .collect { onDataReceived(true) }
+        }
         waitAndExit(2000)
     }
 
@@ -102,10 +126,11 @@ class ObserveTest : BaseAsyncTest() {
         server!!.start()
         val isNotificationReceived = AtomicBoolean(false)
         w(30)
-        client!!.registerObserver("coap://127.0.0.1:2222/msg").subscribe(
-            Consumer { response: String? -> isNotificationReceived.set(true) },
-            Consumer { throwable: Throwable? -> }
-        )
+        observeScope.launch {
+            client!!.registerObserver("coap://127.0.0.1:2222/msg")
+                .catch { }
+                .collect { isNotificationReceived.set(true) }
+        }
         w(4000)
         Assert.assertTrue(isNotificationReceived.get())
     }
@@ -143,5 +168,9 @@ class ObserveTest : BaseAsyncTest() {
             }
         })
         waitAndExit(2000)
+    }
+
+    companion object {
+        private const val FIRST_NOTIFICATION_TIMEOUT_MS = 10_000L
     }
 }

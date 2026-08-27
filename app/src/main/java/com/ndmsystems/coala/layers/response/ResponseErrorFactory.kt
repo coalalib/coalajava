@@ -18,7 +18,10 @@ class ResponseErrorFactory {
             if (message.payload.toString() == "Wrong login or password") {
                 return WrongAuthDataException(message.code, CoAPMessageCode.CoapCodeUnauthorized.name)
             } else if (message.payload.toString().contains("code")) {
-                return proceedByResponsePayloadErrorCode(message, request)
+                // Fall back to the response code when the payload will not parse. Returning the
+                // null from proceedByResponsePayloadErrorCode would read as "no error" in
+                // ResponseLayer, and the caller would be handed an error body as a good response.
+                return proceedByResponsePayloadErrorCode(message, request) ?: proceedByResponseCode(message)
             }
             return proceedByResponseCode(message)
         }

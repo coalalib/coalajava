@@ -1,195 +1,110 @@
 package com.ndmsystems.coala
 
 import android.net.ConnectivityManager
-import android.os.Build
 import com.ndmsystems.coala.Coala.OnPortIsBusyHandler
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
 import com.ndmsystems.coala.helpers.logging.LogHelper.i
 import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.helpers.logging.LogHelper.w
-import io.reactivex.Observable
-import io.reactivex.Single
-import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
-import io.reactivex.subjects.AsyncSubject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 import java.io.IOException
-import java.net.DatagramSocket
 import java.net.InetSocketAddress
 import java.net.MulticastSocket
 import java.net.Socket
-import java.net.SocketException
-import java.net.UnknownHostException
 
-class ConnectionProvider(private val udpPort: Int, private val connectivityManager: ConnectivityManager?) {
+/**
+ * Owns the transport sockets and makes sure only one UDP connect runs at a time, however many
+ * callers ask for a connection while it is in flight.
+ *
+ * Mutable state is guarded by this object's monitor, the same way it was before; coroutines are
+ * only ever resumed outside that monitor, so a waiter can never run while the lock is held.
+ */
+class ConnectionProvider internal constructor(
+    private val socketFactory: UdpSocketFactory,
+    private val tcpSocketFactory: TcpSocketFactory = RealTcpSocketFactory(),
+    dispatcher: CoroutineDispatcher = Dispatchers.IO
+) {
+
+    constructor(udpPort: Int, connectivityManager: ConnectivityManager?) :
+            this(RealUdpSocketFactory(udpPort, connectivityManager))
+
+    private val scope = CoroutineScope(SupervisorJob() + dispatcher)
+
     private var onPortIsBusyHandler: OnPortIsBusyHandler? = null
     private var connection: MulticastSocket? = null
-    private var subject: AsyncSubject<MulticastSocket>? = null
-    private var timerSubscription: Disposable? = null
+
+    /**
+     * Resumes every caller waiting on the connect currently in flight; null when none is running.
+     * Replaces the `AsyncSubject` the previous implementation used for exactly this job.
+     */
+    private var pendingConnection: CompletableDeferred<MulticastSocket>? = null
+
+    /** Coroutine backing [pendingConnection], kept so [close] can abort a connect in progress. */
+    private var connectJob: Job? = null
+
     private var tcpSocket: Socket? = null
     private var transportMode: Coala.TransportMode = Coala.TransportMode.UDP
     private var tcpProxyAddress: InetSocketAddress? = null
 
-    @Synchronized
-    fun waitForUdpConnection(): Single<MulticastSocket> {
+    /**
+     * Returns the open UDP socket, opening one if needed. Concurrent callers share a single
+     * connect attempt and are all resumed with its result.
+     *
+     * @throws IOException when the socket could not be opened, or when [close] dropped the attempt
+     * @throws NotImplementedError when called in TCP mode
+     */
+    suspend fun waitForUdpConnection(): MulticastSocket {
         v("waitForUdpConnection")
-        if (transportMode == Coala.TransportMode.UDP) {
-            return if (connection != null) {
-                v("waitForUdpConnection return connection")
-                Single.just(connection)
-            } else {
-                if (subject == null) {
-                    v("waitForUdpConnection initConnection")
-                    subject = AsyncSubject.create()
-                    initConnection()
+        val pending = synchronized(this) {
+            when (transportMode) {
+                Coala.TransportMode.UDP -> {
+                    connection?.let {
+                        v("waitForUdpConnection return connection")
+                        return it
+                    }
+                    pendingConnection ?: startConnecting()
                 }
-                v("waitForUdpConnection return subject")
-                subject!!.singleOrError()
+
+                Coala.TransportMode.TCP -> {
+                    w("waitForUdpConnection called in TCP mode")
+                    throw NotImplementedError("UDP socket not available in TCP mode")
+                }
             }
-        } else if (transportMode == Coala.TransportMode.TCP) {
-            w("waitForUdpConnection called in TCP mode — returning error Observable")
-            return Single.error(NotImplementedError("UDP socket not available in TCP mode"))
-        } else {
-            e("waitForUdpConnection: Unknown transport mode: $transportMode")
-            throw IllegalStateException("Unknown transport mode")
         }
+        v("waitForUdpConnection await pending connect")
+        return pending.await()
     }
 
-    @Synchronized
     fun close() {
-        d("close")
-        if (connection != null &&
-            !connection!!.isClosed
-        ) {
-            v("Actual close connection")
-            connection!!.close()
-        }
-        connection = null
-        if (tcpSocket != null && !tcpSocket!!.isClosed) {
-            tcpSocket!!.close()
-        }
-        tcpSocket = null
-        if (timerSubscription != null &&
-            !timerSubscription!!.isDisposed
-        ) {
-            timerSubscription!!.dispose()
-            timerSubscription = null
-        }
-        subject?.onError(Exception("Closed"))
-        subject = null
-    }
-
-    private fun initConnection() {
-        if (timerSubscription == null) timerSubscription = Observable.just(0)
-            .map {
-                val newConnection = createConnection() ?: throw Exception("Can't create connection")
-                newConnection
+        val abandoned = synchronized(this) {
+            d("close")
+            connection?.let {
+                if (!it.isClosed) {
+                    v("Actual close connection")
+                    it.close()
+                }
             }
-            .map {
-                saveConnection(it)
-                invokeResultAndCompleteSubject(it)
-                it
-            }
-            .retry(3)
-            .doOnError {
-            }
-            .subscribeOn(Schedulers.io())
-            .subscribe({}, {
-                i("Can't init connection: ${it.message}")
-                timerSubscription?.dispose()
-                timerSubscription = null
-                subject?.onError(it)
-                setSubjectToNull()
-                invokePortIsBusyIfNeeded()
-            })
-    }
+            connection = null
 
-    private fun invokeResultAndCompleteSubject(connection: MulticastSocket) {
-        subject?.onNext(connection)
-        subject?.onComplete()
+            tcpSocket?.let { if (!it.isClosed) it.close() }
+            tcpSocket = null
 
-        setSubjectToNull()
-    }
-
-    @Synchronized
-    private fun setSubjectToNull() {
-        subject = null
-    }
-
-    @Throws(IOException::class)
-    private fun createConnection(): MulticastSocket? {
-        return try {
-            val s = MulticastSocket(udpPort) //Don't change to 5683 or Samsung on wifi stop working!
-            // IMPORTANT: socket is not connected yet → can bind to network
-            bindToActiveNetwork(s)
-            s.receiveBufferSize = 1048576
-            s.trafficClass = IPTOS_RELIABILITY or IPTOS_THROUGHPUT or IPTOS_LOWDELAY
-            d("createConnection, 'udpPort' is $udpPort, port = ${s.port}, localPort = ${s.localPort}. ")
-            s
-        } catch (ex: SocketException) {
-            i("MulticastSocket can't be created, SocketException, try to reuse: " + ex.javaClass + " " + ex.localizedMessage)
-            tryToReuseSocket()
-        } catch (ex: Exception) {
-            e("MulticastSocket can't be created: " + ex.javaClass + " " + ex.localizedMessage)
-            tryToReuseSocket()
+            connectJob?.cancel()
+            connectJob = null
+            pendingConnection.also { pendingConnection = null }
         }
-    }
-
-    private fun bindToActiveNetwork(socket: DatagramSocket) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            try {
-                val net = connectivityManager?.activeNetwork ?: return
-                // Platform requirement: socket must not be connected; bound is OK.
-                net.bindSocket(socket)
-                d("Socket bound to active network: $net")
-            } catch (t: Throwable) {
-                w("bindToActiveNetwork failed: ${t.javaClass.simpleName} ${t.message}")
-            }
-        }
-    }
-
-    @Synchronized
-    private fun saveConnection(connection: MulticastSocket) {
-        d("saveConnection")
-        this.connection = connection
-        timerSubscription?.dispose()
-        timerSubscription = null
-    }
-
-    private fun tryToReuseSocket(): MulticastSocket? {
-        d("tryToReuseSocket")
-        return try {
-            val srcAddress = InetSocketAddress(udpPort)
-            val connection = MulticastSocket(null)
-            connection.reuseAddress = true
-            connection.trafficClass = IPTOS_RELIABILITY or IPTOS_THROUGHPUT or IPTOS_LOWDELAY
-            connection.receiveBufferSize = 1048576
-            connection.bind(srcAddress)
-            w(
-                "MulticastSocket receiveBufferSize: " + connection.receiveBufferSize
-                        + ", socket isBound = " + connection.isBound
-                        + ", socket isClosed = " + connection.isClosed
-                        + ", socket isConnected = " + connection.isConnected
-            )
-            saveConnection(connection)
-            invokeResultAndCompleteSubject(connection)
-            connection
-        } catch (ex: SocketException) {
-            w("MulticastSocket can't be created, and can't be reused: " + ex.javaClass + " " + ex.localizedMessage)
-            null
-        } catch (e: UnknownHostException) {
-            w("MulticastSocket can't be created, and can't be reuse UnknownHostException: " + e.localizedMessage)
-            null
-        } catch (e: IOException) {
-            w("MulticastSocket can't be created, and can't be reuse IOException: " + e.localizedMessage)
-            null
-        }
-    }
-
-    private fun invokePortIsBusyIfNeeded() {
-        if (onPortIsBusyHandler != null) {
-            onPortIsBusyHandler!!.onPortIsBusy()
-        }
+        // Outside the monitor: completing the deferred resumes the waiters inline, and they must
+        // not run while this object is locked.
+        abandoned?.completeExceptionally(IOException("Closed"))
     }
 
     fun setOnPortIsBusyHandler(onPortIsBusyHandler: OnPortIsBusyHandler?) {
@@ -202,10 +117,22 @@ class ConnectionProvider(private val udpPort: Int, private val connectivityManag
         if (transportMode != Coala.TransportMode.TCP) throw IllegalStateException("Not in TCP mode")
         if (tcpProxyAddress == null) throw IllegalStateException("Tcp proxy address is null")
         if (tcpSocket == null || tcpSocket!!.isClosed) {
-            tcpSocket = Socket()
-            tcpSocket!!.connect(tcpProxyAddress, 2000)
+            tcpSocket = tcpSocketFactory.connect(tcpProxyAddress!!, TCP_CONNECT_TIMEOUT_MS)
         }
         return tcpSocket!!
+    }
+
+    /**
+     * Drops the TCP connection so the next [getOrCreateTcpSocket] dials a fresh one.
+     *
+     * Needed because the local socket does not read as closed when the *proxy* hangs up - reads
+     * just hit EOF forever, and a reconnecting loop keeps being handed the same dead socket.
+     */
+    @Synchronized
+    fun invalidateTcpSocket() {
+        d("invalidateTcpSocket")
+        tcpSocket?.let { if (!it.isClosed) it.close() }
+        tcpSocket = null
     }
 
     @Synchronized
@@ -215,9 +142,94 @@ class ConnectionProvider(private val udpPort: Int, private val connectivityManag
         close()
     }
 
+    /**
+     * Starts the single connect attempt every current and future waiter will share.
+     *
+     * Caller must hold this object's monitor: that is what keeps [connectJob] from being cleared
+     * by the coroutine below before it has even been assigned - a race the previous
+     * `timerSubscription` handling was open to, which could wedge the provider into a state where
+     * it refused to ever reconnect.
+     */
+    private fun startConnecting(): CompletableDeferred<MulticastSocket> {
+        v("waitForUdpConnection initConnection")
+        val deferred = CompletableDeferred<MulticastSocket>()
+        pendingConnection = deferred
+        connectJob = scope.launch {
+            try {
+                val socket = connectWithRetries()
+                val isStillWanted = synchronized(this@ConnectionProvider) {
+                    if (pendingConnection === deferred) {
+                        d("saveConnection")
+                        connection = socket
+                        pendingConnection = null
+                        connectJob = null
+                        true
+                    } else {
+                        false
+                    }
+                }
+                if (isStillWanted) {
+                    deferred.complete(socket)
+                } else {
+                    // close() or setTransportMode() dropped this attempt while the socket was
+                    // being opened. Nobody owns it now, and the waiters have already been failed.
+                    d("Connect finished after close, discarding socket")
+                    socket.close()
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                i("Can't init connection: ${error.message}")
+                val isStillWanted = synchronized(this@ConnectionProvider) {
+                    if (pendingConnection === deferred) {
+                        pendingConnection = null
+                        connectJob = null
+                        true
+                    } else {
+                        false
+                    }
+                }
+                if (isStillWanted) {
+                    deferred.completeExceptionally(error)
+                    // Inside the guard: an attempt close() already abandoned has nobody to tell.
+                    // Firing the busy-port handler for it would trigger the app's recovery path
+                    // during a deliberate shutdown.
+                    invokePortIsBusyIfNeeded()
+                }
+            }
+        }
+        return deferred
+    }
+
+    /**
+     * One initial attempt plus [CONNECT_RETRIES] retries - the same budget the previous
+     * `Observable.retry(3)` allowed.
+     */
+    private suspend fun connectWithRetries(): MulticastSocket {
+        var lastError: Throwable = IOException(CANT_CREATE_CONNECTION)
+        repeat(CONNECT_RETRIES + 1) { attempt ->
+            // Rx stopped retrying once the subscription was disposed; cancellation is the
+            // equivalent here, and close() relies on it to stop a doomed reconnect loop.
+            currentCoroutineContext().ensureActive()
+            try {
+                return socketFactory.create() ?: throw IOException(CANT_CREATE_CONNECTION)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                v("Connect attempt ${attempt + 1} failed: ${error.message}")
+                lastError = error
+            }
+        }
+        throw lastError
+    }
+
+    private fun invokePortIsBusyIfNeeded() {
+        onPortIsBusyHandler?.onPortIsBusy()
+    }
+
     companion object {
-        private const val IPTOS_RELIABILITY = 0x04
-        private const val IPTOS_THROUGHPUT = 0x08
-        private const val IPTOS_LOWDELAY = 0x10
+        private const val CONNECT_RETRIES = 3
+        private const val TCP_CONNECT_TIMEOUT_MS = 2000
+        private const val CANT_CREATE_CONNECTION = "Can't create connection"
     }
 }

@@ -2,10 +2,14 @@ package com.ndmsystems.coala.layers.arq.states
 
 import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.layers.arq.Block
+import com.ndmsystems.coala.helpers.MonotonicClock
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 
-class ReceiveState(private val initiatingMessage: CoAPMessage?) : LoggableState() {
+class ReceiveState(
+    private val initiatingMessage: CoAPMessage?,
+    clock: MonotonicClock = MonotonicClock.SYSTEM
+) : LoggableState(clock) {
     private val accumulator = HashMap<Int, ByteArray?>()
     private var lastBlockNumber = Int.MAX_VALUE
     private var numberOfReceivedBlocks = 0
