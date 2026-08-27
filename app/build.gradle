@@ -16,6 +16,7 @@ plugins {
     id 'com.google.devtools.ksp'
     id 'de.mannodermaus.android-junit5'
     id 'jacoco'
+    id 'maven-publish'
 }
 ext {
     supportLibraryVersion = '27.1.1'
@@ -25,7 +26,7 @@ ext {
 
 android {
     namespace = "com.ndmsystems.coala"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig {
         multiDexEnabled true
         minSdkVersion project.ext.minSdkVersion
@@ -78,13 +79,21 @@ android {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
     buildFeatures {
         buildConfig true
     }
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    // Formerly a local jar in app/libs; the Central artifact is byte-identical (same sha1).
+    // A file dependency neither ends up in the published AAR nor in its POM, so consumers of
+    // the artifact would be missing these classes at runtime (CoAPMessagePool uses them).
+    implementation 'com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru:1.4'
 
     implementation "com.google.dagger:dagger:$daggerVersion"
     ksp "com.google.dagger:dagger-compiler:$daggerVersion"
@@ -151,4 +160,25 @@ tasks.register('coverageReport', JacocoReport) {
     )
     sourceDirectories.setFrom(files("$projectDir/src/main/java"))
     executionData.setFrom(fileTree(dir: layout.buildDirectory.get().asFile, includes: ['**/*.exec']))
+}
+
+/**
+ * Publication of the single :app module as an Android library artifact.
+ *
+ * Local check: ./gradlew :app:publishToMavenLocal
+ * JitPack builds the same publication on demand and serves it as
+ * com.github.coalalib:coalajava:<commit-or-tag>, rewriting the version below
+ * to the requested ref. See jitpack.yml for the JDK it builds with.
+ */
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = 'com.github.coalalib'
+                artifactId = 'coalajava'
+                version = android.defaultConfig.versionName
+            }
+        }
+    }
 }
