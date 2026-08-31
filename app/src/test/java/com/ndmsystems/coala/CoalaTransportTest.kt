@@ -10,6 +10,9 @@ import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.observer.RegistryOfObservingResources
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
@@ -27,8 +30,8 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 /**
- * Covers the two ways a caller gets an answer out of coala - the suspend transport calls and the Rx
- * bridges still wrapped around them.
+ * Covers how a caller gets an answer out of coala - the suspend transport calls (the Rx bridges
+ * that used to wrap them are gone).
  *
  * No sockets involved: the coala under test is never started, the message goes into the pool as
  * usual, and the test then plays the part of the layer stack by invoking the handler that was
@@ -297,123 +300,126 @@ object CoalaTransportTest : Spek({
         }
     }
 
-    describe("the Rx bridges") {
+    describe("the suspend facade contracts") {
 
-        it("send nothing until something subscribes") {
+        it("register the request on the calling thread") {
             val coala = coala()
             val message = requestMessage()
 
-            coala.sendRequest(message)
+            val call = CoroutineScope(SupervisorJob()).launch(Dispatchers.Unconfined) {
+                runCatching { coala.sendRequestAndAwait(message) }
+            }
 
-            assertNull(message.responseHandler)
-        }
-
-        it("register the request on the subscribing thread") {
-            val coala = coala()
-            val message = requestMessage()
-
-            coala.sendRequest(message).test()
-
-            // Unconfined, so subscribing has already put the message in the pool by the time
-            // subscribe() returns - the way Observable.create used to.
+            // Unconfined: the call has already put the message in the pool by the time
+            // launch returns - the way subscribing the old bridge did.
             assertNotNull(message.responseHandler)
+            call.cancel()
         }
 
-        it("emit the response and complete") {
+        it("deliver the response to the caller") {
             val coala = coala()
             val message = requestMessage()
-
-            val observer = coala.sendRequest(message).test()
             val response = response(PAYLOAD)
+
+            var delivered: ResponseData? = null
+            CoroutineScope(SupervisorJob()).launch(Dispatchers.Unconfined) {
+                delivered = coala.sendRequestAndAwait(message)
+            }
             message.responseHandler!!.onResponse(response)
 
-            observer.assertValue(response).assertComplete()
+            assertEquals(response, delivered)
         }
 
-        it("emit the error the layers deliver") {
+        it("deliver the error the layers deliver") {
             val coala = coala()
             val message = requestMessage()
 
-            val observer = coala.sendRequest(message).test()
+            var delivered: Throwable? = null
+            CoroutineScope(SupervisorJob()).launch(Dispatchers.Unconfined) {
+                delivered = runCatching { coala.sendRequestAndAwait(message) }.exceptionOrNull()
+            }
             message.responseHandler!!.onError(BaseCoalaThrowable("boom"))
 
-            observer.assertError(BaseCoalaThrowable::class.java).assertNotComplete()
+            assertTrue(delivered is BaseCoalaThrowable)
         }
 
-        it("stay cold - a resubscribe sends the message again") {
+        it("send the message again on every call") {
             val coala = coala()
             val message = requestMessage()
-            val requests = coala.sendRequest(message)
+            val scope = CoroutineScope(SupervisorJob())
 
-            val first = requests.test()
+            scope.launch(Dispatchers.Unconfined) { runCatching { coala.sendRequestAndAwait(message) } }
             val firstHandler = message.responseHandler
-            first.dispose()
-            requests.test()
+            message.responseHandler!!.onResponse(response(PAYLOAD))
+            scope.launch(Dispatchers.Unconfined) { runCatching { coala.sendRequestAndAwait(message) } }
             val secondHandler = message.responseHandler
 
-            // api relies on this: retryWhen / onErrorResumeNext resubscribe, and that has to put
-            // the message back on the wire rather than wait on the first attempt's handler.
+            // api relies on this: a retry loop calls again, and that has to put the message
+            // back on the wire rather than wait on the first attempt's handler.
             assertNotNull(firstHandler)
             assertNotNull(secondHandler)
             assertTrue(firstHandler !== secondHandler)
         }
 
-        it("emit the answer for the plain send bridge") {
+        it("answer the plain send facade") {
             val coala = coala()
             val message = requestMessage()
 
-            val observer = coala.send(message).test()
+            var answered: CoAPMessage? = null
+            CoroutineScope(SupervisorJob()).launch(Dispatchers.Unconfined) {
+                answered = runCatching { coala.sendAndAwait(message) }.getOrNull()
+            }
             val answer = requestMessage()
             coala.handlerFor(message).onMessage(answer, null)
 
-            observer.assertValue(answer).assertComplete()
+            assertEquals(answer, answered)
         }
 
-        it("drop a failure that loses the race with disposal, instead of escalating it") {
-            // kotlinx-rx2's rxSingle would forward this to RxJavaPlugins.onError - a hard crash
-            // for any consumer without a global handler. The hand-rolled bridges keep the old
-            // tryOnError contract: a late error after dispose is silently dropped.
-            val escalated = java.util.concurrent.CopyOnWriteArrayList<Throwable>()
-            io.reactivex.plugins.RxJavaPlugins.setErrorHandler { escalated += it }
-            try {
-                val coala = coala()
-                val message = requestMessage()
-                val observer = coala.sendRequest(message).test()
+        it("drop a late error after the caller gave up, instead of crashing") {
+            // The Rx bridges dropped a failure that lost the race with disposal via tryOnError;
+            // the CompletableDeferred keeps that contract - completeExceptionally on a cancelled
+            // await is a no-op, nothing escalates anywhere.
+            val coala = coala()
+            val message = requestMessage()
 
-                observer.dispose()
-                message.responseHandler!!.onError(BaseCoalaThrowable("late failure"))
-
-                assertTrue(escalated.isEmpty(), "a late error after dispose reached RxJavaPlugins: $escalated")
-            } finally {
-                io.reactivex.plugins.RxJavaPlugins.setErrorHandler(null)
+            val call = CoroutineScope(SupervisorJob()).launch(Dispatchers.Unconfined) {
+                runCatching { coala.sendRequestAndAwait(message) }
             }
+            val handler = message.responseHandler!!
+            call.cancel()
+
+            handler.onError(BaseCoalaThrowable("late failure"))
         }
 
         it("deliver discovery results off the coroutine timer thread") {
             // The suspend discovery resumes from delay() on kotlinx's singleton DefaultExecutor;
-            // subscriber work there stalls every delay() in the process, so the bridge must hop
-            // off it before onSuccess.
+            // caller work there stalls every delay() in the process, so runResourceDiscovery
+            // must hop off it before returning - even to an Unconfined caller.
             val coala = coala()
             val deliveredOn = java.util.concurrent.atomic.AtomicReference<String>("")
 
-            coala.runResourceDiscovery()
-                .doOnSuccess { deliveredOn.set(Thread.currentThread().name) }
-                .blockingGet()
+            CoroutineScope(SupervisorJob()).launch(Dispatchers.Unconfined) {
+                runCatching { coala.runResourceDiscovery() }
+                deliveredOn.set(Thread.currentThread().name)
+            }
 
+            awaitCondition("discovery completes") { deliveredOn.get().isNotEmpty() }
             assertTrue(
                 !deliveredOn.get().contains("DefaultExecutor"),
-                "discovery results delivered on ${deliveredOn.get()} - subscriber work there stalls the transport's timers"
+                "discovery results delivered on ${deliveredOn.get()} - caller work there stalls the transport's timers"
             )
         }
 
-        it("take the message back out of the pool when disposed") {
+        it("take the message back out of the pool when the caller gives up") {
             val coala = coala()
             val message = requestMessage()
 
-            val observer = coala.sendRequest(message).test()
+            val call = CoroutineScope(SupervisorJob()).launch(Dispatchers.Unconfined) {
+                runCatching { coala.sendRequestAndAwait(message) }
+            }
             assertNotNull(coala.messagePool!![message.id])
 
-            observer.dispose()
+            call.cancel()
 
             awaitCondition("the abandoned request leaves the pool") {
                 coala.messagePool!![message.id] == null

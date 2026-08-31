@@ -22,8 +22,6 @@ import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPRequestMethod
 import com.ndmsystems.coala.observer.RegistryOfObservingResources
 import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult
-import io.reactivex.Observable
-import io.reactivex.Single
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -106,12 +104,6 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         dependencyGraph.inject(this)
     }
 
-    /**
-     * Runs the Rx bridge coroutines. Supervisor so one failed call cannot take down another;
-     * the dispatcher is chosen per launch.
-     */
-    private val bridgeScope = CoroutineScope(SupervisorJob())
-
     override fun getObservableResource(path: String): CoAPObservableResource? {
         return resourceRegistry!!.getObservableResource(path)
     }
@@ -143,31 +135,12 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
     /**
      * Find all available to discovery coap resourceRegistry in local network.
      *
-     * Rx wrapper kept for callers outside coala; the discovery itself is a coroutine now.
-     * Unconfined so the multicast still goes out on the subscribing thread the way `Single.defer`
-     * did, and so that disposing the Single cancels the wait and deregisters the handlers.
-     *
-     * @return
+     * The `withContext(Dispatchers.IO)` hop matters for Unconfined callers: the discovery resumes
+     * from delay() on kotlinx's singleton DefaultExecutor, and caller work there would stall every
+     * delay() in the process - the sender's polls, the restart timers, the observe renewals.
      */
-    override fun runResourceDiscovery(): Single<List<ResourceDiscoveryResult>> {
-        return Single.create { emitter ->
-            val job = bridgeScope.launch(Dispatchers.Unconfined) {
-                try {
-                    val results = localPeerDiscoverer!!.runResourceDiscovery()
-                    // Off the coroutine timer thread: after delay() an Unconfined continuation is
-                    // running on kotlinx's singleton DefaultExecutor, and subscriber work there
-                    // would stall every delay() in the process - the sender's polls, the restart
-                    // timers, the observe renewals.
-                    withContext(Dispatchers.IO) { emitter.onSuccess(results) }
-                } catch (cancellation: CancellationException) {
-                    // Disposed: nothing to deliver.
-                } catch (error: Throwable) {
-                    emitter.tryOnError(error)
-                }
-            }
-            emitter.setCancellable { job.cancel() }
-        }
-    }
+    override suspend fun runResourceDiscovery(): List<ResourceDiscoveryResult> =
+        withContext(Dispatchers.IO) { localPeerDiscoverer!!.runResourceDiscovery() }
 
     override fun cancel(message: CoAPMessage) {
         messagePool!!.remove(message)
@@ -272,51 +245,6 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
             v("Caller gave up on message " + message.id + ", cancelling it")
             cancel(message)
             throw cancellation
-        }
-    }
-
-    /**
-     * Unconfined so the bridges keep the timing the `Observable.create` bodies had: the message
-     * goes out on the subscribing thread, and the answer is emitted on whichever thread the layers
-     * delivered it on.
-     *
-     * Hand-rolled rather than `rxSingle`: kotlinx-rx2 routes a failure that loses the race with
-     * disposal into `RxJavaPlugins.onError`, which crashes any consumer without a global handler.
-     * The old `Observable.create` bodies dropped that case silently via `tryOnError`, and these
-     * bridges keep that contract. Disposal still cancels the coroutine, so [awaitAnswer] withdraws
-     * the message.
-     */
-    override fun sendRequest(message: CoAPMessage): Observable<ResponseData> {
-        return Observable.create { emitter ->
-            val job = bridgeScope.launch(Dispatchers.Unconfined) {
-                try {
-                    val response = sendRequestAndAwait(message)
-                    emitter.onNext(response)
-                    emitter.onComplete()
-                } catch (cancellation: CancellationException) {
-                    // Disposed: nothing to deliver, and awaitAnswer already withdrew the message.
-                } catch (error: Throwable) {
-                    emitter.tryOnError(error)
-                }
-            }
-            emitter.setCancellable { job.cancel() }
-        }
-    }
-
-    override fun send(message: CoAPMessage): Observable<CoAPMessage> {
-        return Observable.create { emitter ->
-            val job = bridgeScope.launch(Dispatchers.Unconfined) {
-                try {
-                    val answer = sendAndAwait(message)
-                    emitter.onNext(answer)
-                    emitter.onComplete()
-                } catch (cancellation: CancellationException) {
-                    // Disposed: nothing to deliver.
-                } catch (error: Throwable) {
-                    emitter.tryOnError(error)
-                }
-            }
-            emitter.setCancellable { job.cancel() }
         }
     }
 

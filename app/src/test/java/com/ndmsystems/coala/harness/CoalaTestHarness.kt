@@ -17,7 +17,6 @@ import com.ndmsystems.coala.layers.security.SecurityLayer
 import com.ndmsystems.coala.layers.security.session.SecuredSessionPool
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.utils.Reference
-import io.reactivex.Observable
 import java.net.InetSocketAddress
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -151,11 +150,5 @@ internal class RecordingClient(private val ackHandlersPool: AckHandlersPool) : C
         throw UnsupportedOperationException("the harness drives the layers directly")
 
     override suspend fun sendRequestAndAwait(message: CoAPMessage): ResponseData =
-        throw UnsupportedOperationException("the harness drives the layers directly")
-
-    override fun send(message: CoAPMessage): Observable<CoAPMessage> =
-        throw UnsupportedOperationException("the harness drives the layers directly")
-
-    override fun sendRequest(message: CoAPMessage): Observable<ResponseData> =
         throw UnsupportedOperationException("the harness drives the layers directly")
 }

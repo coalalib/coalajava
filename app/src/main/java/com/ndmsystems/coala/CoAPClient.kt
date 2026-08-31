@@ -2,7 +2,6 @@ package com.ndmsystems.coala
 
 import com.ndmsystems.coala.layers.response.ResponseData
 import com.ndmsystems.coala.message.CoAPMessage
-import io.reactivex.Observable
 
 interface CoAPClient {
     fun send(message: CoAPMessage, handler: CoAPHandler?)
@@ -24,16 +23,6 @@ interface CoAPClient {
      * Cancellation behaves as in [sendAndAwait]: giving up withdraws the request.
      */
     suspend fun sendRequestAndAwait(message: CoAPMessage): ResponseData
-
-    /**
-     * Rx bridge over [sendAndAwait] for callers outside coala. Cold, like the `Observable.create`
-     * it replaces: every subscribe sends the message again. Remove once those callers are on
-     * coroutines.
-     */
-    fun send(message: CoAPMessage): Observable<CoAPMessage>
-
-    /** Rx bridge over [sendRequestAndAwait]; see [send] for the terms. */
-    fun sendRequest(message: CoAPMessage): Observable<ResponseData>
 
     fun cancel(message: CoAPMessage)
     fun getMessageDeliveryInfo(message: CoAPMessage): MessageDeliveryInfo?

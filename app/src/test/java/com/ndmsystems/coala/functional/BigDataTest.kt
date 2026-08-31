@@ -14,6 +14,9 @@ import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessagePayload
 import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.message.CoAPRequestMethod
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.junit.Assert
 import org.junit.Ignore
 import org.junit.Test
@@ -43,13 +46,13 @@ class BigDataTest {
         w(100)
         val request = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
         request.setURI("coap://127.0.0.1:3457/msg")
-        client.sendRequest(request).subscribe(
-            { response: ResponseData ->
+        CoroutineScope(Dispatchers.IO).launch {
+            runCatching { client.sendRequestAndAwait(request) }.onSuccess { response: ResponseData ->
                 responseReceived.set(true)
                 if (bigData == response.payload) responseDataIsCorrect.set(true)
                 lock!!.countDown()
             }
-        ) { ignore: Throwable? -> }
+        }
         lock!!.await(40, TimeUnit.SECONDS)
         Assert.assertTrue(responseReceived.get())
         Assert.assertTrue(responseDataIsCorrect.get())
@@ -90,9 +93,11 @@ class BigDataTest {
         val request = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.POST)
         request.setURI("coap://127.0.0.1:3457/msg")
         request.payload = CoAPMessagePayload(bigData)
-        client.send(request).subscribe(
-            { message: CoAPMessage -> v("message: $message") }
-        ) { throwable: Throwable -> v("throwable: $throwable") }
+        CoroutineScope(Dispatchers.IO).launch {
+            runCatching { client.sendAndAwait(request) }
+                .onSuccess { message: CoAPMessage -> v("message: $message") }
+                .onFailure { throwable: Throwable -> v("throwable: $throwable") }
+        }
         lock!!.await(40, TimeUnit.SECONDS)
         Assert.assertTrue(requestReceived.get())
         Assert.assertTrue(requestDataIsCorrect.get())
@@ -136,14 +141,14 @@ class BigDataTest {
         request.payload = CoAPMessagePayload(bigData)
         val responseReceived = AtomicBoolean(false)
         val responseDataIsCorrect = AtomicBoolean(false)
-        client.sendRequest(request).subscribe(
-            { response: ResponseData ->
+        CoroutineScope(Dispatchers.IO).launch {
+            runCatching { client.sendRequestAndAwait(request) }.onSuccess { response: ResponseData ->
                 d("Client received: $response")
                 responseReceived.set(true)
                 if (bigData == response.payload) responseDataIsCorrect.set(true)
                 lock!!.countDown()
             }
-        ) { throwable: Throwable? -> }
+        }
         lock!!.await(40, TimeUnit.SECONDS)
         Assert.assertTrue(requestReceived.get())
         Assert.assertTrue(requestDataIsCorrect.get())

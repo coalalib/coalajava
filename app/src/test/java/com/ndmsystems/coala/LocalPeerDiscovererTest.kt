@@ -6,7 +6,6 @@ import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryHelper
-import io.reactivex.Observable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -281,9 +280,5 @@ private class FakeCoAPClient(private val udpMode: Boolean) : CoAPClient {
     override suspend fun sendRequestAndAwait(message: CoAPMessage): ResponseData =
         throw UnsupportedOperationException("not used by discovery")
 
-    override fun send(message: CoAPMessage): Observable<CoAPMessage> =
-        throw UnsupportedOperationException("not used by discovery")
 
-    override fun sendRequest(message: CoAPMessage): Observable<ResponseData> =
-        throw UnsupportedOperationException("not used by discovery")
 }
