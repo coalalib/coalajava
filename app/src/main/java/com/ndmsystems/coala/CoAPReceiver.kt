@@ -330,13 +330,10 @@ class CoAPReceiver(
         }
     }
 
+    /** Switches the mode only; see [CoAPSender.setTransportMode] for why it does not restart. */
     fun setTransportMode(mode: Coala.TransportMode) {
         if (transportMode == mode) return
-        stop()
-
         transportMode = mode
-        // If it was running — start again
-        start()
     }
 
     companion object {

@@ -68,6 +68,37 @@ object CoAPSenderTest : Spek({
             }
         }
 
+        it("switching transport mode does not start a stopped sender") {
+            runTest {
+                val polls = AtomicInteger()
+                val sender = newSender(idlePool(polls))
+
+                sender.setTransportMode(Coala.TransportMode.TCP)
+
+                // Restarting is Coala.setTransportMode's job - it stops both halves, switches
+                // them and revives only the ones that were running. A start() here resurrected
+                // a sender the app had deliberately stopped, and the mocked lifecycle test in
+                // CoalaLifecycleTest could not see it.
+                assertFalse(sender.isStarted)
+                runCurrent()
+                assertEquals(0, polls.get())
+            }
+        }
+
+        it("switching transport mode leaves a running sender running") {
+            runTest {
+                val polls = AtomicInteger()
+                val sender = newSender(idlePool(polls))
+                sender.start()
+                runCurrent()
+
+                sender.setTransportMode(Coala.TransportMode.TCP)
+
+                assertTrue(sender.isStarted)
+                sender.stop()
+            }
+        }
+
         it("asks the pool again after the idle delay") {
             runTest {
                 val polls = AtomicInteger()

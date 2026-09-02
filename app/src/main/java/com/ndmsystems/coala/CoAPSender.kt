@@ -288,12 +288,14 @@ class CoAPSender(
         }
     }
 
+    /**
+     * Switches the mode only. Restarting is the caller's business: [Coala.setTransportMode]
+     * stops both halves, switches them and brings back exactly the ones that were running.
+     * Starting here as well used to resurrect a sender the app had deliberately stopped.
+     */
     fun setTransportMode(mode: Coala.TransportMode) {
         if (transportMode == mode) return
-        stop()
-        // Recreate sender/receiver for new mode; same connectionProvider
         transportMode = mode
-        start()
     }
 
     companion object {

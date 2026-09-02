@@ -40,18 +40,25 @@ internal class RealUdpSocketFactory(
 
     @Throws(IOException::class)
     override fun create(): MulticastSocket? {
+        // Held outside the try so a socket that binds but fails to configure can be closed before
+        // the fallback runs - leaking it keeps the requested port occupied for the retry.
+        var socket: MulticastSocket? = null
         return try {
             val s = MulticastSocket(udpPort) //Don't change to 5683 or Samsung on wifi stop working!
+            socket = s
             // IMPORTANT: socket is not connected yet → can bind to network
             bindToActiveNetwork(s)
             s.receiveBufferSize = RECEIVE_BUFFER_SIZE
             s.trafficClass = IPTOS_RELIABILITY or IPTOS_THROUGHPUT or IPTOS_LOWDELAY
             d("createConnection, 'udpPort' is $udpPort, port = ${s.port}, localPort = ${s.localPort}. ")
+            socket = null
             s
         } catch (ex: SocketException) {
+            socket?.let { runCatching { it.close() } }
             i("MulticastSocket can't be created, SocketException, try to reuse: " + ex.javaClass + " " + ex.localizedMessage)
             tryToReuseSocket()
         } catch (ex: Exception) {
+            socket?.let { runCatching { it.close() } }
             e("MulticastSocket can't be created: " + ex.javaClass + " " + ex.localizedMessage)
             tryToReuseSocket()
         }

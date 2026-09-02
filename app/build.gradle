@@ -134,7 +134,7 @@ jacoco {
 }
 
 /**
- * Coverage for the unit-test suite: ./gradlew :submodules:coala:app:coverageReport
+ * Coverage for the unit-test suite: ./gradlew :app:coverageReport
  * HTML lands in app/build/reports/jacoco/coverageReport/html/index.html
  */
 tasks.register('coverageReport', JacocoReport) {

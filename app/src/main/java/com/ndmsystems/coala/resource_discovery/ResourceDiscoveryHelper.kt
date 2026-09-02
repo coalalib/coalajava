@@ -23,7 +23,7 @@ class ResourceDiscoveryHelper(
     private val entryTtlMillis: Long = DEFAULT_ENTRY_TTL_MILLIS
 ) {
 
-    private class Entry(val result: ResourceDiscoveryResult) {
+    private class Entry(var result: ResourceDiscoveryResult) {
         @Volatile
         var lastSeenMillis: Long = 0L
     }
@@ -45,8 +45,12 @@ class ResourceDiscoveryHelper(
     @Synchronized
     fun addResult(oneResource: ResourceDiscoveryResult) {
         val now = clock.nowMillis()
-        val existing = entries.firstOrNull { it.result == oneResource }
+        // Keyed by host alone: ResourceDiscoveryResult's equality also covers the payload, so a
+        // router that changes its /info answer (rename, firmware update) used to appear twice
+        // until the old payload aged out. One entry per peer, carrying the latest payload.
+        val existing = entries.firstOrNull { it.result.host == oneResource.host }
         if (existing != null) {
+            existing.result = oneResource
             existing.lastSeenMillis = now
         } else {
             // Prune only when adding: a bounded handful of devices, and doing it here keeps the

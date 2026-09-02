@@ -109,7 +109,8 @@ client.start()
 val request = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
 request.setURI("coap://127.0.0.1:5683/msg")
 
-runBlocking {
+// Launch from a lifecycle-aware scope - never runBlocking on Android, the wait is unbounded.
+scope.launch {
     try {
         val response = client.sendRequestAndAwait(request)
         println(response.payload)

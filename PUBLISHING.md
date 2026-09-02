@@ -29,10 +29,8 @@ The first request for a given ref triggers the build on JitPack's side and can t
 minutes; after that the artifact is served from their cache. Build logs live at
 `https://jitpack.io/com/github/coalalib/coalajava/<version>/build.log`.
 
-Note on the compile classpath: the public API exposes RxJava 2 types (`Observable`, `Single`),
-which the POM declares with `runtime` scope. A consumer that calls those entry points must
-declare `io.reactivex.rxjava2:rxjava` itself. The Rx surface is transitional and scheduled to
-disappear in favour of the `suspend`/`Flow` API.
+The public API is `suspend`/`Flow` only - a consumer needs `kotlinx-coroutines-core`, which the
+POM declares, and nothing else.
 
 ## Local development against a consumer (composite build)
 
