@@ -53,6 +53,13 @@ For local development against a consumer, substitute the artifact with a source 
 a composite build — see [PUBLISHING.md](PUBLISHING.md) for the exact block and the rules
 the publication must keep.
 
+## Merging changes
+
+**Merge pull requests with a merge commit — not squash, not rebase.** Consumers pin this library
+by commit sha (see [PUBLISHING.md](PUBLISHING.md)); squashing rewrites the sha, the pinned commit
+stops being reachable from any branch, and JitPack can no longer build it — the consumer's build
+breaks later, with nothing pointing at the cause.
+
 ## Quick Start
 
 ```kotlin
