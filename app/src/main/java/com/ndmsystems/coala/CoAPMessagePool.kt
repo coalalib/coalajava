@@ -3,9 +3,10 @@ package com.ndmsystems.coala
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap
 import com.ndmsystems.coala.CoAPHandler.AckError
 import com.ndmsystems.coala.exceptions.BaseCoalaThrowable
-import com.ndmsystems.coala.helpers.TimeHelper
+import com.ndmsystems.coala.helpers.MonotonicClock
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.message.CoAPMessage
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,16 +19,22 @@ import java.util.concurrent.TimeUnit
 class CoAPMessagePool(
     private val ackHandlersPool: AckHandlersPool,
     private val params: Params,
+    /** Seam for tests: every deadline below is measured against this rather than the system clock. */
+    private val clock: MonotonicClock = MonotonicClock.SYSTEM,
+    /** Seam for tests: lets a test flush the error callbacks instead of waiting for them. */
+    errorDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    /** How long per-message delivery statistics are kept; a parameter so tests can reach expiry. */
+    deliveryInfoTtlMillis: Long = 20L * 60 * 1000,
 ) {
     // One long-lived scope instead of allocating a new CoroutineScope on every
     // clear()/raiseAckError() — raiseAckError fires per timed-out message, a hot path.
     // SupervisorJob so one failing handler callback doesn't tear down the others.
-    private val errorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val errorScope = CoroutineScope(SupervisorJob() + errorDispatcher)
     private val pool: ConcurrentLinkedHashMap<Int, QueueElement>
     private val messageIdForToken = ConcurrentHashMap<String, Int>()
     private val messageDeliveryInfo = ExpiringMap.builder()
         .expirationPolicy(ExpirationPolicy.CREATED)
-        .expiration(20, TimeUnit.MINUTES)
+        .expiration(deliveryInfoTtlMillis, TimeUnit.MILLISECONDS)
         .build<String, MessageDeliveryInfo>()
 
     init {
@@ -41,6 +48,17 @@ class CoAPMessagePool(
     }
 
     companion object {
+        /**
+         * How much longer a message waiting for a long answer is given, on both deadlines.
+         *
+         * Applied to the garbage period since 2022 and to the expiration period since the two were
+         * found to disagree. With the production values that means a garbage window of ~125 s
+         * against an expiry of ~300 s, so garbage - measured from the last send, which is what the
+         * period is about - is the deadline that actually ends the message, and the resend period of
+         * ~30 s fits four retries inside it.
+         */
+        internal const val LONG_ANSWER_MULTIPLIER = 5
+
         data class Params(
             val resendPeriod: Int = 2002, // period to waitForConnection before resend a command
             val resendLongPeriod: Int = 30002, // period to waitForConnection before resend a command, for message with long answer
@@ -58,8 +76,29 @@ class CoAPMessagePool(
         var isNeededSend = true
 
         init {
-            createTime = TimeHelper.timeForMeasurementInMilliseconds
+            createTime = clock.nowMillis()
         }
+    }
+
+    /**
+     * How long this message may sit in the pool, measured from when it was created.
+     *
+     * Three cases, and the multipliers are the point of the method:
+     *
+     * - an ARQ original is not sent itself, it only waits for its blocks, so it gets ten times the
+     *   usual life;
+     * - a message waiting for a long answer gets [LONG_ANSWER_MULTIPLIER] times the usual life, so
+     *   that this deadline stops being the one that ends it. The garbage deadline below, measured
+     *   from the last send, is meant to be the binding one for these - it is the one that was
+     *   widened when the long resend period was introduced. Expiry was not widened with it, and
+     *   because it is both tighter and checked first, the wider garbage window was unreachable and
+     *   a long-answer message got a single resend before being dropped at the plain expiry.
+     * - everything else gets the plain period.
+     */
+    private fun expirationLimitFor(element: QueueElement): Int = when {
+        !element.isNeededSend -> 10 * params.expirationPeriod
+        element.message.isRequestWithLongTimeNoAnswer -> LONG_ANSWER_MULTIPLIER * params.expirationPeriod
+        else -> params.expirationPeriod
     }
 
     fun requeue(id: Int) {
@@ -83,12 +122,10 @@ class CoAPMessagePool(
                 LogHelper.e(e.message ?: "ConcurrentModificationException")
                 continue
             }
-            val now = TimeHelper.timeForMeasurementInMilliseconds
+            val now = clock.nowMillis()
 
             // check if this message is too old to send
-            if (next.createTime != null && now - next.createTime!!
-                >= (if (next.isNeededSend) params.expirationPeriod else 10 * params.expirationPeriod)
-            ) { //10 time longer expiration period for !isNeededSend message, for ARQ original messages
+            if (next.createTime != null && now - next.createTime!! >= expirationLimitFor(next)) {
                 LogHelper.v("Remove message with id " + next.message.id + " from pool because expired")
                 remove(next.message)
                 raiseAckError(next.message, "message expired")
@@ -97,7 +134,7 @@ class CoAPMessagePool(
 
             // check if this message should be already removed from the pool, before ACK
             if (next.isNeededSend && next.sendTime != null
-                && now - next.sendTime!! >= if (next.message.isRequestWithLongTimeNoAnswer) params.garbagePeriod * 5
+                && now - next.sendTime!! >= if (next.message.isRequestWithLongTimeNoAnswer) params.garbagePeriod * LONG_ANSWER_MULTIPLIER
                 else params.garbagePeriod
             ) {
                 LogHelper.v("Remove message with id " + next.message.id + " from pool because garbage")
@@ -131,7 +168,7 @@ class CoAPMessagePool(
                     messageDeliveryInfo[hexToken] = currentMessageDeliveryInfo
 
                     next.sent = true
-                    next.sendTime = TimeHelper.timeForMeasurementInMilliseconds
+                    next.sendTime = clock.nowMillis()
                     next.sendAttempts++
                     return CoAPMessage(next.message)
                 } else {

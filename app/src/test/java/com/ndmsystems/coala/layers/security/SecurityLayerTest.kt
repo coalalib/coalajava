@@ -6,6 +6,7 @@ import com.ndmsystems.coala.CoAPMessagePool
 import com.ndmsystems.coala.Coala
 import com.ndmsystems.coala.crypto.Aead
 import com.ndmsystems.coala.crypto.Curve25519
+import com.ndmsystems.coala.crypto.CurveRepository
 import com.ndmsystems.coala.helpers.CoalaHelper
 import com.ndmsystems.coala.helpers.EncryptionHelper
 import com.ndmsystems.coala.helpers.Hex
@@ -26,7 +27,6 @@ import io.mockk.slot
 import io.mockk.verify
 import org.junit.Assert.assertArrayEquals
 import org.spekframework.spek2.Spek
-import org.spekframework.spek2.dsl.Skip
 import org.spekframework.spek2.style.specification.describe
 import java.net.InetSocketAddress
 import kotlin.test.assertEquals
@@ -39,6 +39,9 @@ object SecurityLayerTest: Spek({
     val mockAckHandlersPool = mockk<AckHandlersPool>(relaxed = true)
     val mockCoAPClient = mockk<CoAPClient>(relaxed = true)
     val mockSecuredSessionPool = mockk<SecuredSessionPool>(relaxed = true)
+    // Real repository over the in-memory test storage: the sessions under test need a usable
+    // key pair, and it is no longer reachable through a global.
+    val curveRepository = CurveRepository(CoalaHelper.storage)
     val mockRefAddress = mockk<Reference<InetSocketAddress>>()
     every { mockRefAddress.get() } returns InetSocketAddress("8.8.8.8", 80)
     every { mockCoAPMessagePool.getSourceMessageByToken(any()) }  returns CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.POST).also { it.address = mockRefAddress.get() }
@@ -47,7 +50,8 @@ object SecurityLayerTest: Spek({
             mockCoAPMessagePool,
             mockAckHandlersPool,
             mockCoAPClient,
-            mockSecuredSessionPool
+            mockSecuredSessionPool,
+            curveRepository
     )
 
     describe("Check getting main message by hex token"){
@@ -92,7 +96,8 @@ object SecurityLayerTest: Spek({
                     mockCoAPMessagePool,
                     mockAckHandlersPool,
                     client,
-                    sessionPool
+                    sessionPool,
+                    curveRepository
             )
 
             val peerPublicKey = Curve25519().publicKey
@@ -152,7 +157,7 @@ object SecurityLayerTest: Spek({
         }
     }
 
-    describe("Check onReceive return false by secured protocol with unsuccess decrypt result", skip = Skip.Yes("Strange inner security error")){
+    describe("Check onReceive return false by secured protocol with unsuccess decrypt result"){
         val msg = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.POST)
         msg.setURI("coaps://192.168.1.1:8080/test?param=1&param=value")
         msg.setStringPayload("Some data")
@@ -179,7 +184,8 @@ object SecurityLayerTest: Spek({
                 mockCoAPMessagePool,
                 mockAckHandlersPool,
                 mockCoAPClient,
-                securedSessionPool
+                securedSessionPool,
+                curveRepository
         )
 
         it("return false"){
@@ -187,7 +193,7 @@ object SecurityLayerTest: Spek({
         }
     }
 
-    describe("Check onReceive return true by secured protocol with success decrypt result", skip = Skip.Yes("Strange inner security error")){
+    describe("Check onReceive return true by secured protocol with success decrypt result"){
         val msg = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.POST)
         msg.setURI("coaps://192.168.1.1:8080/test?param=1&param=value")
         msg.setStringPayload("Some data")
@@ -217,7 +223,8 @@ object SecurityLayerTest: Spek({
                 mockCoAPMessagePool,
                 mockAckHandlersPool,
                 mockCoAPClient,
-                securedSessionPool
+                securedSessionPool,
+                curveRepository
         )
 
         it("return true"){

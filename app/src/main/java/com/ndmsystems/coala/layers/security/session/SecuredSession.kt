@@ -1,7 +1,7 @@
 package com.ndmsystems.coala.layers.security.session
 
-import com.ndmsystems.coala.Coala
 import com.ndmsystems.coala.crypto.Aead
+import com.ndmsystems.coala.crypto.CurveRepository
 import com.ndmsystems.coala.crypto.Curve25519
 import com.ndmsystems.coala.crypto.Hkdf
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
@@ -12,11 +12,17 @@ import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 
-class SecuredSession(incoming: Boolean) {
+/**
+ * @param curveRepository where the local key pair comes from. Passed in rather than fetched from a
+ * global: two Coala instances in one process used to share whichever one was built last, which made
+ * the handshake impossible to test in isolation and would have had two peers signing with the same
+ * key material.
+ */
+class SecuredSession(incoming: Boolean, private val curveRepository: CurveRepository) {
     private var curve: Curve25519? = null
         get() {
             if (field == null) {
-                field = Coala.dependencyGraph.provideCurveRepository()!!.curve
+                field = curveRepository.curve
             }
             return field
         }

@@ -1,11 +1,14 @@
 package com.ndmsystems.coala.layers.arq.states
 
-import com.ndmsystems.coala.helpers.TimeHelper.timeForMeasurementInMilliseconds
+import com.ndmsystems.coala.helpers.MonotonicClock
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.message.CoAPMessage.ResendHandler
 
-abstract class LoggableState internal constructor() : ResendHandler {
-    private val startTime: Long = timeForMeasurementInMilliseconds
+abstract class LoggableState internal constructor(
+    /** Seam for tests: transfer timings are measured against this, not the system clock. */
+    private val clock: MonotonicClock = MonotonicClock.SYSTEM
+) : ResendHandler {
+    private val startTime: Long = clock.nowMillis()
     var diffTime: Int? = null
         private set
     private var numberOfMessages: Int = 0
@@ -18,7 +21,7 @@ abstract class LoggableState internal constructor() : ResendHandler {
 
     fun onTransferCompleted() {
         d("onTransferCompleted")
-        if (diffTime == null) diffTime = (timeForMeasurementInMilliseconds - startTime).toInt()
+        if (diffTime == null) diffTime = (clock.nowMillis() - startTime).toInt()
     }
 
     abstract val dataSize: Int

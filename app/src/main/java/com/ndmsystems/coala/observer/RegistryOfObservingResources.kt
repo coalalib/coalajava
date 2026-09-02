@@ -13,13 +13,25 @@ import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageOption
 import com.ndmsystems.coala.message.CoAPMessageOptionCode
 import com.ndmsystems.coala.message.CoAPMessageType
-import java.util.Timer
-import java.util.TimerTask
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
-class RegistryOfObservingResources(private val client: CoAPClient) {
+class RegistryOfObservingResources(
+    private val client: CoAPClient,
+    /** Where the re-subscription loop runs. Seam for tests: its delay becomes virtual time. */
+    private val workDispatcher: CoroutineDispatcher = Dispatchers.IO
+) {
     private val observingResources = HashMap<String, ObservingResource>()
-    private var timer: Timer? = null
-    private var checkResourcesTask: TimerTask? = null
+    private val scope = CoroutineScope(SupervisorJob() + workDispatcher)
+
+    /** Re-subscribes to every resource whose max-age has run out; null while nothing is observed. */
+    private var checkResourcesJob: Job? = null
     fun unregisterObserver(uri: String?) {
         d("unregisterObserver")
         removeObservingResource(getTokenForObservingResourceUri(uri))
@@ -39,17 +51,28 @@ class RegistryOfObservingResources(private val client: CoAPClient) {
         return null
     }
 
-    fun registerObserver(uri: String?, handler: CoAPHandler?) {
+    /**
+     * Starts a new observation and returns the request that went out, so the caller can withdraw
+     * it and remove the observation later by its token.
+     *
+     * Always a fresh token: reusing an existing token for the same uri would merge this observer
+     * with whoever is already watching, and the first of them to leave would tear the shared
+     * registration down under the other. Renewal - the one case that must keep its token - goes
+     * through [checkResources], which passes the token explicitly.
+     */
+    fun registerObserver(uri: String?, handler: CoAPHandler?): CoAPMessage {
         d("registerObserver $uri")
-        var token = getTokenForObservingResourceUri(uri)
-        d("token for observing resources: " + encodeHexString(token))
-        if (token == null) token = getRandom(8)
+        return sendObserveRequest(uri, getRandom(8), handler)
+    }
+
+    private fun sendObserveRequest(uri: String?, token: ByteArray?, handler: CoAPHandler?): CoAPMessage {
         val message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
         message.setURI(uri!!)
         message.token = token
         v("Token: " + encodeHexString(token))
         message.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, 0))
         client.send(message, handler)
+        return message
     }
 
     @Synchronized
@@ -58,8 +81,10 @@ class RegistryOfObservingResources(private val client: CoAPClient) {
         for (resource in observingResources.values) {
             d("resource: " + resource.uri)
             if (resource.isExpired) {
-                d("checkResourcesTask, register: " + resource.uri)
-                registerObserver(resource.uri, resource.handler)
+                d("checkResourcesTask, renew: " + resource.uri)
+                // The existing token, deliberately: a renewal continues the observation, it does
+                // not open a second one.
+                sendObserveRequest(resource.uri, resource.initiatingMessage.token, resource.handler)
             }
         }
     }
@@ -69,14 +94,18 @@ class RegistryOfObservingResources(private val client: CoAPClient) {
         val strToken = encodeHexString(token)
         d("addObservingResource $strToken")
         observingResources[strToken] = resource
-        if (!isTimerRunning) {
-            timer = Timer(true)
-            checkResourcesTask = object : TimerTask() {
-                override fun run() {
-                    checkResources()
+        if (!isCheckingRunning) {
+            checkResourcesJob = scope.launch {
+                while (isActive) {
+                    delay(PERIOD_OF_CHECKING)
+                    // One failed pass must not end renewals for every observation, forever.
+                    try {
+                        checkResources()
+                    } catch (error: Exception) {
+                        e("Observe renewal pass failed: ${error.message}")
+                    }
                 }
             }
-            timer!!.scheduleAtFixedRate(checkResourcesTask, PERIOD_OF_CHECKING, PERIOD_OF_CHECKING)
         }
     }
 
@@ -96,17 +125,17 @@ class RegistryOfObservingResources(private val client: CoAPClient) {
         if (!observingResources.containsKey(hexToken)) return
         observingResources.remove(hexToken)
         if (observingResources.size == 0) {
-            if (isTimerRunning) {
-                checkResourcesTask!!.cancel()
-                checkResourcesTask = null
-                timer!!.cancel()
-                timer = null
-            }
+            checkResourcesJob?.cancel()
+            checkResourcesJob = null
         }
     }
 
-    private val isTimerRunning: Boolean
-        private get() = timer != null
+    /**
+     * isActive, not merely non-null: a loop that died would otherwise wedge this true forever, and
+     * addObservingResource would never relaunch it - every observation silently stops renewing.
+     */
+    private val isCheckingRunning: Boolean
+        get() = checkResourcesJob?.isActive == true
 
     fun processNotification(message: CoAPMessage, maxAge: Int?, sequenceNumber: Int?) {
         val resource = getResource(message.token)
@@ -129,6 +158,7 @@ class RegistryOfObservingResources(private val client: CoAPClient) {
     }
 
     companion object {
-        private const val PERIOD_OF_CHECKING: Long = 10000
+        /** How often expired subscriptions are renewed. Internal so tests can advance past it. */
+        internal const val PERIOD_OF_CHECKING: Long = 10000
     }
 }

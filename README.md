@@ -9,7 +9,7 @@ Coala Java includes:
 - UDP client/server API over CoAP datagram encoding.
 - TCP proxy transport using Coala frame format.
 - Resources with `GET`, `POST`, `PUT`, and `DELETE` handlers.
-- RxJava response APIs and callback-based send APIs.
+- Suspend (`sendAndAwait`/`sendRequestAndAwait`), Flow (`registerObserver`) and callback-based send APIs.
 - Response callbacks, retransmit pool, and delivery statistics.
 - Observable resources and Observe registration handling.
 - Multicast discovery on `224.0.0.187:<port>/info`.
@@ -31,21 +31,34 @@ Coala Java includes:
 
 ## Integration
 
-Add this repository as a submodule and include the Android library module.
+The library is consumed as a JitPack artifact; pin a commit sha for reproducible builds.
 
 `settings.gradle`:
 
 ```gradle
-include ':submodules:coala:app'
+dependencyResolutionManagement {
+    repositories { maven { url 'https://jitpack.io' } }
+}
 ```
 
 Application module `build.gradle`:
 
 ```gradle
 dependencies {
-    implementation project(':submodules:coala:app')
+    implementation 'com.github.coalalib:coalajava:<sha>'
 }
 ```
+
+For local development against a consumer, substitute the artifact with a source clone via
+a composite build — see [PUBLISHING.md](PUBLISHING.md) for the exact block and the rules
+the publication must keep.
+
+## Merging changes
+
+**Merge pull requests with a merge commit — not squash, not rebase.** Consumers pin this library
+by commit sha (see [PUBLISHING.md](PUBLISHING.md)); squashing rewrites the sha, the pinned commit
+stops being reachable from any branch, and JitPack can no longer build it — the consumer's build
+breaks later, with nothing pointing at the cause.
 
 ## Quick Start
 
@@ -96,10 +109,15 @@ client.start()
 val request = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
 request.setURI("coap://127.0.0.1:5683/msg")
 
-client.sendRequest(request).subscribe(
-    { response -> println(response.payload) },
-    { error -> error.printStackTrace() },
-)
+// Launch from a lifecycle-aware scope - never runBlocking on Android, the wait is unbounded.
+scope.launch {
+    try {
+        val response = client.sendRequestAndAwait(request)
+        println(response.payload)
+    } catch (error: Throwable) {
+        error.printStackTrace()
+    }
+}
 ```
 
 Stop sockets and clear pending messages when the instance is no longer needed:
@@ -122,15 +140,15 @@ server.stop()
 | `setTransportMode(mode, tcpProxyAddress)` | Switches between `UDP` and `TCP` transport modes. TCP requires a proxy address. |
 | `send(message, handler)` | Sends a message and delivers the response through `CoAPHandler`. |
 | `send(message, handler, isNeedAddTokenForced)` | Same as `send`, with explicit token auto-generation control. |
-| `send(message)` | Returns `Observable<CoAPMessage>`. |
-| `sendRequest(message)` | Returns `Observable<ResponseData>` with string/byte payload helpers. |
+| `sendAndAwait(message)` | Suspends until the peer answers; cancelling the caller withdraws the message. |
+| `sendRequestAndAwait(message)` | Suspend request/response; returns `ResponseData` with string/byte payload helpers. |
 | `cancel(message)` | Removes a message from the retransmit pool and ack handler pool. |
 | `addResource(path, method, handler)` | Registers a server-side resource. |
 | `removeResource(path, method)` | Removes a registered resource. |
 | `addObservableResource(path, handler)` | Registers an observable `GET` resource. |
 | `getObservableResource(path)` | Returns the observable resource for a path, if present. |
-| `registerObserver(uri)` | Sends an Observe registration and returns `Observable<String?>`. |
-| `runResourceDiscovery()` | Sends multicast discovery and returns `Single<List<ResourceDiscoveryResult>>`. |
+| `registerObserver(uri)` | Sends an Observe registration and returns a cold `Flow<String>` (one registration per collector). |
+| `runResourceDiscovery()` | Suspend multicast discovery returning `List<ResourceDiscoveryResult>`. |
 | `getMessageDeliveryInfo(message)` | Reads retry/proxy/ARQ delivery metrics for a message. |
 | `getReceivedStateForToken(token)` | Reads ARQ receive state for a token. |
 | `setOnPortIsBusyHandler(handler)` | Installs a callback for port binding failures. |
@@ -248,13 +266,9 @@ Responses can be consumed as `ResponseData`:
 val message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
 message.setURI("coap://192.168.1.10:5683/info")
 
-coala.sendRequest(message).subscribe(
-    { response ->
-        println(response.payload)
-        println(response.peerPublicKey?.joinToString(""))
-    },
-    { error -> error.printStackTrace() },
-)
+val response = coala.sendRequestAndAwait(message)
+println(response.payload)
+println(response.peerPublicKey?.joinToString(""))
 ```
 
 ## Discovery
@@ -262,10 +276,9 @@ coala.sendRequest(message).subscribe(
 `runResourceDiscovery()` works only in UDP mode:
 
 ```kotlin
-coala.runResourceDiscovery().subscribe { peers ->
-    peers.forEach { peer ->
-        println("${peer.host}: ${peer.payload}")
-    }
+val peers = coala.runResourceDiscovery()
+peers.forEach { peer ->
+    println("${peer.host}: ${peer.payload}")
 }
 ```
 
@@ -296,10 +309,9 @@ server.addObservableResource("temperature", object : CoAPResource.CoAPResourceHa
 Client-side registration:
 
 ```kotlin
-client.registerObserver("coap://192.168.1.10:5683/temperature").subscribe(
-    { payload -> println(payload) },
-    { error -> error.printStackTrace() },
-)
+client.registerObserver("coap://192.168.1.10:5683/temperature")
+    .catch { error -> error.printStackTrace() }
+    .collect { payload -> println(payload) }
 ```
 
 The Observe layer tracks registrations by token, processes Observe sequence
@@ -315,10 +327,8 @@ val request = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.POST)
 request.setURI("coaps://192.168.1.10:5683/secure")
 request.payload = CoAPMessagePayload("encrypted payload")
 
-coala.sendRequest(request).subscribe(
-    { response -> println(response.payload) },
-    { error -> error.printStackTrace() },
-)
+val response = coala.sendRequestAndAwait(request)
+println(response.payload)
 ```
 
 To pin the peer key, set `peerPublicKey` before sending:
@@ -345,10 +355,8 @@ val request = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
 request.setURI("coap://192.168.1.10:5683/remote/info")
 request.setProxy(InetSocketAddress("10.0.0.1", 5683))
 
-coala.send(request).subscribe(
-    { response -> println(response.payload) },
-    { error -> error.printStackTrace() },
-)
+val answer = coala.sendAndAwait(request)
+println(answer.payload)
 ```
 
 Proxy support uses `Proxy-Uri` and Coala `proxySecurityId` when secure sessions
@@ -441,7 +449,7 @@ Key differences:
 - TCP transport uses a Coala proxy frame format, not RFC 8323 CoAP-over-TCP
   framing.
 - The API is organized around an Android client/server object model: `Coala`,
-  resources, RxJava callbacks, observe registry, message pool, and delivery
+  resources, suspend/callback delivery, observe registry, message pool, and delivery
   metrics.
 
 In short: regular CoAP peers can understand simple UDP CoAP datagrams, but Coala

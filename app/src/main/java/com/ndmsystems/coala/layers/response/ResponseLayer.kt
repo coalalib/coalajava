@@ -21,12 +21,13 @@ class ResponseLayer : ReceiveLayer, SendLayer {
     private val client: CoAPClient
     private val errorFactory: ResponseErrorFactory
 
-    constructor(client: CoAPClient) {
+    @JvmOverloads
+    constructor(client: CoAPClient, requestTtlMillis: Long = DEFAULT_REQUEST_TTL_MILLIS) {
         this.client = client
         requests = Collections.synchronizedMap(
             ExpiringMap.builder()
                 .expirationPolicy(ExpirationPolicy.ACCESSED)
-                .expiration(10, TimeUnit.MINUTES)
+                .expiration(requestTtlMillis, TimeUnit.MILLISECONDS)
                 .build()
         )
         errorFactory = ResponseErrorFactory()
@@ -80,5 +81,10 @@ class ResponseLayer : ReceiveLayer, SendLayer {
 
     override fun onStop() {
         requests.clear()
+    }
+
+    companion object {
+        /** Ten minutes, as it always was. */
+        internal const val DEFAULT_REQUEST_TTL_MILLIS = 10L * 60 * 1000
     }
 }

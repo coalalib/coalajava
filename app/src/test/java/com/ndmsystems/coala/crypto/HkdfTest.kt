@@ -5,10 +5,9 @@ import com.ndmsystems.coala.helpers.Hex.encodeHexString
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import org.junit.Assert
 import org.spekframework.spek2.Spek
-import org.spekframework.spek2.dsl.Skip
 
 class HkdfTest: Spek({
-    test("testCase1", skip = Skip.Yes("Strange not found error")) {
+    test("testCase1") {
         LogHelper.setLogLevel(LogHelper.LogLevel.WARNING)
         val IKM = "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"
         val salt = "000102030405060708090a0b0c"
@@ -28,7 +27,7 @@ class HkdfTest: Spek({
         Assert.assertEquals(encodeHexString(hkdf.myIV), myIV)
     }
 
-    test("testCase2", skip = Skip.Yes("Strange not found error")) {
+    test("testCase2") {
         LogHelper.setLogLevel(LogHelper.LogLevel.WARNING)
         val IKM = "000102030405060708090a0b0c0d0e0f" +
                 "101112131415161718191a1b1c1d1e1f" +
@@ -60,7 +59,7 @@ class HkdfTest: Spek({
         Assert.assertEquals(encodeHexString(hkdf.myIV), myIV)
     }
 
-    test("testCase3", skip = Skip.Yes("Strange not found error")) {
+    test("testCase3") {
         LogHelper.setLogLevel(LogHelper.LogLevel.WARNING)
         val IKM = "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"
         val salt = ""

@@ -103,13 +103,15 @@ class CoalaModule(private val coala: Coala, private val port: Int, private val p
         messagePool: CoAPMessagePool,
         ackHandlersPool: AckHandlersPool,
         client: CoAPClient,
-        securedSessionPool: SecuredSessionPool
+        securedSessionPool: SecuredSessionPool,
+        curveRepository: CurveRepository
     ): SecurityLayer {
         return SecurityLayer(
             messagePool,
             ackHandlersPool,
             client,
-            securedSessionPool
+            securedSessionPool,
+            curveRepository
         )
     }
 
