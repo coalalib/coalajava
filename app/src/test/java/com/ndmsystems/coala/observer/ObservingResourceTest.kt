@@ -83,6 +83,19 @@ object ObservingResourceTest : Spek({
             assertFalse(resource.isExpired, "a huge max age must read as far away, not as already past")
         }
 
+        it("survives a max age above Int.MAX_VALUE, which arrives here as a negative Int") {
+            // The option decoder returns a signed Int, so a uint32 Max-Age above 2^31-1 lands here
+            // negative. Read signed it would put the deadline in the past and expire the
+            // subscription the instant the peer asked for the longest possible one.
+            val clock = TestClock()
+            val resource = resource(clock)
+
+            resource.setMaxAge(-1) // 0xFFFFFFFF on the wire: the largest lifetime CoAP can express
+
+            clock.advance(DEFAULT_MAX_AGE_MILLIS * 10)
+            assertFalse(resource.isExpired, "the largest possible lifetime must not read as expired")
+        }
+
         it("of zero falls due immediately") {
             val clock = TestClock()
             val resource = resource(clock)

@@ -23,9 +23,11 @@ class ObservingResource(
 
     fun setMaxAge(maxAge: Int) {
         v("Set max age at $maxAge")
-        // 1000L, not 1000: Max-Age is peer-controlled and CoAP allows uint32, so 32-bit multiply
-        // wraps negative past ~24.8 days and the subscription would read as instantly expired.
-        validUntil = clock.nowMillis() + maxAge * 1000L
+        // Max-Age is a peer-controlled uint32, and the option decoder hands it over as a signed
+        // Int - a value above Int.MAX_VALUE arrives negative and would put the deadline in the
+        // past, expiring the subscription the moment the peer asked for the longest one. Read the
+        // bits back as unsigned, and multiply in Long so the seconds->millis scaling cannot wrap.
+        validUntil = clock.nowMillis() + (maxAge.toLong() and 0xFFFFFFFFL) * 1000L
     }
 
     val isExpired: Boolean

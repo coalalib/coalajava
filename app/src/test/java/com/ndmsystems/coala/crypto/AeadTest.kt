@@ -67,6 +67,23 @@ object AeadTest : Spek({
             assertFalse(first.contentEquals(second), "a fixed nonce would leak that two messages match")
         }
 
+        it("only carries its low 16 bits, so ids above 16 bits collide and the seal is refused") {
+            // makeNonce writes the counter as two bytes, so id 7 and id 7 + 65536 produce the same
+            // nonce - and a repeated nonce under one key is the failure AES-GCM does not survive.
+            // The JCE refuses it outright, which Aead reports as null: an outbound message that
+            // silently never goes. CoAP message ids are uint16 so this cannot happen today; pinned
+            // so that widening the id type shows up here instead of on the wire.
+            val (client, _) = peerPair()
+            val plain = "payload".toByteArray()
+
+            assertNotNull(client.encrypt(plain, 7, null))
+
+            assertNull(
+                client.encrypt(plain, 7 + 0x10000, null),
+                "the nonce ignores everything above bit 15, and the platform will not reuse one"
+            )
+        }
+
         it("has to match on both sides") {
             // The counter is the message id; opening with the wrong one is what happens if ids ever
             // drift between the peers, and it has to fail rather than return rubbish.
@@ -131,12 +148,17 @@ private const val COUNTER = 42
 /**
  * A client and a server whose keys mirror one another, the way [SecuredSession] sets them up: what
  * one calls "mine" the other calls "the peer's".
+ *
+ * Key and IV lengths are production's: [Hkdf] cuts 16-byte keys and **4-byte** IV prefixes out of
+ * its key material. The length matters - `makeNonce` fills a 12-byte buffer with the IV followed by
+ * two counter bytes, so a longer fixture IV would exercise a nonce layout that never occurs on the
+ * wire and would keep passing across a change that breaks the real one.
  */
 private fun peerPair(seed: Int = 1): Pair<Aead, Aead> {
     val clientKey = ByteArray(16) { (it + seed).toByte() }
     val serverKey = ByteArray(16) { (it + seed + 100).toByte() }
-    val clientIv = ByteArray(10) { (it + seed).toByte() }
-    val serverIv = ByteArray(10) { (it + seed + 50).toByte() }
+    val clientIv = ByteArray(4) { (it + seed).toByte() }
+    val serverIv = ByteArray(4) { (it + seed + 50).toByte() }
 
     val client = Aead(peerKey = serverKey, myKey = clientKey, peerIV = serverIv, myIV = clientIv)
     val server = Aead(peerKey = clientKey, myKey = serverKey, peerIV = clientIv, myIV = serverIv)

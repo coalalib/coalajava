@@ -109,7 +109,9 @@ object CoalaProtocolConformanceTest : Spek({
 
     describe("what this client cannot verify locally") {
 
-        it("records the gaps rather than pretending they are covered") {
+        // xit, not it: there is nothing to assert yet, and a passing case here would claim
+        // coverage that does not exist. Reported as pending until the vectors arrive.
+        xit("records the gaps rather than pretending they are covered") {
             // Kept as an executable note: the protocol document names X25519, HKDF-SHA256 and
             // AES-128-GCM with a 12-byte tag, and the code uses exactly those - but without test
             // vectors from libcoala there is no way to prove the *outputs* match, only the shapes.
@@ -117,7 +119,6 @@ object CoalaProtocolConformanceTest : Spek({
             // structurally in AeadTest; interop is proven daily by the app talking to real routers,
             // and here by the emulator smoke runs. If libcoala ever publishes vectors, replace this
             // case with them.
-            assertTrue(true)
         }
     }
 })
