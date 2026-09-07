@@ -105,6 +105,54 @@ object LogKeys {
     /** Elapsed time in milliseconds. */
     const val DURATION_MS = "duration_ms"
 
+    // ---- Payloads and identity ----------------------------------------------------------------
+
+    /**
+     * The body that was sent or received, verbatim.
+     *
+     * Router answers and CoAP payloads are logged whole all over the app, and a JSON body is
+     * exactly the shape `LogSanitizer` knows how to strip credentials out of - so it stays a
+     * string here rather than being parsed into fields.
+     */
+    const val PAYLOAD = "payload"
+
+    /** The answer to a request, where [PAYLOAD] would be the request's own body. */
+    const val RESPONSE = "response"
+
+    /** Request path, without the host: `/get`, `/rci/`, `/user/auth`. */
+    const val PATH = "path"
+
+    /** Name of the thing acted on, when nothing more specific fits. */
+    const val NAME = "name"
+
+    /** Internet connection profile - the name, or the whole parsed profile. */
+    const val PROFILE = "profile"
+
+    /** The value under discussion, when the message already says what it is. */
+    const val VALUE = "value"
+
+    /** Current state or status, as the code names it. */
+    const val STATE = "state"
+
+    /** Why this happened, in the caller's own words - free text, unlike [CAUSE]. */
+    const val REASON = "reason"
+
+    /** File name or path. */
+    const val FILE = "file"
+
+    // ---- CoAP ---------------------------------------------------------------------------------
+
+    /**
+     * The CoAP message token, hex-encoded.
+     *
+     * Deliberately not `token`: this is a correlation id, and `LogSanitizer` blanks a field named
+     * `token` outright. Redacting it would make every message trace unreadable for nothing.
+     */
+    const val COAP_TOKEN = "coap_token"
+
+    /** The CoAP message id, which unlike [COAP_TOKEN] is per-transmission. */
+    const val COAP_MESSAGE_ID = "coap_message_id"
+
     // ---- App surface -------------------------------------------------------------------------
 
     /** Screen or presenter the call came from, when `caller` is not specific enough. */

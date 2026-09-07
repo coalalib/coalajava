@@ -60,14 +60,14 @@ class LocalPeerDiscoverer(
                 if (!message.token.contentEquals(DISCOVERY_TOKEN)) {
                     LogHelper.d(
                         "sendDiscoveryMulticast: ignoring foreign response",
-                        mapOf(LogKeys.ADDRESS to message.address.toString(), "coap_token" to message.hexToken)
+                        mapOf(LogKeys.ADDRESS to message.address.toString(), LogKeys.COAP_TOKEN to message.hexToken)
                     )
                     return
                 }
 
                 LogHelper.d(
                     "sendDiscoveryMulticast response",
-                    mapOf(LogKeys.ADDRESS to message.address.toString(), "payload" to message.toString())
+                    mapOf(LogKeys.ADDRESS to message.address.toString(), LogKeys.PAYLOAD to message.toString())
                 )
                 resourceDiscoveryHelper.addResult(
                     ResourceDiscoveryResult(

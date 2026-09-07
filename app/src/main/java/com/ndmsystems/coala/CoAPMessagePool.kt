@@ -134,7 +134,7 @@ class CoAPMessagePool(
             if (next.createTime != null && now - next.createTime!! >= expirationLimitFor(next)) {
                 LogHelper.v(
                     "Remove message from pool because expired",
-                    mapOf("coap_message_id" to next.message.id)
+                    mapOf(LogKeys.COAP_MESSAGE_ID to next.message.id)
                 )
                 remove(next.message)
                 raiseAckError(next.message, "message expired")
@@ -148,7 +148,7 @@ class CoAPMessagePool(
             ) {
                 LogHelper.v(
                     "Remove message from pool because garbage",
-                    mapOf("coap_message_id" to next.message.id)
+                    mapOf(LogKeys.COAP_MESSAGE_ID to next.message.id)
                 )
                 remove(next.message)
                 raiseAckError(next.message, "message deleted by garbage")
@@ -160,7 +160,7 @@ class CoAPMessagePool(
                         LogHelper.v(
                             "Remove message from pool because too many attempts",
                             mapOf(
-                                "coap_message_id" to next.message.id,
+                                LogKeys.COAP_MESSAGE_ID to next.message.id,
                                 LogKeys.ATTEMPT to next.sendAttempts,
                                 LogKeys.MAX_ATTEMPTS to params.maxPickAttempts
                             )
@@ -210,7 +210,7 @@ class CoAPMessagePool(
         val token = message.hexToken
         LogHelper.v(
             "Add message to pool",
-            mapOf("coap_message_id" to message.id, "coap_token" to token)
+            mapOf(LogKeys.COAP_MESSAGE_ID to message.id, LogKeys.COAP_TOKEN to token)
         )
         pool[message.id] = QueueElement(message)
         messageIdForToken.putIfAbsent(token, message.id)
@@ -223,7 +223,7 @@ class CoAPMessagePool(
 
     fun getSourceMessageByToken(token: String): CoAPMessage? {
         val id = messageIdForToken[token]
-        LogHelper.v("getSourceMessageByToken", mapOf("coap_token" to token, "coap_message_id" to id))
+        LogHelper.v("getSourceMessageByToken", mapOf(LogKeys.COAP_TOKEN to token, LogKeys.COAP_MESSAGE_ID to id))
         return id?.let { get(it) }
     }
 
@@ -231,7 +231,7 @@ class CoAPMessagePool(
         LogHelper.v(
             "Remove message from pool",
             mapOf(
-                "coap_message_id" to message!!.id,
+                LogKeys.COAP_MESSAGE_ID to message!!.id,
                 "retransmit_counter" to messageDeliveryInfo[message.hexToken]?.toString()
             )
         )
@@ -267,7 +267,7 @@ class CoAPMessagePool(
      * Triggers message's handler with Error
      */
     private fun raiseAckError(message: CoAPMessage?, error: String) {
-        LogHelper.v("raiseAckError", mapOf("coap_message_id" to message?.id, LogKeys.ERROR to error))
+        LogHelper.v("raiseAckError", mapOf(LogKeys.COAP_MESSAGE_ID to message?.id, LogKeys.ERROR to error))
 
         message?.let {
             errorScope.launch {
@@ -288,10 +288,10 @@ class CoAPMessagePool(
             LogHelper.w(
                 "Pool entry",
                 mapOf(
-                    "coap_message_id" to id,
+                    LogKeys.COAP_MESSAGE_ID to id,
                     "coap_type" to message.type.name,
                     "coap_code" to message.code.name,
-                    "path" to message.getURIPathString(),
+                    LogKeys.PATH to message.getURIPathString(),
                     "scheme" to message.getURIScheme().toString()
                 )
             )
@@ -309,13 +309,13 @@ class CoAPMessagePool(
             } else {
                 LogHelper.i(
                     "Try to setNoNeededSending, message not contains in pool",
-                    mapOf("coap_message_id" to message.id)
+                    mapOf(LogKeys.COAP_MESSAGE_ID to message.id)
                 )
             }
         } else {
             LogHelper.i(
                 "Try to setNoNeededSending, id not contains in pool",
-                mapOf("coap_message_id" to message.id)
+                mapOf(LogKeys.COAP_MESSAGE_ID to message.id)
             )
         }
     }

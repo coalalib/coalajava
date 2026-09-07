@@ -32,7 +32,7 @@ class AckHandlersPool(
     private val clearScope = CoroutineScope(SupervisorJob() + clearDispatcher)
 
     fun add(id: Int, handler: CoAPHandler) {
-        LogHelper.v("Add handler to pool", mapOf("coap_message_id" to id))
+        LogHelper.v("Add handler to pool", mapOf(LogKeys.COAP_MESSAGE_ID to id))
         pool[id] = handler
     }
 
@@ -41,7 +41,7 @@ class AckHandlersPool(
     }
 
     fun remove(id: Int) {
-        LogHelper.v("Remove handler from pool", mapOf("coap_message_id" to id))
+        LogHelper.v("Remove handler from pool", mapOf(LogKeys.COAP_MESSAGE_ID to id))
         pool.remove(id)
     }
 
@@ -59,7 +59,7 @@ class AckHandlersPool(
     }
 
     fun raiseAckError(message: CoAPMessage, error: String) {
-        LogHelper.v("raiseAckError", mapOf("coap_message_id" to message.id, LogKeys.ERROR to error))
+        LogHelper.v("raiseAckError", mapOf(LogKeys.COAP_MESSAGE_ID to message.id, LogKeys.ERROR to error))
         val handler = get(message.id)
         if (handler != null) {
             remove(message.id)
@@ -67,7 +67,7 @@ class AckHandlersPool(
         } else {
             LogHelper.d(
                 "Message with null handler",
-                mapOf("coap_message_id" to message.id, LogKeys.ERROR to error)
+                mapOf(LogKeys.COAP_MESSAGE_ID to message.id, LogKeys.ERROR to error)
             )
         }
     }

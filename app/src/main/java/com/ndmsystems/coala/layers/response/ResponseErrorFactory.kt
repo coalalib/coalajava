@@ -46,7 +46,7 @@ class ResponseErrorFactory {
         } catch (e: JSONException) {
             LogHelper.w(
                 "ResponseErrorFactory: can't parse error payload",
-                mapOf("payload" to message.payload?.toString(), LogKeys.ERROR to e.message)
+                mapOf(LogKeys.PAYLOAD to message.payload?.toString(), LogKeys.ERROR to e.message)
             )
         }
         return coAPException

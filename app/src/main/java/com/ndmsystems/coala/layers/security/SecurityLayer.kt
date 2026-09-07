@@ -76,7 +76,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
             if (session == null || !session.isReady) {
                 LogHelper.i(
                     "Decrypt message error, session is null or not ready",
-                    mapOf("coap_token" to message.hexToken, LogKeys.ADDRESS to senderAddress.toString())
+                    mapOf(LogKeys.COAP_TOKEN to message.hexToken, LogKeys.ADDRESS to senderAddress.toString())
                 )
                 mainMessage?.let { addMessageToPending(it) }
                 sendSessionError(message, senderAddress, CoAPMessageOptionCode.OptionSessionNotFound)
@@ -125,8 +125,8 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                                     mapOf(
                                         LogKeys.ADDRESS to message.address.toString(),
                                         "public_key" to Hex.encodeHexString(publicKey),
-                                        "coap_message_id" to clientHelloResponseMessage.id,
-                                        "coap_token" to clientHelloResponseMessage.hexToken
+                                        LogKeys.COAP_MESSAGE_ID to clientHelloResponseMessage.id,
+                                        LogKeys.COAP_TOKEN to clientHelloResponseMessage.hexToken
                                     )
                                 )
                                 val securedSession = getSessionForAddress(message)
@@ -213,7 +213,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
     }
 
     private fun addMessageToPending(message: CoAPMessage) {
-        LogHelper.d("Add message to pending pool", mapOf("coap_message_id" to message.id))
+        LogHelper.d("Add message to pending pool", mapOf(LogKeys.COAP_MESSAGE_ID to message.id))
         messagePool.remove(message)
         synchronized(pendingMessages) { pendingMessages.add(message) }
     }

@@ -5,6 +5,7 @@ import com.ndmsystems.coala.CoAPResourceInput
 import com.ndmsystems.coala.LayersStack.LayerResult
 import com.ndmsystems.coala.ResourceRegistry
 import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.helpers.logging.LogHelper.e
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
@@ -20,7 +21,7 @@ class RequestLayer(private val resourceRegistry: ResourceRegistry, private val c
             val resourcesForPath = resourceRegistry.getResourcesForPath(message.getURIPathString())
             LogHelper.d(
                 "RequestLayer get resource for path",
-                mapOf("path" to message.getURIPathString(), "result" to resourcesForPath.toString())
+                mapOf(LogKeys.PATH to message.getURIPathString(), "result" to resourcesForPath.toString())
             )
             if (resourcesForPath != null) {
                 val resource = resourcesForPath.getResourceByMethod(message.method)
