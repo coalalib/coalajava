@@ -68,6 +68,44 @@ object LogHelper {
         for (logger in loggers) logger.e(message)
     }
 
+    /**
+     * The same five levels, with structured context attached to the record.
+     *
+     * Gated exactly like their message-only counterparts, so turning a level off silences both
+     * forms at once. `e` has no gate for the same reason it has none above: an error is worth
+     * reporting whatever the configured level is.
+     *
+     * @see ILogger.log
+     */
+    @JvmStatic
+    fun v(message: String, fields: Map<String, Any?>) {
+        if (logLevel.ordinal <= LogLevel.VERBOSE.ordinal) dispatch(LogLevel.VERBOSE, message, fields)
+    }
+
+    @JvmStatic
+    fun d(message: String, fields: Map<String, Any?>) {
+        if (logLevel.ordinal <= LogLevel.DEBUG.ordinal) dispatch(LogLevel.DEBUG, message, fields)
+    }
+
+    @JvmStatic
+    fun i(message: String, fields: Map<String, Any?>) {
+        if (logLevel.ordinal <= LogLevel.INFO.ordinal) dispatch(LogLevel.INFO, message, fields)
+    }
+
+    @JvmStatic
+    fun w(message: String, fields: Map<String, Any?>) {
+        if (logLevel.ordinal <= LogLevel.WARNING.ordinal) dispatch(LogLevel.WARNING, message, fields)
+    }
+
+    @JvmStatic
+    fun e(message: String, fields: Map<String, Any?>) {
+        dispatch(LogLevel.ERROR, message, fields)
+    }
+
+    private fun dispatch(level: LogLevel, message: String, fields: Map<String, Any?>) {
+        for (logger in loggers) logger.log(level, message, fields)
+    }
+
     @JvmStatic
     fun getFirstOurAppEntryFromStacktrace(stackTrace: Array<StackTraceElement>, fileNameToExclude: String?): String {
         val stackTraceEntry =
