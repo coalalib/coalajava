@@ -18,7 +18,10 @@ class RequestLayer(private val resourceRegistry: ResourceRegistry, private val c
     override fun onReceive(message: CoAPMessage, senderAddressReference: Reference<InetSocketAddress>): LayerResult {
         if (message.type != CoAPMessageType.ACK && message.code.isRequest) {
             val resourcesForPath = resourceRegistry.getResourcesForPath(message.getURIPathString())
-            LogHelper.d("RequestLayer get resource for path ${message.getURIPathString()}, result is $resourcesForPath")
+            LogHelper.d(
+                "RequestLayer get resource for path",
+                mapOf("path" to message.getURIPathString(), "result" to resourcesForPath.toString())
+            )
             if (resourcesForPath != null) {
                 val resource = resourcesForPath.getResourceByMethod(message.method)
                 if (resource != null) {

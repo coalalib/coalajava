@@ -4,6 +4,7 @@ import com.ndmsystems.coala.CoAPSerializer.DeserializeException
 import com.ndmsystems.coala.CoAPSerializer.fromBytes
 import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.helpers.logging.LogHelper.e
 import com.ndmsystems.coala.helpers.logging.LogHelper.i
@@ -207,7 +208,10 @@ class CoAPReceiver(
             val socketAddress = try {
                 udpPacket.socketAddress as InetSocketAddress
             } catch (e: IllegalArgumentException) {
-                LogHelper.w("IllegalArgumentException when try to get message address: ${e.message}")
+                LogHelper.w(
+                    "IllegalArgumentException when trying to get the message address",
+                    mapOf(LogKeys.ERROR to e.message)
+                )
                 continue
             }
 
@@ -274,7 +278,13 @@ class CoAPReceiver(
                     // the socket is the only thing that wakes it. That is a shutdown, not an error,
                     // and it happens every time the app goes to background.
                     if (isActive) {
-                        LogHelper.e("TCP receiving loop error: ${e.message}, ${LogHelper.getShortStackTraceString(e)}")
+                        LogHelper.e(
+                            "TCP receiving loop error",
+                            mapOf(
+                                LogKeys.ERROR to e.message,
+                                LogKeys.STACK to LogHelper.getShortStackTraceString(e)
+                            )
+                        )
                         // EOF from the proxy does not close our end of the socket, so without this
                         // the restarted loop is handed the same dead connection and dies again.
                         connectionProvider.invalidateTcpSocket()

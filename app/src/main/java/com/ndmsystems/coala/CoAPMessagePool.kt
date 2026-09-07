@@ -5,6 +5,7 @@ import com.ndmsystems.coala.CoAPHandler.AckError
 import com.ndmsystems.coala.exceptions.BaseCoalaThrowable
 import com.ndmsystems.coala.helpers.MonotonicClock
 import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.message.CoAPMessage
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -40,11 +41,16 @@ class CoAPMessagePool(
     init {
         pool = ConcurrentLinkedHashMap.Builder<Int, QueueElement>().maximumWeightedCapacity(1000)
             .build()
-        LogHelper.d("Params resendPeriod = ${params.resendPeriod}")
-        LogHelper.d("Params resendLongPeriod = ${params.resendLongPeriod}")
-        LogHelper.d("Params expirationPeriod = ${params.expirationPeriod}")
-        LogHelper.d("Params garbagePeriod = ${params.garbagePeriod}")
-        LogHelper.d("Params maxPickAttempts = ${params.maxPickAttempts}")
+        LogHelper.d(
+            "CoAPMessagePool params",
+            mapOf(
+                "resend_period" to params.resendPeriod,
+                "resend_long_period" to params.resendLongPeriod,
+                "expiration_period" to params.expirationPeriod,
+                "garbage_period" to params.garbagePeriod,
+                "max_pick_attempts" to params.maxPickAttempts
+            )
+        )
     }
 
     companion object {
@@ -126,7 +132,10 @@ class CoAPMessagePool(
 
             // check if this message is too old to send
             if (next.createTime != null && now - next.createTime!! >= expirationLimitFor(next)) {
-                LogHelper.v("Remove message with id " + next.message.id + " from pool because expired")
+                LogHelper.v(
+                    "Remove message from pool because expired",
+                    mapOf("coap_message_id" to next.message.id)
+                )
                 remove(next.message)
                 raiseAckError(next.message, "message expired")
                 continue
@@ -137,7 +146,10 @@ class CoAPMessagePool(
                 && now - next.sendTime!! >= if (next.message.isRequestWithLongTimeNoAnswer) params.garbagePeriod * LONG_ANSWER_MULTIPLIER
                 else params.garbagePeriod
             ) {
-                LogHelper.v("Remove message with id " + next.message.id + " from pool because garbage")
+                LogHelper.v(
+                    "Remove message from pool because garbage",
+                    mapOf("coap_message_id" to next.message.id)
+                )
                 remove(next.message)
                 raiseAckError(next.message, "message deleted by garbage")
                 continue
@@ -145,7 +157,14 @@ class CoAPMessagePool(
             if (next.isNeededSend) {
                 if (!next.sent) {
                     if (next.sendAttempts >= params.maxPickAttempts) {
-                        LogHelper.v("Remove message with id " + next.message.id + " from pool because too many attempts")
+                        LogHelper.v(
+                            "Remove message from pool because too many attempts",
+                            mapOf(
+                                "coap_message_id" to next.message.id,
+                                LogKeys.ATTEMPT to next.sendAttempts,
+                                LogKeys.MAX_ATTEMPTS to params.maxPickAttempts
+                            )
+                        )
                         remove(next.message)
                         raiseAckError(next.message, "Request Canceled, too many attempts ")
                         continue
@@ -189,7 +208,10 @@ class CoAPMessagePool(
 
     fun add(message: CoAPMessage) {
         val token = message.hexToken
-        LogHelper.v("Add message with id " + message.id + " and token " + token + " to pool")
+        LogHelper.v(
+            "Add message to pool",
+            mapOf("coap_message_id" to message.id, "coap_token" to token)
+        )
         pool[message.id] = QueueElement(message)
         messageIdForToken.putIfAbsent(token, message.id)
     }
@@ -201,12 +223,18 @@ class CoAPMessagePool(
 
     fun getSourceMessageByToken(token: String): CoAPMessage? {
         val id = messageIdForToken[token]
-        LogHelper.v("getSourceMessageByToken: $token, id: $id")
+        LogHelper.v("getSourceMessageByToken", mapOf("coap_token" to token, "coap_message_id" to id))
         return id?.let { get(it) }
     }
 
     fun remove(message: CoAPMessage?) {
-        LogHelper.v("Remove message with id " + message!!.id + " from pool, retransmitCounter " + messageDeliveryInfo[message.hexToken])
+        LogHelper.v(
+            "Remove message from pool",
+            mapOf(
+                "coap_message_id" to message!!.id,
+                "retransmit_counter" to messageDeliveryInfo[message.hexToken]?.toString()
+            )
+        )
         pool.remove(message.id)
         val idForToken = messageIdForToken[message.hexToken]
         if (idForToken != null && idForToken == message.id) {
@@ -216,7 +244,7 @@ class CoAPMessagePool(
 
     fun clear(exception: BaseCoalaThrowable) {
         errorScope.launch {
-            LogHelper.d("Clear message pool, current pool size: ${pool.size}")
+            LogHelper.d("Clear message pool", mapOf("pool_size" to pool.size))
             for (queueElement in pool.values) {
                 if (queueElement.message.responseHandler != null) {
                     queueElement.message.responseHandler?.onError(exception)
@@ -239,7 +267,7 @@ class CoAPMessagePool(
      * Triggers message's handler with Error
      */
     private fun raiseAckError(message: CoAPMessage?, error: String) {
-        LogHelper.v("raiseAckError: ${message?.id}")
+        LogHelper.v("raiseAckError", mapOf("coap_message_id" to message?.id, LogKeys.ERROR to error))
 
         message?.let {
             errorScope.launch {
@@ -257,7 +285,16 @@ class CoAPMessagePool(
         LogHelper.w("Printing pool:")
         for (id in pool.keys) {
             val message = pool[id]!!.message
-            LogHelper.w("Id: " + id + " " + (" type: " + message.type.name + " code: " + message.code.name + " path: " + message.getURIPathString() + " schema: " + message.getURIScheme()))
+            LogHelper.w(
+                "Pool entry",
+                mapOf(
+                    "coap_message_id" to id,
+                    "coap_type" to message.type.name,
+                    "coap_code" to message.code.name,
+                    "path" to message.getURIPathString(),
+                    "scheme" to message.getURIScheme().toString()
+                )
+            )
         }
     }
 
@@ -269,8 +306,18 @@ class CoAPMessagePool(
             if (element != null) {
                 element.isNeededSend = false
                 pool[id] = element
-            } else LogHelper.i("Try to setNoNeededSending, message not contains in pool, id: " + message.id)
-        } else LogHelper.i("Try to setNoNeededSending, id not contains in pool, id: " + message.id)
+            } else {
+                LogHelper.i(
+                    "Try to setNoNeededSending, message not contains in pool",
+                    mapOf("coap_message_id" to message.id)
+                )
+            }
+        } else {
+            LogHelper.i(
+                "Try to setNoNeededSending, id not contains in pool",
+                mapOf("coap_message_id" to message.id)
+            )
+        }
     }
 
     fun getMessageDeliveryInfo(messageToken: String): MessageDeliveryInfo? {

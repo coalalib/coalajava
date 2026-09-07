@@ -2,6 +2,7 @@ package com.ndmsystems.coala
 
 import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageType
@@ -57,11 +58,17 @@ class LocalPeerDiscoverer(
                 // parsed as a local /info announcement. The fixed token is what marks a genuine
                 // discovery exchange, so check it before trusting the payload.
                 if (!message.token.contentEquals(DISCOVERY_TOKEN)) {
-                    LogHelper.d("sendDiscoveryMulticast: ignoring foreign response from ${message.address}, token ${message.hexToken}")
+                    LogHelper.d(
+                        "sendDiscoveryMulticast: ignoring foreign response",
+                        mapOf(LogKeys.ADDRESS to message.address.toString(), "coap_token" to message.hexToken)
+                    )
                     return
                 }
 
-                LogHelper.d("sendDiscoveryMulticast response: " + message.address + ", payload " + message)
+                LogHelper.d(
+                    "sendDiscoveryMulticast response",
+                    mapOf(LogKeys.ADDRESS to message.address.toString(), "payload" to message.toString())
+                )
                 resourceDiscoveryHelper.addResult(
                     ResourceDiscoveryResult(
                         if (message.payload != null) message.payload.toString() else "",
@@ -71,7 +78,7 @@ class LocalPeerDiscoverer(
             }
 
             override fun onAckError(error: String) {
-                LogHelper.d("sendDiscoveryMulticast onAckError: $error")
+                LogHelper.d("sendDiscoveryMulticast onAckError", mapOf(LogKeys.ERROR to error))
             }
         })
         return message

@@ -2,6 +2,7 @@ package com.ndmsystems.coala.crypto
 
 import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import java.nio.ByteBuffer
 
 class Aead(peerKey: ByteArray, myKey: ByteArray, peerIV: ByteArray, myIV: ByteArray) {
@@ -13,10 +14,21 @@ class Aead(peerKey: ByteArray, myKey: ByteArray, peerIV: ByteArray, myIV: ByteAr
     private val decryptor: AesGcm
 
     init {
-        LogHelper.v("Aead peerKey=" + Hex.encodeHexString(peerKey) + ", length: " + peerKey.size)
-        LogHelper.v("Aead myKey=" + Hex.encodeHexString(myKey) + ", length: " + myKey.size)
-        LogHelper.v("Aead peerIV=" + Hex.encodeHexString(peerIV) + ", length: " + peerIV.size)
-        LogHelper.v("Aead myIV=" + Hex.encodeHexString(myIV) + ", length: " + myIV.size)
+        // The names matter: LogSanitizer blanks these four by key before anything is uploaded,
+        // so the material stays in logcat for local debugging and never reaches the collector.
+        LogHelper.v(
+            "Aead keys",
+            mapOf(
+                "peer_key" to Hex.encodeHexString(peerKey),
+                "peer_key_length" to peerKey.size,
+                "my_key" to Hex.encodeHexString(myKey),
+                "my_key_length" to myKey.size,
+                "peer_iv" to Hex.encodeHexString(peerIV),
+                "peer_iv_length" to peerIV.size,
+                "my_iv" to Hex.encodeHexString(myIV),
+                "my_iv_length" to myIV.size
+            )
+        )
         this.peerKey = peerKey
         this.myKey = myKey
         this.peerIV = peerIV
@@ -30,7 +42,13 @@ class Aead(peerKey: ByteArray, myKey: ByteArray, peerIV: ByteArray, myIV: ByteAr
             decryptor.open(cipherText, makeNonce(peerIV, counter), associatedData)
         } catch (e: Exception) {
             e.printStackTrace()
-            LogHelper.e("Error then decrypt: " + e.message + ", nonce: " + Hex.encodeHexString(makeNonce(peerIV, counter)))
+            LogHelper.e(
+                "Error then decrypt",
+                mapOf(
+                    LogKeys.ERROR to e.message,
+                    "nonce" to Hex.encodeHexString(makeNonce(peerIV, counter))
+                )
+            )
             null
         }
     }
@@ -44,7 +62,10 @@ class Aead(peerKey: ByteArray, myKey: ByteArray, peerIV: ByteArray, myIV: ByteAr
             encryptor.seal(plainText, makeNonce(myIV, counter), associatedData)
         } catch (e: Exception) {
             e.printStackTrace()
-            LogHelper.e("Error then encrypt: $e, ${e.message}")
+            LogHelper.e(
+                "Error then encrypt",
+                mapOf(LogKeys.ERROR_TYPE to e.javaClass.name, LogKeys.ERROR to e.message)
+            )
             null
         }
     }

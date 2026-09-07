@@ -26,7 +26,7 @@ class Hkdf(sharedSecret: ByteArray, salt: ByteArray?, info: ByteArray?) {
 
     init {
         val okm = deriveSecrets(sharedSecret, salt, info)
-        LogHelper.v("OKM: " + Hex.encodeHexString(okm))
+        LogHelper.v("OKM", mapOf("okm" to Hex.encodeHexString(okm)))
         System.arraycopy(okm, 0, peerKey, 0, KEY_LEN)
         System.arraycopy(okm, KEY_LEN, myKey, 0, KEY_LEN)
         System.arraycopy(okm, 2 * KEY_LEN, peerIV, 0, 4)

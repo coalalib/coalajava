@@ -1,6 +1,7 @@
 package com.ndmsystems.coala
 
 import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.message.CoAPMessage
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -31,7 +32,7 @@ class AckHandlersPool(
     private val clearScope = CoroutineScope(SupervisorJob() + clearDispatcher)
 
     fun add(id: Int, handler: CoAPHandler) {
-        LogHelper.v("Add handler for message: $id to pool")
+        LogHelper.v("Add handler to pool", mapOf("coap_message_id" to id))
         pool[id] = handler
     }
 
@@ -40,12 +41,12 @@ class AckHandlersPool(
     }
 
     fun remove(id: Int) {
-        LogHelper.v("Remove handler for message: $id from pool")
+        LogHelper.v("Remove handler from pool", mapOf("coap_message_id" to id))
         pool.remove(id)
     }
 
     fun clear(exception: Throwable) {
-        LogHelper.d("Clear handlers pool, current pool size: ${pool.size}")
+        LogHelper.d("Clear handlers pool", mapOf("pool_size" to pool.size))
         clearScope.launch {
             val poolCopy: List<CoAPHandler?> = pool.values.toList()
             pool.clear()
@@ -58,12 +59,17 @@ class AckHandlersPool(
     }
 
     fun raiseAckError(message: CoAPMessage, error: String) {
-        LogHelper.v("raiseAckError ${message.id} $error")
+        LogHelper.v("raiseAckError", mapOf("coap_message_id" to message.id, LogKeys.ERROR to error))
         val handler = get(message.id)
         if (handler != null) {
             remove(message.id)
             handler.onAckError(error + " for id: " + message.id)
-        } else LogHelper.d("Message with null handler error: " + error + " for id: " + message.id)
+        } else {
+            LogHelper.d(
+                "Message with null handler",
+                mapOf("coap_message_id" to message.id, LogKeys.ERROR to error)
+            )
+        }
     }
 
     companion object {
