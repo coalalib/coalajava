@@ -153,6 +153,19 @@ object LogKeys {
     /** The CoAP message id, which unlike [COAP_TOKEN] is per-transmission. */
     const val COAP_MESSAGE_ID = "coap_message_id"
 
+    // ---- Routing ------------------------------------------------------------------------------
+
+    /**
+     * Marks a record as belonging in logcat and nowhere else. A sink that ships records honours it
+     * by dropping the record; the local ones ignore it and print as usual.
+     *
+     * The level is about how bad something is. Where a record should end up is a different
+     * question, and answering it by lowering a level only works by accident - a full wire trace is
+     * not less important than a lifecycle line, it is just useless to a server. This says so
+     * directly, and leaves the level free to mean severity.
+     */
+    const val LOCAL_ONLY = "local_only"
+
     // ---- App surface -------------------------------------------------------------------------
 
     /** Screen or presenter the call came from, when `caller` is not specific enough. */

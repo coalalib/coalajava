@@ -313,7 +313,6 @@ class CoAPSender(
                 connection!!.send(udpPacket)
             }
         } else if (transportMode == Coala.TransportMode.TCP) {
-            LogHelper.d("CoAPSender: sending via TCP socket")
             if (messageData != null && address != null) {
                 val out = connectionProvider.getOrCreateTcpSocket().getOutputStream()
                 out.write(TcpFraming.encode(address, messageData))

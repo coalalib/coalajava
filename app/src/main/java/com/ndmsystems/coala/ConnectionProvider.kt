@@ -128,7 +128,6 @@ class ConnectionProvider internal constructor(
      */
     @Synchronized
     fun invalidateTcpSocket() {
-        LogHelper.d("invalidateTcpSocket")
         tcpSocket?.let { if (!it.isClosed) it.close() }
         tcpSocket = null
     }

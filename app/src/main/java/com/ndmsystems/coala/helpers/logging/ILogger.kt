@@ -53,8 +53,11 @@ interface ILogger {
      * reject or rename one that collides with something it writes itself.
      */
     fun log(level: LogHelper.LogLevel, message: String, fields: Map<String, Any?>) {
-        val line = if (fields.isEmpty()) message else {
-            message + fields.entries.joinToString(", ", prefix = " | ") { "${it.key}=${it.value}" }
+        // LOCAL_ONLY says where the record goes, not what happened, so it is not rendered - the
+        // sinks that read this text are exactly the ones it is addressed to.
+        val rendered = fields.filterKeys { it != LogKeys.LOCAL_ONLY }
+        val line = if (rendered.isEmpty()) message else {
+            message + rendered.entries.joinToString(", ", prefix = " | ") { "${it.key}=${it.value}" }
         }
         when (level) {
             LogHelper.LogLevel.VERBOSE -> v(line)

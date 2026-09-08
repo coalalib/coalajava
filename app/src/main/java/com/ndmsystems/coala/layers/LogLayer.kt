@@ -5,6 +5,7 @@ import com.ndmsystems.coala.LayersStack.LayerResult
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
 import com.ndmsystems.coala.helpers.MessageHelper.getMessageOptionsString
 import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageOptionCode
@@ -17,9 +18,9 @@ class LogLayer : ReceiveLayer, SendLayer {
         if (BuildConfig.DEBUG) {
             val stringForPrint = getStringToPrintReceivedMessage(message, senderAddressReference)
             if (isResourceDiscoveryMessage(message)) {
-                LogHelper.v("Received data from Peer", mapOf("coap_message" to stringForPrint))
+                LogHelper.v("Received data from Peer", localDump(stringForPrint))
             } else {
-                LogHelper.d("Received data from Peer", mapOf("coap_message" to stringForPrint))
+                LogHelper.d("Received data from Peer", localDump(stringForPrint))
             }
         }
         return LayerResult(true, null)
@@ -29,13 +30,24 @@ class LogLayer : ReceiveLayer, SendLayer {
         if (BuildConfig.DEBUG) {
             val stringForPrint = getStringToPrintSendingMessage(message, receiverAddressReference)
             if (isResourceDiscoveryMessage(message) || isArqAckMessage(message)) {
-                LogHelper.v("Send data to Peer", mapOf("coap_message" to stringForPrint))
+                LogHelper.v("Send data to Peer", localDump(stringForPrint))
             } else {
-                LogHelper.d("Send data to Peer", mapOf("coap_message" to stringForPrint))
+                LogHelper.d("Send data to Peer", localDump(stringForPrint))
             }
         }
         return LayerResult(true, null)
     }
+
+    /**
+     * The rendered message, marked for logcat only.
+     *
+     * These two records are the whole CoAP exchange written out, and they are what anyone
+     * debugging this library actually reads - so they keep their level. They are also, measured,
+     * 61% of every byte the uploader ships, which would evict everything else from a queue capped
+     * in kilobytes. Local is where they belong, and [LogKeys.LOCAL_ONLY] says so.
+     */
+    private fun localDump(rendered: String): Map<String, Any?> =
+        mapOf("coap_message" to rendered, LogKeys.LOCAL_ONLY to true)
 
     private fun isArqAckMessage(message: CoAPMessage): Boolean {
         val option = message.getOption(CoAPMessageOptionCode.OptionBlock2)

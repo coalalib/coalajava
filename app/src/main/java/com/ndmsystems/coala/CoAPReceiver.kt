@@ -80,7 +80,6 @@ class CoAPReceiver(
             }
 
             Coala.TransportMode.TCP -> {
-                LogHelper.d("CoAPReceiver TCP mode start if needed")
                 startTcpReceivingLoop()
             }
         }
@@ -307,12 +306,10 @@ class CoAPReceiver(
                         LogHelper.d("TCP receiving loop ended with the socket", mapOf(LogKeys.ERROR to e.message))
                     }
                 }
-                LogHelper.i("TCP receiving loop stopped")
                 // The same self-healing the UDP loop and the sender have: the proxy dropping the
                 // connection must not leave a receiver that reports isStarted yet hears nothing -
                 // requests kept going out while every answer was lost until a transport bounce.
                 delay(RESTART_DELAY_MS)
-                LogHelper.d("Try to restart TCP receiving loop")
                 restartTcpIfStillCurrent(self)
             }
         }
