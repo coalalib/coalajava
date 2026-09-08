@@ -1,14 +1,13 @@
 package com.ndmsystems.coala.layers.security.session
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.crypto.Aead
 import com.ndmsystems.coala.crypto.CurveRepository
 import com.ndmsystems.coala.crypto.Curve25519
 import com.ndmsystems.coala.crypto.Hkdf
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
 import com.ndmsystems.coala.helpers.RBGHelper.rbg
-import com.ndmsystems.coala.helpers.logging.LogHelper.d
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 
@@ -34,7 +33,7 @@ class SecuredSession(incoming: Boolean, private val curveRepository: CurveReposi
     val publicKey: ByteArray
         get() {
             val publicKey = curve!!.publicKey
-            v("getPublicKey: " + encodeHexString(publicKey))
+            LogHelper.v("getPublicKey", mapOf("public_key" to encodeHexString(publicKey)))
             return publicKey
         }
 
@@ -46,7 +45,7 @@ class SecuredSession(incoming: Boolean, private val curveRepository: CurveReposi
             val md: MessageDigest = try {
                 MessageDigest.getInstance("SHA-256")
             } catch (e: NoSuchAlgorithmException) {
-                e("SecuredSession getSignature NoSuchAlgorithmException " + e.message)
+                LogHelper.e("SecuredSession getSignature NoSuchAlgorithmException", mapOf(LogKeys.ERROR to e.message))
                 return ByteArray(0)
             }
             md.update(sharedSecret)
@@ -54,7 +53,7 @@ class SecuredSession(incoming: Boolean, private val curveRepository: CurveReposi
         }
 
     fun start(peerPublicKey: ByteArray) {
-        d("SecuredSession start start")
+        LogHelper.d("SecuredSession start start")
         this.peerPublicKey = peerPublicKey
 
         // Generating Shared Secret based on: MyPrivateKey + PeerPublicKey
@@ -64,7 +63,7 @@ class SecuredSession(incoming: Boolean, private val curveRepository: CurveReposi
 
         // OK! Session is started! We can communicate now with AES Ephemeral Key!
         setAead(parseHKDF(Hkdf(sharedSecret, salt, info)))
-        d("SecuredSession start end")
+        LogHelper.d("SecuredSession start end")
     }
 
     private fun parseHKDF(hkdf: Hkdf): Aead {
@@ -72,7 +71,7 @@ class SecuredSession(incoming: Boolean, private val curveRepository: CurveReposi
     }
 
     fun startPeer(peerPublicKey: ByteArray) {
-        d("SecuredSession start start")
+        LogHelper.d("SecuredSession start start")
         this.peerPublicKey = peerPublicKey
 
         // Generating Shared Secret based on: MyPrivateKey + PeerPublicKey
@@ -82,7 +81,7 @@ class SecuredSession(incoming: Boolean, private val curveRepository: CurveReposi
 
         // OK! Session is started! We can communicate now with AES Ephemeral Key!
         setAead(parseHKDFPeer(Hkdf(sharedSecret, salt, info)))
-        d("SecuredSession start end")
+        LogHelper.d("SecuredSession start end")
     }
 
     private fun parseHKDFPeer(hkdf: Hkdf): Aead {
@@ -96,7 +95,7 @@ class SecuredSession(incoming: Boolean, private val curveRepository: CurveReposi
         // If the Peer is not a Man-In-The-Middle then Peer's Shared Secret is the Same!
         // Hash our Shared Secret to Compare with Peer's Signature!
         if (signature != peerSignature) {
-            e("signature and peerSignature are not Equal")
+            LogHelper.e("signature and peerSignature are not Equal")
         }
 
         // Generating Shared Secret based on: MyPrivateKey + PeerPublicKey

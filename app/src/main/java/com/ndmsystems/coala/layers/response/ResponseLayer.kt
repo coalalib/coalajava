@@ -1,9 +1,10 @@
 package com.ndmsystems.coala.layers.response
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.CoAPClient
 import com.ndmsystems.coala.LayersStack.LayerResult
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
-import com.ndmsystems.coala.helpers.logging.LogHelper.d
 import com.ndmsystems.coala.layers.ReceiveLayer
 import com.ndmsystems.coala.layers.SendLayer
 import com.ndmsystems.coala.message.CoAPMessage
@@ -61,7 +62,7 @@ class ResponseLayer : ReceiveLayer, SendLayer {
 
     private fun sendAckMessage(message: CoAPMessage, from: InetSocketAddress) {
         val ackMessage = CoAPMessage.ackTo(message, from, CoAPMessageCode.CoapCodeEmpty)
-        d("SEND EMPTY ACK " + ackMessage.id)
+        LogHelper.d("Send empty ACK", mapOf(LogKeys.COAP_MESSAGE_ID to ackMessage.id))
         client.send(ackMessage, null)
     }
 

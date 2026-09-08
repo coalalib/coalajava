@@ -1,13 +1,12 @@
 package com.ndmsystems.coala.layers
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.AckHandlersPool
 import com.ndmsystems.coala.CoAPClient
 import com.ndmsystems.coala.CoAPResourceInput
 import com.ndmsystems.coala.CoAPServer
 import com.ndmsystems.coala.LayersStack.LayerResult
-import com.ndmsystems.coala.helpers.logging.LogHelper.d
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageOption
@@ -47,16 +46,16 @@ class ObserveLayer(
     private fun onReceiveResponse(message: CoAPMessage, senderAddress: InetSocketAddress): LayerResult {
         if (isNotificationWithoutToken(message)) {
             sendResetMessage(senderAddress, message)
-            v("Notification without token")
+            LogHelper.v("Notification without token")
             return LayerResult(false, null)
         } else if (isExpectedNotification(message)) {
-            v("Expected notification")
+            LogHelper.v("Expected notification")
             client.cancel(message)
             val maxAgeOption = message.getOption(CoAPMessageOptionCode.OptionMaxAge)
             val maxAge = if (maxAgeOption?.value != null) maxAgeOption.value as Int else DEFAULT_MAX_AGE
             val sequenceNumber = getSequenceNumber(message)
             registryOfObservingResources.processNotification(message, maxAge, sequenceNumber)
-            v("isProcessNotificationSuccessful, sendAckMessage")
+            LogHelper.v("isProcessNotificationSuccessful, sendAckMessage")
             if (message.type == CoAPMessageType.CON) sendAckMessage(senderAddress, message)
             if (isObservationStopped(message)) {
                 registryOfObservingResources.removeObservingResource(message.token)
@@ -71,18 +70,18 @@ class ObserveLayer(
     }
 
     private fun onReceiveRequest(message: CoAPMessage, senderAddress: InetSocketAddress): LayerResult {
-        v("ObserveLayer: onReceiveRequest")
-        v("searching for observable path: " + message.getURIPathString())
+        LogHelper.v("ObserveLayer: onReceiveRequest")
+        LogHelper.v("Searching for an observable path", mapOf(LogKeys.PATH to message.getURIPathString()))
         val resource = server.getObservableResource(message.getURIPathString()) ?: return LayerResult(true, null)
         if (isRegistrationRequest(message)) {
-            d("Add observer")
+            LogHelper.d("Add observer")
             val observer = Observer(message, senderAddress)
             resource.addObserver(observer)
             val output = resource.handler.onReceive(CoAPResourceInput(message, null))
             resource.send(output, observer)
             return LayerResult(false, null)
         } else if (isDeregistrationRequest(message)) {
-            d("Remove observer")
+            LogHelper.d("Remove observer")
             val observer = Observer(message, senderAddress)
             resource.removeObserver(observer)
             // Suspected missing default response for GET
@@ -130,7 +129,7 @@ class ObserveLayer(
     }
 
     private fun sendAckMessage(senderAddress: InetSocketAddress, message: CoAPMessage) {
-        v("Send ack message")
+        LogHelper.v("Send ack message")
         val responseMessage = CoAPMessage.ackTo(message, senderAddress, CoAPMessageCode.CoapCodeEmpty)
         if (message.getOption(CoAPMessageOptionCode.OptionBlock1) != null) responseMessage.addOption(
             CoAPMessageOption(
@@ -156,12 +155,12 @@ class ObserveLayer(
     }
 
     private fun sendResetMessage(senderAddress: InetSocketAddress, message: CoAPMessage) {
-        v("Send reset message")
+        LogHelper.v("Send reset message")
         val responseMessage = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.CoapCodeEmpty, message.id)
         if (message.token != null) responseMessage.token = message.token
         responseMessage.address = senderAddress
         if (responseMessage.address == null) {
-            e("Message address == null in ObserveLayer sendResetMessage")
+            LogHelper.e("Message address == null in ObserveLayer sendResetMessage")
         }
         if (message.getOption(CoAPMessageOptionCode.OptionBlock1) != null) {
             responseMessage.addOption(

@@ -1,6 +1,6 @@
 package com.ndmsystems.coala.message
 
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.Arrays
@@ -56,7 +56,7 @@ class CoAPMessageOption : Comparable<CoAPMessageOption> {
             CoAPMessageOptionCode.OptionCookie, CoAPMessageOptionCode.OptionCoapsURI, CoAPMessageOptionCode.OptionWindowChangeable -> value = data
             CoAPMessageOptionCode.OptionChecksum -> value = String(data, StandardCharsets.UTF_8)
             else -> {
-                e("Try from byte unknown option: " + this.code)
+                LogHelper.e("Try from byte unknown option", mapOf("option_code" to this.code.toString()))
                 value = data
             }
         }

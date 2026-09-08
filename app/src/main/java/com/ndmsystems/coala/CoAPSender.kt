@@ -1,10 +1,8 @@
 package com.ndmsystems.coala
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.helpers.Hex
-import com.ndmsystems.coala.helpers.logging.LogHelper.d
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
-import com.ndmsystems.coala.helpers.logging.LogHelper.i
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.layers.LogLayer.Companion.getStringToPrintSendingMessage
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageType
@@ -61,7 +59,7 @@ class CoAPSender(
 
     @Synchronized
     fun start() {
-        v("CoAPSender start with mode $transportMode")
+        LogHelper.v("CoAPSender start", mapOf("transport_mode" to transportMode.toString()))
 
         if (transportMode == Coala.TransportMode.UDP) {
             if (connection == null) {
@@ -76,7 +74,7 @@ class CoAPSender(
                         } catch (error: CancellationException) {
                             throw error
                         } catch (error: Throwable) {
-                            e("Can't start CoAPSender: $error")
+                            LogHelper.e("Can't start CoAPSender", mapOf(LogKeys.ERROR to error.toString()))
                         }
                     }
                     connectWaiter = waiter
@@ -89,7 +87,7 @@ class CoAPSender(
                 startSendingLoop()
             }
         } else {
-            i("CoAPSender TCP mode try to start if needed")
+            LogHelper.i("CoAPSender TCP mode try to start if needed")
             startSendingLoop()
         }
     }
@@ -102,11 +100,11 @@ class CoAPSender(
     @Synchronized
     private fun onUdpSocketStarted(waiter: Job, newConnection: MulticastSocket?) {
         if (connectWaiter !== waiter) {
-            d("Connect finished after the sender was stopped, ignoring the socket")
+            LogHelper.d("Connect finished after the sender was stopped, ignoring the socket")
             return
         }
         connectWaiter = null
-        d("CoAPSender started, socket: $newConnection")
+        LogHelper.d("CoAPSender started", mapOf("socket" to newConnection.toString()))
         connection = newConnection
         startSendingLoop()
     }
@@ -118,7 +116,7 @@ class CoAPSender(
         // be able to observe isStarted == false and take itself for already retired.
         isStarted = true
         if (needsNewLoop) {
-            v("Sending loop try to start")
+            LogHelper.v("Sending loop try to start")
             // Assigned under the monitor, and everything the loop does to this field is taken
             // under the same monitor, so the loop cannot clear a field it has not been given yet.
             sendingJob = scope.launch(workDispatcher) {
@@ -128,14 +126,20 @@ class CoAPSender(
                 } catch (cancellation: CancellationException) {
                     throw cancellation
                 } catch (error: Throwable) {
-                    i("Sending loop stopped by ${error.javaClass.simpleName}: ${error.message}")
+                    LogHelper.i(
+                        "Sending loop stopped by an error",
+                        mapOf(
+                            LogKeys.ERROR_TYPE to error.javaClass.simpleName,
+                            LogKeys.ERROR to error.message
+                        )
+                    )
                 }
-                v("Sending loop end")
+                LogHelper.v("Sending loop end")
                 // Reached only when the loop came back without the job being cancelled - a
                 // deliberate stop() cancels it, and this delay then throws straight through
                 // instead of reviving a sender somebody asked to shut down.
                 delay(RESTART_DELAY_MS)
-                d("Try to start sending loop")
+                LogHelper.d("Try to start sending loop")
                 restartIfStillCurrent(self)
             }
         }
@@ -153,7 +157,7 @@ class CoAPSender(
     @Synchronized
     private fun restartIfStillCurrent(job: Job) {
         if (!isStarted || sendingJob !== job) {
-            d("Sending loop was retired while waiting to restart, leaving it alone")
+            LogHelper.d("Sending loop was retired while waiting to restart, leaving it alone")
             return
         }
         sendingJob = null
@@ -183,7 +187,7 @@ class CoAPSender(
      * the caller's restart is for.
      */
     private suspend fun runSendingLoop() {
-        v("Sending loop start, number in pool: ${messagePool.size()}")
+        LogHelper.v("Sending loop start", mapOf(LogKeys.COUNT to messagePool.size()))
         while (currentCoroutineContext().isActive) {
             val message = messagePool.next()
             if (message == null) {
@@ -196,43 +200,63 @@ class CoAPSender(
                 // Hack to preserve original destination address before layers rewrite it
                 message.address = destinationAddressReference.get()
                 if (message.address == null) {
-                    e("Message address == null in sending loop")
+                    LogHelper.e("Message address == null in sending loop")
                 }
                 // Run Layers Chain
                 val layerResult = try {
                     layersStack.onSend(message, destinationAddressReference)
                 } catch (e: LayersStack.InterruptedException) {
-                    d("Sending loop interrupted while running layers: ${e.message}")
+                    LogHelper.d("Sending loop interrupted while running layers", mapOf(LogKeys.ERROR to e.message))
                     continue
                 } catch (ex: Exception) {
-                    i("Exception in sending loop layers: ${ex.message}, ${Hex.encodeHexString(message.token)}")
+                    LogHelper.i(
+                        "Exception in sending loop layers",
+                        mapOf(
+                            LogKeys.ERROR to ex.message,
+                            LogKeys.COAP_TOKEN to Hex.encodeHexString(message.token)
+                        )
+                    )
                     continue
                 }
                 val messageForSend = layerResult.message ?: message
                 if (destinationAddressReference.get() == null) {
-                    e(
-                        "Destination is null!! isNeedToSend = " + layerResult.shouldContinue + ", message = " + getStringToPrintSendingMessage(
-                            messageForSend,
-                            destinationAddressReference
+                    LogHelper.e(
+                        "Destination is null!!",
+                        mapOf(
+                            "should_continue" to layerResult.shouldContinue,
+                            "coap_message" to getStringToPrintSendingMessage(
+                                messageForSend,
+                                destinationAddressReference
+                            )
                         )
                     )
                 } else {
                     if (destinationAddressReference.get().toString().contains("local")) {
-                        e("Try to send to localhost!!!")
+                        LogHelper.e("Try to send to localhost!!!")
                     }
                 }
 
                 // send it now!
                 if (layerResult.shouldContinue) {
                     if (destinationAddressReference.get() == null) {
-                        e(
-                            "Destination is null, but need to sending, message = " + getStringToPrintSendingMessage(
-                                messageForSend,
-                                destinationAddressReference
+                        LogHelper.e(
+                            "Destination is null, but the message needs sending",
+                            mapOf(
+                                "coap_message" to getStringToPrintSendingMessage(
+                                    messageForSend,
+                                    destinationAddressReference
+                                )
                             )
                         )
                     } else {
-                        v("message id ${message.id}, token ${Hex.encodeHexString(message.token)} actual sending to ${destinationAddressReference.get()}")
+                        LogHelper.v(
+                            "Message sending",
+                            mapOf(
+                                LogKeys.COAP_MESSAGE_ID to message.id,
+                                LogKeys.COAP_TOKEN to Hex.encodeHexString(message.token),
+                                LogKeys.ADDRESS to destinationAddressReference.get().toString()
+                            )
+                        )
                         sendMessageToAddress(destinationAddressReference.get(), messageForSend)
                     }
                 }
@@ -243,7 +267,7 @@ class CoAPSender(
                     messagePool.remove(messageForSend)
                 }
             } catch (e: IOException) {
-                d("IOException: " + e.message)
+                LogHelper.d("IOException in the sending loop", mapOf(LogKeys.ERROR to e.message))
                 // A broken pipe to the proxy: our end still reads as open, so drop it or every
                 // retry keeps writing into the same dead connection.
                 if (transportMode == Coala.TransportMode.TCP) connectionProvider.invalidateTcpSocket()
@@ -255,11 +279,18 @@ class CoAPSender(
                 // address NPE, a misconfigured TCP proxy) does not kill the whole loop and put it
                 // into a silent 500 ms restart cycle. The message keeps being offered until its
                 // attempt budget evicts it, which bounds the noise.
-                e("Unexpected error sending message ${message.id}: ${error.javaClass.simpleName} ${error.message}")
+                LogHelper.e(
+                    "Unexpected error sending message",
+                    mapOf(
+                        LogKeys.COAP_MESSAGE_ID to message.id,
+                        LogKeys.ERROR_TYPE to error.javaClass.simpleName,
+                        LogKeys.ERROR to error.message
+                    )
+                )
                 delay(IDLE_POLL_MS)
             }
         }
-        i("Sending loop stopped")
+        LogHelper.i("Sending loop stopped")
     }
 
     @Throws(IOException::class)
@@ -271,7 +302,10 @@ class CoAPSender(
                 try {
                     udpPacket = DatagramPacket(messageData, messageData.size, address)
                 } catch (exception: IllegalArgumentException) {
-                    e("sendMessageToAddress IllegalArgumentException, address: " + address.toString())
+                    LogHelper.e(
+                        "sendMessageToAddress IllegalArgumentException",
+                        mapOf(LogKeys.ADDRESS to address.toString())
+                    )
                 }
             }
             // Send data!
@@ -279,7 +313,7 @@ class CoAPSender(
                 connection!!.send(udpPacket)
             }
         } else if (transportMode == Coala.TransportMode.TCP) {
-            d("CoAPSender: sending via TCP socket")
+            LogHelper.d("CoAPSender: sending via TCP socket")
             if (messageData != null && address != null) {
                 val out = connectionProvider.getOrCreateTcpSocket().getOutputStream()
                 out.write(TcpFraming.encode(address, messageData))

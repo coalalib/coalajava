@@ -1,8 +1,8 @@
 package com.ndmsystems.coala.helpers
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.crypto.Aead
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
-import com.ndmsystems.coala.helpers.logging.LogHelper.w
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageOption
 import com.ndmsystems.coala.message.CoAPMessageOptionCode
@@ -31,7 +31,10 @@ object EncryptionHelper {
         if (message.payload != null) {
             val newPayload = aead.decrypt(message.payload!!.content, message.id, null)
             if (newPayload == null) {
-                e("Can't decrypt message with id: " + message.id + ", token: " + message.hexToken)
+                LogHelper.e(
+                    "Can't decrypt message",
+                    mapOf(LogKeys.COAP_MESSAGE_ID to message.id, LogKeys.COAP_TOKEN to message.hexToken)
+                )
                 message.payload = null
                 return false
             }
@@ -47,7 +50,7 @@ object EncryptionHelper {
             if (uriBytes != null) {
                 message.setURI(String(uriBytes))
                 message.removeOption(CoAPMessageOptionCode.OptionCoapsURI)
-            } else w("OptionCoapsURI empty after decrypt")
+            } else LogHelper.w("OptionCoapsURI empty after decrypt")
         }
     }
 }

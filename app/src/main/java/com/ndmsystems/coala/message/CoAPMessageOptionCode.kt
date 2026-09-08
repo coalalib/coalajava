@@ -1,6 +1,8 @@
 package com.ndmsystems.coala.message
 
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
+
 
 enum class CoAPMessageOptionCode
 /**
@@ -79,7 +81,7 @@ enum class CoAPMessageOptionCode
                 4005 -> OptionCoapsURI
                 4006 -> OptionChecksum
                 else -> {
-                    e("Unknown CoAP Option Code $value")
+                    LogHelper.e("Unknown CoAP Option Code", mapOf(LogKeys.VALUE to value))
                     DefaultOption
                 }
             }

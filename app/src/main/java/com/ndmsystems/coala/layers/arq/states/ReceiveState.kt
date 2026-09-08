@@ -1,6 +1,6 @@
 package com.ndmsystems.coala.layers.arq.states
 
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.layers.arq.Block
 import com.ndmsystems.coala.helpers.MonotonicClock
 import com.ndmsystems.coala.message.CoAPMessage
@@ -28,7 +28,7 @@ class ReceiveState(
                         currentPosInResult += forCopy.size
                     }
                 } else {
-                    v("Accumulator don't contain block number $i or it's null")
+                    LogHelper.v("Accumulator does not contain the block, or it is null", mapOf("block_number" to i))
                 }
             }
             return result
@@ -39,14 +39,14 @@ class ReceiveState(
     fun didReceiveBlock(block: Block, code: CoAPMessageCode) {
         if (code != CoAPMessageCode.CoapCodeContinue) initiatingMessage!!.code = code
         if (accumulator.containsKey(block.number)) {
-            v("Already received block with number " + block.number)
+            LogHelper.v("Already received this block", mapOf("block_number" to block.number))
             onResend()
         } else {
             numberOfReceivedBlocks++
             accumulator[block.number] = block.data
             if (!block.isMoreComing) {
                 lastBlockNumber = block.number
-                v("Received last block, lastBlockNumber = $lastBlockNumber")
+                LogHelper.v("Received the last block", mapOf("block_number" to lastBlockNumber))
             }
             if (isTransferCompleted) onTransferCompleted()
         }

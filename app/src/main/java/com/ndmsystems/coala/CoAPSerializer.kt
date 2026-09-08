@@ -1,8 +1,7 @@
 package com.ndmsystems.coala
 
-import com.ndmsystems.coala.helpers.logging.LogHelper.d
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
-import com.ndmsystems.coala.helpers.logging.LogHelper.w
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageOption
@@ -244,10 +243,10 @@ object CoAPSerializer {
                 val optionCode = CoAPMessageOptionCode.valueOf(actualOptionNumber)
                 message.addOption(CoAPMessageOption(optionCode, optionValue))
             } catch (e: IOException) {
-                e(e.message!!)
+                LogHelper.e("Can't read the option", mapOf(LogKeys.ERROR to e.message))
                 continue
             } catch (e: IllegalArgumentException) {
-                e(e.message!!)
+                LogHelper.e("Can't read the option", mapOf(LogKeys.ERROR to e.message))
                 continue
             }
             previousOptionNumber = actualOptionNumber
@@ -282,7 +281,7 @@ object CoAPSerializer {
         try {
             encodeHeader(buffer, messageToEncode)
         } catch (e: IOException) {
-            e(e.message!!)
+            LogHelper.e("Can't encode the header", mapOf(LogKeys.ERROR to e.message))
             return null
         }
 
@@ -290,7 +289,7 @@ object CoAPSerializer {
         try {
             encodeOptions(buffer, messageToEncode)
         } catch (e: Exception) {
-            e(e.message!!)
+            LogHelper.e("Can't encode the options", mapOf(LogKeys.ERROR to e.message))
             return null
         }
 
@@ -360,7 +359,7 @@ object CoAPSerializer {
             throw Exception("Previous option $previousNumber must not be larger then current option no $optionNumber")
         }
         val rawOptionValue = option.toBytes()
-        if (rawOptionValue.isEmpty()) w("Option with null length: $optionNumber")
+        if (rawOptionValue.isEmpty()) LogHelper.w("Option with null length", mapOf("option_number" to optionNumber))
         val optionDelta = optionNumber - previousNumber
         val optionLength = Math.min(rawOptionValue.size, option.maxSizeInBytes)
         if (optionLength > MAX_OPTION_LENGTH) {
@@ -370,7 +369,7 @@ object CoAPSerializer {
             throw Exception("Option no. $optionNumber exceeds maximum option delta: $optionDelta vs $MAX_OPTION_DELTA")
         }
         if (optionNumber == CoAPMessageOptionCode.OptionContentFormat.value) {
-            d("encodeOption, length: $optionLength, delta: $optionDelta")
+            LogHelper.d("encodeOption", mapOf("option_length" to optionLength, "option_delta" to optionDelta))
         }
         if (optionDelta < 13) {
             //option delta < 13

@@ -1,11 +1,10 @@
 package com.ndmsystems.coala.layers
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.BuildConfig
 import com.ndmsystems.coala.LayersStack.LayerResult
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
 import com.ndmsystems.coala.helpers.MessageHelper.getMessageOptionsString
-import com.ndmsystems.coala.helpers.logging.LogHelper.d
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageOptionCode
@@ -18,9 +17,9 @@ class LogLayer : ReceiveLayer, SendLayer {
         if (BuildConfig.DEBUG) {
             val stringForPrint = getStringToPrintReceivedMessage(message, senderAddressReference)
             if (isResourceDiscoveryMessage(message)) {
-                v(stringForPrint)
+                LogHelper.v("Received data from Peer", mapOf("coap_message" to stringForPrint))
             } else {
-                d(stringForPrint)
+                LogHelper.d("Received data from Peer", mapOf("coap_message" to stringForPrint))
             }
         }
         return LayerResult(true, null)
@@ -30,9 +29,9 @@ class LogLayer : ReceiveLayer, SendLayer {
         if (BuildConfig.DEBUG) {
             val stringForPrint = getStringToPrintSendingMessage(message, receiverAddressReference)
             if (isResourceDiscoveryMessage(message) || isArqAckMessage(message)) {
-                v(stringForPrint)
+                LogHelper.v("Send data to Peer", mapOf("coap_message" to stringForPrint))
             } else {
-                d(stringForPrint)
+                LogHelper.d("Send data to Peer", mapOf("coap_message" to stringForPrint))
             }
         }
         return LayerResult(true, null)

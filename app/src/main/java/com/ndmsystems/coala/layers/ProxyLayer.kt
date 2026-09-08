@@ -1,11 +1,10 @@
 package com.ndmsystems.coala.layers
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.CoAPClient
 import com.ndmsystems.coala.CoAPMessagePool
 import com.ndmsystems.coala.LayersStack.LayerResult
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
-import com.ndmsystems.coala.helpers.logging.LogHelper.i
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageOptionCode
@@ -16,25 +15,33 @@ import java.net.InetSocketAddress
 class ProxyLayer(private val client: CoAPClient, private val messagePool: CoAPMessagePool) : ReceiveLayer, SendLayer {
     override fun onReceive(message: CoAPMessage, senderAddressReference: Reference<InetSocketAddress>): LayerResult {
         val sourceMessage = messagePool.getSourceMessageByToken(message.hexToken)
-        v(
-            "ProxyLayer onReceive:" +
-                    " message: " + message.id +
-                    " sourceMessage id = " + (sourceMessage?.id ?: "null") +
-                    " destination: " + sourceMessage?.address +
-                    " proxy: " + if (sourceMessage?.proxy == null) "null" else sourceMessage.proxy
+        LogHelper.v(
+            "ProxyLayer onReceive",
+            mapOf(
+                LogKeys.COAP_MESSAGE_ID to message.id,
+                "source_message_id" to sourceMessage?.id,
+                LogKeys.ADDRESS to sourceMessage?.address?.toString(),
+                "proxy" to sourceMessage?.proxy?.toString()
+            )
         )
         if (sourceMessage?.proxy != null) {
-            i("Set destination: " + sourceMessage.address + ", proxy: " + sourceMessage.proxy)
+            LogHelper.i(
+                "Set destination",
+                mapOf(
+                    LogKeys.ADDRESS to sourceMessage.address?.toString(),
+                    "proxy" to sourceMessage.proxy?.toString()
+                )
+            )
             message.address = sourceMessage.address
             if (message.address == null) {
-                e("Message address == null in ProxyLayer onReceive")
+                LogHelper.e("Message address == null in ProxyLayer onReceive")
             }
             sourceMessage.address.let { senderAddressReference.set(it) }
         } else {
             if (sourceMessage == null) {
-                v("Source message is null")
+                LogHelper.v("Source message is null")
             } else {
-                v("Source message proxy: " + sourceMessage.proxy)
+                LogHelper.v("Source message proxy", mapOf("proxy" to sourceMessage.proxy?.toString()))
             }
         }
         if (!isAboutProxying(message)) return LayerResult(true, null)
@@ -47,11 +54,13 @@ class ProxyLayer(private val client: CoAPClient, private val messagePool: CoAPMe
 
     override fun onSend(message: CoAPMessage, receiverAddressReference: Reference<InetSocketAddress>): LayerResult {
         if (!isAboutProxying(message)) return LayerResult(true, null)
-        v(
-            "ProxyLayer onSend:" +
-                    " message: " + message.id +
-                    " destination: " + message.address +
-                    " proxy: " + if (message.proxy == null) "null" else message.proxy
+        LogHelper.v(
+            "ProxyLayer onSend",
+            mapOf(
+                LogKeys.COAP_MESSAGE_ID to message.id,
+                LogKeys.ADDRESS to message.address?.toString(),
+                "proxy" to message.proxy?.toString()
+            )
         )
         receiverAddressReference.set(message.proxy!!)
         return LayerResult(true, null)
@@ -62,7 +71,7 @@ class ProxyLayer(private val client: CoAPClient, private val messagePool: CoAPMe
     }
 
     private fun respondNotSupported(message: CoAPMessage, senderAddress: InetSocketAddress) {
-        v("Send \"proxy is not supported\" message")
+        LogHelper.v("Send \"proxy is not supported\" message")
         val responseMessage = CoAPMessage(CoAPMessageType.NON, CoAPMessageCode.CoapCodeProxyingNotSupported, message.id)
         if (message.token != null) responseMessage.token = message.token
         responseMessage.address = senderAddress

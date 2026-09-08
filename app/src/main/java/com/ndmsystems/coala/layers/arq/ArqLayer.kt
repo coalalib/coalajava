@@ -1,5 +1,7 @@
 package com.ndmsystems.coala.layers.arq
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.BuildConfig
 import com.ndmsystems.coala.CoAPClient
 import com.ndmsystems.coala.CoAPHandler
@@ -8,9 +10,6 @@ import com.ndmsystems.coala.LayersStack
 import com.ndmsystems.coala.helpers.Hex.decodeHex
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
 import com.ndmsystems.coala.helpers.MessageHelper.getMessageOptionsString
-import com.ndmsystems.coala.helpers.logging.LogHelper.d
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.layers.ReceiveLayer
 import com.ndmsystems.coala.layers.SendLayer
 import com.ndmsystems.coala.layers.arq.data.DataFactory
@@ -117,7 +116,10 @@ class ArqLayer(
 
                 val sendState = sendStates[token]
                 if (sendState != null && sendState.isCompleted) {
-                    v("ARQ: Sending completed, pushing to message pool original message ${sendState.originalMessage.id}")
+                    LogHelper.v(
+                        "ARQ: sending completed, pushing the original message to the pool",
+                        mapOf(LogKeys.COAP_MESSAGE_ID to sendState.originalMessage.id)
+                    )
 
                     // Completion should depend on response code, not only CoapCodeEmpty
                     if (mutableIncomingMessage.code == CoAPMessageCode.CoapCodeContinue) {
@@ -138,12 +140,12 @@ class ArqLayer(
                 // Receive CON
                 val payload = mutableIncomingMessage.payload
                 if (payload == null) {
-                    e("ARQ: payload expected for token = $token")
+                    LogHelper.e("ARQ: payload expected", mapOf(LogKeys.COAP_TOKEN to token))
                     throw RuntimeException("ARQ: payload expected for token = $token")
                 }
                 var receiveState = receiveStates[token]
                 if (receiveState == null) {
-                    v("ARQ: creating ReceiveState for token = $token")
+                    LogHelper.v("ARQ: creating ReceiveState", mapOf(LogKeys.COAP_TOKEN to token))
                     receiveState = ReceiveState(mutableIncomingMessage)
                     receiveStates[token] = receiveState
                 }
@@ -154,10 +156,14 @@ class ArqLayer(
                     //receiveStates.remove(token);
                     val originalMessage = messagePool.getSourceMessageByToken(mutableIncomingMessage.hexToken)
                     if (originalMessage != null) {
-                        v(
-                            "ARQ: Receive " + mutableIncomingMessage.hexToken + " completed, size " + receiveState.dataSize
-                                    + ", passing message " + originalMessage.id + ", with token: " + encodeHexString(originalMessage.token)
-                                    + " along"
+                        LogHelper.v(
+                            "ARQ: receive completed, passing the original message along",
+                            mapOf(
+                                LogKeys.COAP_TOKEN to mutableIncomingMessage.hexToken,
+                                LogKeys.BYTES to receiveState.dataSize,
+                                LogKeys.COAP_MESSAGE_ID to originalMessage.id,
+                                "original_token" to encodeHexString(originalMessage.token)
+                            )
                         )
                         if (originalMessage.hasOption(CoAPMessageOptionCode.OptionProxyURI)) {
                             ackMessage.addOption(originalMessage.getOption(CoAPMessageOptionCode.OptionProxyURI)!!)
@@ -170,9 +176,12 @@ class ArqLayer(
                         }
                         mutableIncomingMessage.id = originalMessage.id
                     } else {
-                        v(
-                            "ARQ: Receive with originalMessage = null, token " + mutableIncomingMessage.hexToken + " completed, size "
-                                    + receiveState.dataSize
+                        LogHelper.v(
+                            "ARQ: receive completed with originalMessage = null",
+                            mapOf(
+                                LogKeys.COAP_TOKEN to mutableIncomingMessage.hexToken,
+                                LogKeys.BYTES to receiveState.dataSize
+                            )
                         )
                     }
                     ackMessage.code = CoAPMessageCode.CoapCodeEmpty
@@ -187,9 +196,12 @@ class ArqLayer(
                     return LayersStack.LayerResult(true, mutableIncomingMessage)
                 } else {
                     if (BuildConfig.DEBUG) { //For no slowing prod version, so many logs, what don't showing anymore
-                        v(
-                            "ARQ: Receive " + mutableIncomingMessage.hexToken + " in progress, responding with ACK continued, received: "
-                                    + receiveState.dataSize
+                        LogHelper.v(
+                            "ARQ: receive in progress, responding with ACK continued",
+                            mapOf(
+                                LogKeys.COAP_TOKEN to mutableIncomingMessage.hexToken,
+                                LogKeys.BYTES to receiveState.dataSize
+                            )
                         )
                     }
                     ackMessage.code = CoAPMessageCode.CoapCodeContinue
@@ -205,7 +217,7 @@ class ArqLayer(
             }
 
             CoAPMessageType.NON -> {
-                e("ARQ: NON message received")
+                LogHelper.e("ARQ: NON message received")
                 throw RuntimeException("ARQ: NON message received")
             }
         }
@@ -214,7 +226,10 @@ class ArqLayer(
     }
 
     private fun didTransmit(blockNumber: Int, token: String) {
-        v("ARQ: did transmit block = $blockNumber for token = $token")
+        LogHelper.v(
+            "ARQ: did transmit block",
+            mapOf("block_number" to blockNumber, LogKeys.COAP_TOKEN to token)
+        )
         val sendState = sendStates[token]
         if (sendState != null) {
             sendState.didTransmit(blockNumber)
@@ -227,7 +242,7 @@ class ArqLayer(
         var block: Block?
         if (state != null) {
             while (state.popBlock().also { block = it } != null) {
-                v("ARQ: did pop block number = " + block!!.number)
+                LogHelper.v("ARQ: did pop block", mapOf("block_number" to block!!.number))
                 send(block!!, state.originalMessage, token, state)
                 state.incrementNumberOfMessage()
                 sendStates[token] = state
@@ -255,22 +270,25 @@ class ArqLayer(
         client.send(blockMessage, object : CoAPHandler {
             override fun onMessage(message: CoAPMessage, error: String?) {
                 if (error != null) {
-                    v("Block number = " + block.number + " failed " + error)
+                    LogHelper.v(
+                        "ARQ: block failed",
+                        mapOf("block_number" to block.number, LogKeys.ERROR to error)
+                    )
                     fail(token)
                     return
                 }
-                v("Block number = " + block.number + " sent")
+                LogHelper.v("ARQ: block sent", mapOf("block_number" to block.number))
             }
 
             override fun onAckError(error: String) {
-                v("Block number = " + block.number + " failed")
+                LogHelper.v("ARQ: block failed on ack", mapOf("block_number" to block.number))
                 fail(token)
             }
         })
     }
 
     private fun fail(token: String) {
-        v("ARQ: fail to transfer for token = $token")
+        LogHelper.v("ARQ: fail to transfer", mapOf(LogKeys.COAP_TOKEN to token))
         val sendState = sendStates[token]
         if (sendState != null) {
             sendState.onError(client.getMessageDeliveryInfo(sendState.originalMessage))
@@ -288,7 +306,7 @@ class ArqLayer(
         }
         val token = encodeHexString(message.token)
         val payload = message.payload
-        v("ARQ: removing original message " + message.id + " from pool")
+        LogHelper.v("ARQ: removing the original message from the pool", mapOf(LogKeys.COAP_MESSAGE_ID to message.id))
         messagePool.remove(message)
         var originalMessage: CoAPMessage? = null
         var ackMessage: CoAPMessage? = null
@@ -300,14 +318,17 @@ class ArqLayer(
                 CoAPMessage.convertToEmptyAck(message, receiverAddressReference.get())
                 ackMessage = message
                 ackMessage.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionSelectiveRepeatWindowSize, WINDOW_SIZE))
-                d(
-                    "ARQ: Send empty ack, id " + ackMessage.id + " " +
-                            "payload: '" + ackMessage + " " +
-                            "destination host: " + ackMessage.getURI() + " " +
-                            "type: " + ackMessage.type + " " +
-                            "code: " + ackMessage.code.name + " " +
-                            "token: " + encodeHexString(ackMessage.token) + " " +
-                            "options: " + getMessageOptionsString(ackMessage)
+                LogHelper.d(
+                    "ARQ: send empty ack",
+                    mapOf(
+                        LogKeys.COAP_MESSAGE_ID to ackMessage.id,
+                        LogKeys.PAYLOAD to ackMessage.toString(),
+                        LogKeys.URL to ackMessage.getURI(),
+                        "coap_type" to ackMessage.type.toString(),
+                        "coap_code" to ackMessage.code.name,
+                        LogKeys.COAP_TOKEN to encodeHexString(ackMessage.token),
+                        "options" to getMessageOptionsString(ackMessage)
+                    )
                 )
             }
 
@@ -322,7 +343,10 @@ class ArqLayer(
         val sendState = SendState(DataFactory.create(payload?.content ?: ByteArray(0)), WINDOW_SIZE, MAX_PAYLOAD_SIZE, originalMessage)
         sendStates[token] = sendState
         sendMoreData(token)
-        v("ARQ: split message " + message.id + " to values. Sending payload = " + payload?.content?.size)
+        LogHelper.v(
+            "ARQ: split message into blocks",
+            mapOf(LogKeys.COAP_MESSAGE_ID to message.id, LogKeys.BYTES to payload?.content?.size)
+        )
         return LayersStack.LayerResult(ackMessage != null)
     }
 

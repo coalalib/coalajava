@@ -1,10 +1,10 @@
 package com.ndmsystems.coala.layers
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.AckHandlersPool
 import com.ndmsystems.coala.CoAPMessagePool
 import com.ndmsystems.coala.LayersStack.LayerResult
 import com.ndmsystems.coala.LocalPeerDiscoverer
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageType
@@ -34,7 +34,7 @@ class ReliabilityLayer(
             // @TODO: error handling
             handler.onMessage(message, responseError)
             if (message.hexToken == LocalPeerDiscoverer.DISCOVERY_HEX_TOKEN) { // For recognize broadcast
-                v("Broadcast message, no need delete handler")
+                LogHelper.v("Broadcast message, no need delete handler")
             } else {
                 ackHandlersPool.remove(message.id)
             }

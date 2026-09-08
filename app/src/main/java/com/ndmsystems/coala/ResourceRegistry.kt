@@ -1,7 +1,8 @@
 package com.ndmsystems.coala
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.CoAPResource.CoAPResourceHandler
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.message.CoAPRequestMethod
 import java.util.Collections
 
@@ -12,11 +13,18 @@ class ResourceRegistry(private val client: CoAPClient) {
     }
 
     fun getObservableResource(path: String): CoAPObservableResource? {
-        v("searching for observable resource for path: $path")
+        LogHelper.v("Searching for an observable resource", mapOf(LogKeys.PATH to path))
         val resourcesGroupForPath = resources[path]
         if (resourcesGroupForPath != null) {
             for (resource in resourcesGroupForPath.resources) {
-                v("resource path: " + resource.path + ", method: " + resource.method + ", is observable ? " + (resource is CoAPObservableResource))
+                LogHelper.v(
+                    "Candidate resource",
+                    mapOf(
+                        LogKeys.PATH to resource.path,
+                        "method" to resource.method.toString(),
+                        "observable" to (resource is CoAPObservableResource)
+                    )
+                )
                 if (resource is CoAPObservableResource &&
                     resource.doesMatch(path, CoAPRequestMethod.GET)
                 ) {
@@ -28,13 +36,13 @@ class ResourceRegistry(private val client: CoAPClient) {
     }
 
     fun addObservableResource(path: String, handler: CoAPResourceHandler) {
-        v("addObservableResource for path: $path")
+        LogHelper.v("addObservableResource", mapOf(LogKeys.PATH to path))
         val resource: CoAPResource = CoAPObservableResource(CoAPRequestMethod.GET, path, handler, client)
         addResource(path, resource)
     }
 
     fun addResource(path: String, method: CoAPRequestMethod?, handler: CoAPResourceHandler?) {
-        v("addResource for path: $path")
+        LogHelper.v("addResource", mapOf(LogKeys.PATH to path))
         val resource = CoAPResource(method!!, path, handler!!)
         addResource(path, resource)
     }
@@ -47,7 +55,7 @@ class ResourceRegistry(private val client: CoAPClient) {
     }
 
     fun removeResource(path: String, method: CoAPRequestMethod?) {
-        v("removeResource for path: $path")
+        LogHelper.v("removeResource", mapOf(LogKeys.PATH to path))
         val resourcesGroupForPath = resources[path]
         resourcesGroupForPath?.remove(method)
     }

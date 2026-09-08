@@ -1,12 +1,11 @@
 package com.ndmsystems.coala.message
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.Coala
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
 import com.ndmsystems.coala.helpers.MessageHelper.generateId
 import com.ndmsystems.coala.helpers.StringHelper.join
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
-import com.ndmsystems.coala.helpers.logging.LogHelper.w
 import com.ndmsystems.coala.layers.response.ResponseHandler
 import java.io.UnsupportedEncodingException
 import java.net.InetSocketAddress
@@ -26,7 +25,7 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
     var responseHandler: ResponseHandler? = null
     var resendHandler: ResendHandler = object: ResendHandler {
         override fun onResend() {
-            v("Resend message: $id")
+            LogHelper.v("Resend message", mapOf(LogKeys.COAP_MESSAGE_ID to id))
         }
     }
     var peerPublicKey: ByteArray? = null
@@ -133,7 +132,7 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
         val builder = StringBuilder()
         val port: Int = if (address.port != -1) address.port else Coala.DEFAULT_PORT
         val host: String = if (address.address != null && address.address.hostAddress != null) address.address.hostAddress else {
-            w("Address is null! return \"null\"")
+            LogHelper.w("Address is null! return \"null\"")
             "null"
         }
         if (hasOption(CoAPMessageOptionCode.OptionProxyURI)) {
@@ -155,7 +154,7 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
                 try {
                     value = URLEncoder.encode(value, "UTF-8").replace("[+]".toRegex(), "%20")
                 } catch (ignore: UnsupportedEncodingException) {
-                    e("Can't encode query parameter: $value")
+                    LogHelper.e("Can't encode query parameter", mapOf(LogKeys.VALUE to value))
                 }
                 builder.append(key).append("=").append(value).append("&")
             }
@@ -201,7 +200,7 @@ class CoAPMessage @JvmOverloads constructor(var type: CoAPMessageType, var code:
         val st = StringTokenizer(query, "&")
         while (st.hasMoreTokens()) {
             val parts = st.nextToken().split("=".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-            if (parts.size < 2) e("Wrong parts") else addQueryParam(parts[0], parts[1])
+            if (parts.size < 2) LogHelper.e("Wrong parts") else addQueryParam(parts[0], parts[1])
         }
     }
 

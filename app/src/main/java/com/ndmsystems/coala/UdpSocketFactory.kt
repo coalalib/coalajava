@@ -1,11 +1,9 @@
 package com.ndmsystems.coala
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import android.net.ConnectivityManager
 import android.os.Build
-import com.ndmsystems.coala.helpers.logging.LogHelper.d
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
-import com.ndmsystems.coala.helpers.logging.LogHelper.i
-import com.ndmsystems.coala.helpers.logging.LogHelper.w
 import java.io.IOException
 import java.net.DatagramSocket
 import java.net.InetSocketAddress
@@ -50,16 +48,25 @@ internal class RealUdpSocketFactory(
             bindToActiveNetwork(s)
             s.receiveBufferSize = RECEIVE_BUFFER_SIZE
             s.trafficClass = IPTOS_RELIABILITY or IPTOS_THROUGHPUT or IPTOS_LOWDELAY
-            d("createConnection, 'udpPort' is $udpPort, port = ${s.port}, localPort = ${s.localPort}. ")
+            LogHelper.d(
+                "createConnection",
+                mapOf("udp_port" to udpPort, "port" to s.port, "local_port" to s.localPort)
+            )
             socket = null
             s
         } catch (ex: SocketException) {
             socket?.let { runCatching { it.close() } }
-            i("MulticastSocket can't be created, SocketException, try to reuse: " + ex.javaClass + " " + ex.localizedMessage)
+            LogHelper.i(
+                "MulticastSocket can't be created, SocketException, trying to reuse",
+                mapOf(LogKeys.ERROR_TYPE to ex.javaClass.name, LogKeys.ERROR to ex.localizedMessage)
+            )
             tryToReuseSocket()
         } catch (ex: Exception) {
             socket?.let { runCatching { it.close() } }
-            e("MulticastSocket can't be created: " + ex.javaClass + " " + ex.localizedMessage)
+            LogHelper.e(
+                "MulticastSocket can't be created",
+                mapOf(LogKeys.ERROR_TYPE to ex.javaClass.name, LogKeys.ERROR to ex.localizedMessage)
+            )
             tryToReuseSocket()
         }
     }
@@ -70,15 +77,18 @@ internal class RealUdpSocketFactory(
                 val net = connectivityManager?.activeNetwork ?: return
                 // Platform requirement: socket must not be connected; bound is OK.
                 net.bindSocket(socket)
-                d("Socket bound to active network: $net")
+                LogHelper.d("Socket bound to active network", mapOf("network" to net.toString()))
             } catch (t: Throwable) {
-                w("bindToActiveNetwork failed: ${t.javaClass.simpleName} ${t.message}")
+                LogHelper.w(
+                    "bindToActiveNetwork failed",
+                    mapOf(LogKeys.ERROR_TYPE to t.javaClass.simpleName, LogKeys.ERROR to t.message)
+                )
             }
         }
     }
 
     private fun tryToReuseSocket(): MulticastSocket? {
-        d("tryToReuseSocket")
+        LogHelper.d("tryToReuseSocket")
         return try {
             val srcAddress = InetSocketAddress(udpPort)
             val connection = MulticastSocket(null)
@@ -86,21 +96,33 @@ internal class RealUdpSocketFactory(
             connection.trafficClass = IPTOS_RELIABILITY or IPTOS_THROUGHPUT or IPTOS_LOWDELAY
             connection.receiveBufferSize = RECEIVE_BUFFER_SIZE
             connection.bind(srcAddress)
-            w(
-                "MulticastSocket receiveBufferSize: " + connection.receiveBufferSize
-                        + ", socket isBound = " + connection.isBound
-                        + ", socket isClosed = " + connection.isClosed
-                        + ", socket isConnected = " + connection.isConnected
+            LogHelper.w(
+                "MulticastSocket reused",
+                mapOf(
+                    "receive_buffer_size" to connection.receiveBufferSize,
+                    "bound" to connection.isBound,
+                    "closed" to connection.isClosed,
+                    "connected" to connection.isConnected
+                )
             )
             connection
         } catch (ex: SocketException) {
-            w("MulticastSocket can't be created, and can't be reused: " + ex.javaClass + " " + ex.localizedMessage)
+            LogHelper.w(
+                "MulticastSocket can't be created, and can't be reused",
+                mapOf(LogKeys.ERROR_TYPE to ex.javaClass.name, LogKeys.ERROR to ex.localizedMessage)
+            )
             null
         } catch (e: UnknownHostException) {
-            w("MulticastSocket can't be created, and can't be reuse UnknownHostException: " + e.localizedMessage)
+            LogHelper.w(
+                "MulticastSocket can't be created, and can't be reused: UnknownHostException",
+                mapOf(LogKeys.ERROR to e.localizedMessage)
+            )
             null
         } catch (e: IOException) {
-            w("MulticastSocket can't be created, and can't be reuse IOException: " + e.localizedMessage)
+            LogHelper.w(
+                "MulticastSocket can't be created, and can't be reused: IOException",
+                mapOf(LogKeys.ERROR to e.localizedMessage)
+            )
             null
         }
     }

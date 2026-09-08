@@ -1,6 +1,6 @@
 package com.ndmsystems.coala.layers.arq
 
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import kotlin.math.min
 
 class SlidingWindow<T> @JvmOverloads constructor(size: Int, var offset: Int = 0) {
@@ -18,7 +18,7 @@ class SlidingWindow<T> @JvmOverloads constructor(size: Int, var offset: Int = 0)
     operator fun set(number: Int, value: T) {
         val windowIndex = number - offset
         if (windowIndex > values.size - 1) {
-            e("ARQ: window index out of bounds")
+            LogHelper.e("ARQ: window index out of bounds")
             return
         } else if (windowIndex < 0) return
         values[windowIndex] = value

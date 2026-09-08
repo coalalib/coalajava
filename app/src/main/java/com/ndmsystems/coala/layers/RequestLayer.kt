@@ -6,7 +6,6 @@ import com.ndmsystems.coala.LayersStack.LayerResult
 import com.ndmsystems.coala.ResourceRegistry
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogKeys
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageOption
@@ -27,7 +26,7 @@ class RequestLayer(private val resourceRegistry: ResourceRegistry, private val c
                 val resource = resourcesForPath.getResourceByMethod(message.method)
                 if (resource != null) {
                     if (resource.handler == null) {
-                        e("CoAPResource handler is NULL!!!")
+                        LogHelper.e("CoAPResource handler is NULL!!!")
                         return LayerResult(false, null)
                     }
                     val resourceOutput = resource.handler.onReceive(CoAPResourceInput(message, senderAddressReference.get()))
@@ -46,13 +45,23 @@ class RequestLayer(private val resourceRegistry: ResourceRegistry, private val c
                     }
                     return LayerResult(false, null)
                 }
-                e("Resource for path '" + message.getURIPathString() + "' with method: " + message.method + ", code: " + message.code + " does not exists")
+                LogHelper.e(
+                    "Resource for path with this method does not exist",
+                    mapOf(
+                        LogKeys.PATH to message.getURIPathString(),
+                        "method" to message.method?.toString(),
+                        "coap_code" to message.code.name
+                    )
+                )
                 val responseMessage = CoAPMessage.ackTo(message, senderAddressReference.get(), CoAPMessageCode.CoapCodeMethodNotAllowed)
                 // validate message address
                 addOptions(responseMessage, message, senderAddressReference.get())
                 client.send(responseMessage, null, false)
             } else {
-                e("Resource for path '" + message.getURIPathString() + ", code: " + message.code + " does not exists")
+                LogHelper.e(
+                    "Resource for path does not exist",
+                    mapOf(LogKeys.PATH to message.getURIPathString(), "coap_code" to message.code.name)
+                )
                 val responseMessage = CoAPMessage.ackTo(message, senderAddressReference.get(), CoAPMessageCode.CoapCodeNotFound)
                 // validate message address
                 addOptions(responseMessage, message, senderAddressReference.get())
@@ -66,7 +75,7 @@ class RequestLayer(private val resourceRegistry: ResourceRegistry, private val c
     private fun addOptions(responseMessage: CoAPMessage, message: CoAPMessage, senderAddress: InetSocketAddress) {
         responseMessage.address = senderAddress
         if (responseMessage.address == null) {
-            e("Message address == null in RequestLayer addOptions")
+            LogHelper.e("Message address == null in RequestLayer addOptions")
         }
         if (message.getOption(CoAPMessageOptionCode.OptionBlock1) != null) {
             responseMessage.addOption(

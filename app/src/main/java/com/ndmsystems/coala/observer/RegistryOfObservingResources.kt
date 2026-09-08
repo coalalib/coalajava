@@ -1,13 +1,11 @@
 package com.ndmsystems.coala.observer
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.CoAPClient
 import com.ndmsystems.coala.CoAPHandler
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
 import com.ndmsystems.coala.helpers.RandomGenerator.getRandom
-import com.ndmsystems.coala.helpers.logging.LogHelper.d
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
-import com.ndmsystems.coala.helpers.logging.LogHelper.w
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageOption
@@ -33,18 +31,26 @@ class RegistryOfObservingResources(
     /** Re-subscribes to every resource whose max-age has run out; null while nothing is observed. */
     private var checkResourcesJob: Job? = null
     fun unregisterObserver(uri: String?) {
-        d("unregisterObserver")
+        LogHelper.d("unregisterObserver")
         removeObservingResource(getTokenForObservingResourceUri(uri))
     }
 
     @Synchronized
     private fun getTokenForObservingResourceUri(stringUri: String?): ByteArray? {
         for (resource in observingResources.values) {
-            d("uri1 = " + resource.uri)
-            d("uri2 = $stringUri")
-            d("uri1 equals uri2 ? " + (resource.uri == stringUri))
+            LogHelper.d(
+                "getTokenForObservingResourceUri candidate",
+                mapOf(
+                    LogKeys.URL to resource.uri,
+                    "wanted_url" to stringUri,
+                    "match" to (resource.uri == stringUri)
+                )
+            )
             if (resource.uri == stringUri) {
-                d("initial message token: " + encodeHexString(resource.initiatingMessage.token))
+                LogHelper.d(
+                    "getTokenForObservingResourceUri matched",
+                    mapOf(LogKeys.COAP_TOKEN to encodeHexString(resource.initiatingMessage.token))
+                )
                 return resource.initiatingMessage.token
             }
         }
@@ -61,7 +67,7 @@ class RegistryOfObservingResources(
      * through [checkResources], which passes the token explicitly.
      */
     fun registerObserver(uri: String?, handler: CoAPHandler?): CoAPMessage {
-        d("registerObserver $uri")
+        LogHelper.d("registerObserver", mapOf(LogKeys.URL to uri))
         return sendObserveRequest(uri, getRandom(8), handler)
     }
 
@@ -69,7 +75,7 @@ class RegistryOfObservingResources(
         val message = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.GET)
         message.setURI(uri!!)
         message.token = token
-        v("Token: " + encodeHexString(token))
+        LogHelper.v("sendObserveRequest", mapOf(LogKeys.COAP_TOKEN to encodeHexString(token)))
         message.addOption(CoAPMessageOption(CoAPMessageOptionCode.OptionObserve, 0))
         client.send(message, handler)
         return message
@@ -77,11 +83,11 @@ class RegistryOfObservingResources(
 
     @Synchronized
     private fun checkResources() {
-        v("checkResourcesTask: " + observingResources.size)
+        LogHelper.v("checkResourcesTask", mapOf(LogKeys.COUNT to observingResources.size))
         for (resource in observingResources.values) {
-            d("resource: " + resource.uri)
+            LogHelper.d("checkResourcesTask, resource", mapOf(LogKeys.URL to resource.uri))
             if (resource.isExpired) {
-                d("checkResourcesTask, renew: " + resource.uri)
+                LogHelper.d("checkResourcesTask, renew", mapOf(LogKeys.URL to resource.uri))
                 // The existing token, deliberately: a renewal continues the observation, it does
                 // not open a second one.
                 sendObserveRequest(resource.uri, resource.initiatingMessage.token, resource.handler)
@@ -92,7 +98,7 @@ class RegistryOfObservingResources(
     @Synchronized
     fun addObservingResource(token: ByteArray?, resource: ObservingResource) {
         val strToken = encodeHexString(token)
-        d("addObservingResource $strToken")
+        LogHelper.d("addObservingResource", mapOf(LogKeys.COAP_TOKEN to strToken))
         observingResources[strToken] = resource
         if (!isCheckingRunning) {
             checkResourcesJob = scope.launch {
@@ -102,7 +108,7 @@ class RegistryOfObservingResources(
                     try {
                         checkResources()
                     } catch (error: Exception) {
-                        e("Observe renewal pass failed: ${error.message}")
+                        LogHelper.e("Observe renewal pass failed", mapOf(LogKeys.ERROR to error.message))
                     }
                 }
             }
@@ -121,7 +127,7 @@ class RegistryOfObservingResources(
     @Synchronized
     fun removeObservingResource(token: ByteArray?) {
         val hexToken = encodeHexString(token)
-        v("removeObservingResource $hexToken")
+        LogHelper.v("removeObservingResource", mapOf(LogKeys.COAP_TOKEN to hexToken))
         if (!observingResources.containsKey(hexToken)) return
         observingResources.remove(hexToken)
         if (observingResources.size == 0) {
@@ -139,11 +145,16 @@ class RegistryOfObservingResources(
 
     fun processNotification(message: CoAPMessage, maxAge: Int?, sequenceNumber: Int?) {
         val resource = getResource(message.token)
-        v("processNotification")
-        v("resource sequence number = " + resource?.sequenceNumber)
-        v("message sequence number = $sequenceNumber")
+        LogHelper.v("processNotification")
+        LogHelper.v(
+            "processNotification sequence numbers",
+            mapOf(
+                "resource_sequence_number" to resource?.sequenceNumber,
+                "message_sequence_number" to sequenceNumber
+            )
+        )
         if (resource == null) {
-            w("Resource is null")
+            LogHelper.w("Resource is null")
             return
         }
         if (sequenceNumber != null && sequenceNumber > resource.sequenceNumber ||
@@ -153,7 +164,7 @@ class RegistryOfObservingResources(
             resource.sequenceNumber = sequenceNumber ?: -1
             resource.handler?.onMessage(message, null)
         } else {
-            e("Wrong sequence number")
+            LogHelper.e("Wrong sequence number")
         }
     }
 

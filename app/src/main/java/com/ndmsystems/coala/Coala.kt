@@ -1,5 +1,7 @@
 package com.ndmsystems.coala
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import android.net.ConnectivityManager
 import com.ndmsystems.coala.CoAPHandler.AckError
 import com.ndmsystems.coala.CoAPResource.CoAPResourceHandler
@@ -10,10 +12,6 @@ import com.ndmsystems.coala.exceptions.BaseCoalaThrowable
 import com.ndmsystems.coala.exceptions.CoAPException
 import com.ndmsystems.coala.exceptions.CoalaStoppedException
 import com.ndmsystems.coala.helpers.RandomGenerator.getRandom
-import com.ndmsystems.coala.helpers.logging.LogHelper.d
-import com.ndmsystems.coala.helpers.logging.LogHelper.i
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
-import com.ndmsystems.coala.helpers.logging.LogHelper.w
 import com.ndmsystems.coala.layers.arq.states.LoggableState
 import com.ndmsystems.coala.layers.response.ResponseData
 import com.ndmsystems.coala.layers.response.ResponseHandler
@@ -164,7 +162,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         // the pool and go out on the restarted sender.
         if (isTransportStopped) {
             val error = CoalaStoppedException("Coala is not started")
-            w("Message ${message.id} is not sent: coala is not started")
+            LogHelper.w("Message is not sent: coala is not started", mapOf(LogKeys.COAP_MESSAGE_ID to message.id))
             message.responseHandler?.onError(error)
             handler?.onAckError(error.message ?: "Coala is not started")
             return
@@ -178,7 +176,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         if (handler != null) {
             ackHandlersPool!!.add(message.id, handler)
         } else {
-            v("Handler for message " + message.id + " is null")
+            LogHelper.v("Handler for message is null", mapOf(LogKeys.COAP_MESSAGE_ID to message.id))
         }
 
         // Let's get it on!
@@ -193,12 +191,22 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         message.responseHandler = object : ResponseHandler {
             override fun onResponse(responseData: ResponseData) {
                 val isDelivered = result.complete(responseData)
-                v("sendRequest message: " + message.id + ", onResponse, delivered = " + isDelivered)
+                LogHelper.v(
+                    "sendRequest onResponse",
+                    mapOf(LogKeys.COAP_MESSAGE_ID to message.id, "delivered" to isDelivered)
+                )
             }
 
             override fun onError(error: BaseCoalaThrowable) {
                 val isDelivered = result.completeExceptionally(error)
-                v("sendRequest message: " + message.id + ", throwable " + error + ", emitted = " + isDelivered)
+                LogHelper.v(
+                    "sendRequest onError",
+                    mapOf(
+                        LogKeys.COAP_MESSAGE_ID to message.id,
+                        LogKeys.ERROR to error.toString(),
+                        "emitted" to isDelivered
+                    )
+                )
             }
         }
         send(message, null)
@@ -242,7 +250,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         return try {
             result.await()
         } catch (cancellation: CancellationException) {
-            v("Caller gave up on message " + message.id + ", cancelling it")
+            LogHelper.v("Caller gave up on the message, cancelling it", mapOf(LogKeys.COAP_MESSAGE_ID to message.id))
             cancel(message)
             throw cancellation
         }
@@ -252,7 +260,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
      * Stop coala, and clear all messages.
      */
     fun stop() {
-        i("Coala stop")
+        LogHelper.i("Coala stop")
         isTransportStopped = true
         val coalaStoppedException = CoalaStoppedException("Coala stopped")
         messagePool!!.clear(coalaStoppedException)
@@ -271,7 +279,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
      * notifying.
      */
     fun registerObserver(uri: String): Flow<String> = callbackFlow {
-        d("registerObserver $uri")
+        LogHelper.d("registerObserver", mapOf(LogKeys.URL to uri))
         val registration = registryOfObservingResources!!.registerObserver(uri, object : CoAPHandler {
             override fun onMessage(message: CoAPMessage, error: String?) {
                 if (error != null) {
@@ -303,7 +311,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
             // registry stores getURI()'s canonical form and a caller's raw uri ("host/path", no
             // port) never matches it. The peer learns when its next notification is answered with
             // an RST.
-            d("unregisterObserver $uri")
+            LogHelper.d("unregisterObserver", mapOf(LogKeys.URL to uri))
             cancel(registration)
             registryOfObservingResources!!.removeObservingResource(registration.token)
         }
@@ -314,7 +322,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         .buffer(Channel.UNLIMITED)
 
     fun start() {
-        i("Coala start")
+        LogHelper.i("Coala start")
         receiver!!.start()
         sender!!.start()
         isTransportStopped = false

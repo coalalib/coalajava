@@ -207,7 +207,10 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         val responseHandler = message.responseHandler
         if (responseHandler != null) {
             val errorText = "Can't create session with $receiverAddress: peer public key mismatch"
-            LogHelper.w(errorText)
+            LogHelper.w(
+                "Can't create session: peer public key mismatch",
+                mapOf(LogKeys.ADDRESS to receiverAddress.toString())
+            )
             responseHandler.onError(PeerPublicKeyMismatchException(errorText).setMessageDeliveryInfo(client.getMessageDeliveryInfo(message)))
         }
     }
@@ -327,10 +330,13 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
         proxyAddress?.let { responseMessage.setProxy(it) }
         client.send(responseMessage, handler)
         LogHelper.d(
-                "sendClientHello messageId: " + responseMessage.id
-                        + (" address: " + address.address.hostAddress + ":" + address.port)
-                        + ", publicKey: " + Hex.encodeHexString(myPublicKey)
-                        + ", securityId " + responseMessage.getOption(CoAPMessageOptionCode.OptionProxySecurityID)
+            "sendClientHello",
+            mapOf(
+                LogKeys.COAP_MESSAGE_ID to responseMessage.id,
+                LogKeys.ADDRESS to "${address.address.hostAddress}:${address.port}",
+                "public_key" to Hex.encodeHexString(myPublicKey),
+                "security_id" to responseMessage.getOption(CoAPMessageOptionCode.OptionProxySecurityID)?.toString()
+            )
         )
     }
 

@@ -1,6 +1,6 @@
 package com.ndmsystems.coala
 
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageOption
 import com.ndmsystems.coala.message.CoAPMessageOptionCode
@@ -46,7 +46,7 @@ class CoAPObservableResource(
             responseMessage.address = senderAddress
         }
         if (responseMessage.address == null) {
-            e("Message address == null in addOptions")
+            LogHelper.e("Message address == null in addOptions")
         }
         if (message.getOption(CoAPMessageOptionCode.OptionBlock1) != null) {
             responseMessage.addOption(

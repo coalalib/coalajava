@@ -1,11 +1,9 @@
 package com.ndmsystems.coala
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import android.net.ConnectivityManager
 import com.ndmsystems.coala.Coala.OnPortIsBusyHandler
-import com.ndmsystems.coala.helpers.logging.LogHelper.d
-import com.ndmsystems.coala.helpers.logging.LogHelper.i
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
-import com.ndmsystems.coala.helpers.logging.LogHelper.w
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -63,33 +61,33 @@ class ConnectionProvider internal constructor(
      * @throws NotImplementedError when called in TCP mode
      */
     suspend fun waitForUdpConnection(): MulticastSocket {
-        v("waitForUdpConnection")
+        LogHelper.v("waitForUdpConnection")
         val pending = synchronized(this) {
             when (transportMode) {
                 Coala.TransportMode.UDP -> {
                     connection?.let {
-                        v("waitForUdpConnection return connection")
+                        LogHelper.v("waitForUdpConnection return connection")
                         return it
                     }
                     pendingConnection ?: startConnecting()
                 }
 
                 Coala.TransportMode.TCP -> {
-                    w("waitForUdpConnection called in TCP mode")
+                    LogHelper.w("waitForUdpConnection called in TCP mode")
                     throw NotImplementedError("UDP socket not available in TCP mode")
                 }
             }
         }
-        v("waitForUdpConnection await pending connect")
+        LogHelper.v("waitForUdpConnection await pending connect")
         return pending.await()
     }
 
     fun close() {
         val abandoned = synchronized(this) {
-            d("close")
+            LogHelper.d("close")
             connection?.let {
                 if (!it.isClosed) {
-                    v("Actual close connection")
+                    LogHelper.v("Actual close connection")
                     it.close()
                 }
             }
@@ -108,7 +106,7 @@ class ConnectionProvider internal constructor(
     }
 
     fun setOnPortIsBusyHandler(onPortIsBusyHandler: OnPortIsBusyHandler?) {
-        d("setOnPortIsBusyHandler")
+        LogHelper.d("setOnPortIsBusyHandler")
         this.onPortIsBusyHandler = onPortIsBusyHandler
     }
 
@@ -130,7 +128,7 @@ class ConnectionProvider internal constructor(
      */
     @Synchronized
     fun invalidateTcpSocket() {
-        d("invalidateTcpSocket")
+        LogHelper.d("invalidateTcpSocket")
         tcpSocket?.let { if (!it.isClosed) it.close() }
         tcpSocket = null
     }
@@ -151,7 +149,7 @@ class ConnectionProvider internal constructor(
      * it refused to ever reconnect.
      */
     private fun startConnecting(): CompletableDeferred<MulticastSocket> {
-        v("waitForUdpConnection initConnection")
+        LogHelper.v("waitForUdpConnection initConnection")
         val deferred = CompletableDeferred<MulticastSocket>()
         pendingConnection = deferred
         connectJob = scope.launch {
@@ -159,7 +157,7 @@ class ConnectionProvider internal constructor(
                 val socket = connectWithRetries()
                 val isStillWanted = synchronized(this@ConnectionProvider) {
                     if (pendingConnection === deferred) {
-                        d("saveConnection")
+                        LogHelper.d("saveConnection")
                         connection = socket
                         pendingConnection = null
                         connectJob = null
@@ -173,13 +171,13 @@ class ConnectionProvider internal constructor(
                 } else {
                     // close() or setTransportMode() dropped this attempt while the socket was
                     // being opened. Nobody owns it now, and the waiters have already been failed.
-                    d("Connect finished after close, discarding socket")
+                    LogHelper.d("Connect finished after close, discarding socket")
                     socket.close()
                 }
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Throwable) {
-                i("Can't init connection: ${error.message}")
+                LogHelper.i("Can't init connection", mapOf(LogKeys.ERROR to error.message))
                 val isStillWanted = synchronized(this@ConnectionProvider) {
                     if (pendingConnection === deferred) {
                         pendingConnection = null
@@ -216,7 +214,10 @@ class ConnectionProvider internal constructor(
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Throwable) {
-                v("Connect attempt ${attempt + 1} failed: ${error.message}")
+                LogHelper.v(
+                    "Connect attempt failed",
+                    mapOf(LogKeys.ATTEMPT to attempt + 1, LogKeys.ERROR to error.message)
+                )
                 lastError = error
             }
         }

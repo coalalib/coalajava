@@ -1,9 +1,9 @@
 package com.ndmsystems.coala.observer
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.CoAPHandler
 import com.ndmsystems.coala.helpers.MonotonicClock
-import com.ndmsystems.coala.helpers.logging.LogHelper.d
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.message.CoAPMessage
 
 /**
@@ -22,7 +22,7 @@ class ObservingResource(
         get() = initiatingMessage.getURI()
 
     fun setMaxAge(maxAge: Int) {
-        v("Set max age at $maxAge")
+        LogHelper.v("Set max age", mapOf(LogKeys.VALUE to maxAge))
         // Max-Age is a peer-controlled uint32, and the option decoder hands it over as a signed
         // Int - a value above Int.MAX_VALUE arrives negative and would put the deadline in the
         // past, expiring the subscription the moment the peer asked for the longest one. Read the
@@ -32,7 +32,13 @@ class ObservingResource(
 
     val isExpired: Boolean
         get() {
-            d("is resource (" + initiatingMessage.getURIPathString() + ") expired? " + (clock.nowMillis() >= validUntil))
+            LogHelper.d(
+                "isExpired",
+                mapOf(
+                    LogKeys.PATH to initiatingMessage.getURIPathString(),
+                    "expired" to (clock.nowMillis() >= validUntil)
+                )
+            )
             return clock.nowMillis() >= validUntil
         }
 

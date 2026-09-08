@@ -5,10 +5,6 @@ import com.ndmsystems.coala.CoAPSerializer.fromBytes
 import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogKeys
-import com.ndmsystems.coala.helpers.logging.LogHelper.d
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
-import com.ndmsystems.coala.helpers.logging.LogHelper.i
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
 import com.ndmsystems.coala.layers.arq.states.LoggableState
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.utils.Reference
@@ -59,7 +55,7 @@ class CoAPReceiver(
 
     @Synchronized
     fun start() {
-        v("CoAPReceiver start with mode $transportMode")
+        LogHelper.v("CoAPReceiver start", mapOf("transport_mode" to transportMode.toString()))
         when (transportMode) {
             Coala.TransportMode.UDP -> {
                 if (connection == null) {
@@ -72,7 +68,7 @@ class CoAPReceiver(
                             } catch (error: CancellationException) {
                                 throw error
                             } catch (error: Throwable) {
-                                e("Can't start CoAPReceiver: $error")
+                                LogHelper.e("Can't start CoAPReceiver", mapOf(LogKeys.ERROR to error.toString()))
                             }
                         }
                         connectWaiter = waiter
@@ -84,7 +80,7 @@ class CoAPReceiver(
             }
 
             Coala.TransportMode.TCP -> {
-                d("CoAPReceiver TCP mode start if needed")
+                LogHelper.d("CoAPReceiver TCP mode start if needed")
                 startTcpReceivingLoop()
             }
         }
@@ -94,11 +90,11 @@ class CoAPReceiver(
     @Synchronized
     private fun onUdpSocketStarted(waiter: Job, newConnection: MulticastSocket?) {
         if (connectWaiter !== waiter) {
-            d("Connect finished after the receiver was stopped, ignoring the socket")
+            LogHelper.d("Connect finished after the receiver was stopped, ignoring the socket")
             return
         }
         connectWaiter = null
-        v("CoAPReceiver started, socket: $newConnection")
+        LogHelper.v("CoAPReceiver started", mapOf("socket" to newConnection.toString()))
         connection = newConnection
         startReceivingLoop()
     }
@@ -110,7 +106,7 @@ class CoAPReceiver(
         // going first would see false and quit before receiving anything.
         isStarted = true
         if (needsNewLoop) {
-            v("Receiving loop try to start")
+            LogHelper.v("Receiving loop try to start")
             receivingJob = scope.launch(workDispatcher) {
                 val self = coroutineContext.job
                 try {
@@ -118,14 +114,20 @@ class CoAPReceiver(
                 } catch (cancellation: CancellationException) {
                     throw cancellation
                 } catch (error: Throwable) {
-                    i("Receiving loop stopped by ${error.javaClass.simpleName}: ${error.message}")
+                    LogHelper.i(
+                        "Receiving loop stopped by an error",
+                        mapOf(
+                            LogKeys.ERROR_TYPE to error.javaClass.simpleName,
+                            LogKeys.ERROR to error.message
+                        )
+                    )
                 }
-                v("Receiving loop end")
+                LogHelper.v("Receiving loop end")
                 // Reached only when the loop came back without the job being cancelled - a
                 // deliberate stop() cancels it, and this delay then throws straight through
                 // instead of reviving a receiver somebody asked to shut down.
                 delay(RESTART_DELAY_MS)
-                d("Try to start receiving loop")
+                LogHelper.d("Try to start receiving loop")
                 restartIfStillCurrent(self)
             }
         }
@@ -143,7 +145,7 @@ class CoAPReceiver(
     @Synchronized
     private fun restartIfStillCurrent(job: Job) {
         if (!isStarted || receivingJob !== job) {
-            d("Receiving loop was retired while waiting to restart, leaving it alone")
+            LogHelper.d("Receiving loop was retired while waiting to restart, leaving it alone")
             return
         }
         receivingJob = null
@@ -153,7 +155,7 @@ class CoAPReceiver(
 
     @Synchronized
     fun stop() {
-        i("CoAPReceiver stop")
+        LogHelper.i("CoAPReceiver stop")
         isStarted = false
         // The waiter too - a connect resolving after stop() must not revive the receiver.
         connectWaiter?.cancel()
@@ -185,7 +187,7 @@ class CoAPReceiver(
      * stopping the receiver.
      */
     private suspend fun runReceivingLoop() {
-        v("Receiving loop start")
+        LogHelper.v("Receiving loop start")
         while (currentCoroutineContext().isActive && isStarted) {
 
             // prepare udp packer
@@ -197,11 +199,14 @@ class CoAPReceiver(
                 val socket = connection
                 if (socket != null && !socket.isClosed) socket.receive(udpPacket) else break
             } catch (e: IOException) {
-                d("IOException when try to receive message: ${e.message}")
+                LogHelper.d("IOException when try to receive message", mapOf(LogKeys.ERROR to e.message))
                 continue
             }
             if (!currentCoroutineContext().isActive || !isStarted) {
-                d("cancelled = ${!currentCoroutineContext().isActive} isRunning = $isStarted stopping")
+                LogHelper.d(
+                    "Receiving loop stopping",
+                    mapOf("cancelled" to !currentCoroutineContext().isActive, "running" to isStarted)
+                )
                 break
             }
 
@@ -218,27 +223,37 @@ class CoAPReceiver(
             // Build message from bytes
             val message = getMessageFromPacket(udpPacket, socketAddress) ?: continue
             if (message.id < 0) {
-                e("CoAPReceiver: Receiving data from CoAP Peer: Invalid Data. Skipping.")
+                LogHelper.e("CoAPReceiver: Receiving data from CoAP Peer: Invalid Data. Skipping.")
                 continue
             }
 
             // Run Layers Chain
             try {
-                v("message id ${message.id}, token ${Hex.encodeHexString(message.token)} actual received from ${socketAddress}, send to layers")
+                LogHelper.v(
+                    "Message received, sending to layers",
+                    mapOf(
+                        LogKeys.COAP_MESSAGE_ID to message.id,
+                        LogKeys.COAP_TOKEN to Hex.encodeHexString(message.token),
+                        LogKeys.ADDRESS to socketAddress.toString()
+                    )
+                )
                 val senderAddressReference = Reference(socketAddress)
                 message.address = senderAddressReference.get()
                 if (message.address == null) {
-                    e("Message address == null in receiving loop")
+                    LogHelper.e("Message address == null in receiving loop")
                 }
                 receiveLayerStack.onReceive(message, senderAddressReference)
             } catch (e: LayersStack.InterruptedException) {
-                d("Receiving loop interrupted while running layers: ${e.message}")
+                LogHelper.d("Receiving loop interrupted while running layers", mapOf(LogKeys.ERROR to e.message))
             } catch (ex: Exception) {
-                i("Exception in receiving loop layers: ${ex.message}, ${LogHelper.getShortStackTraceString(ex)}")
+                LogHelper.i(
+                    "Exception in receiving loop layers",
+                    mapOf(LogKeys.ERROR to ex.message, LogKeys.STACK to LogHelper.getShortStackTraceString(ex))
+                )
                 continue
             }
         }
-        i("Receiving loop stopped")
+        LogHelper.i("Receiving loop stopped")
     }
 
     private fun getMessageFromPacket(udpPacket: DatagramPacket, addressFrom: InetSocketAddress? = null): CoAPMessage? {
@@ -252,7 +267,7 @@ class CoAPReceiver(
             // app. The reported senders bear that out (e.g. :3478 STUN). A parse failure on the
             // TCP path below is a different matter, since that is an established connection to our
             // own server, and stays at error level.
-            d("Deserialization error: " + e.message)
+            LogHelper.d("Deserialization error", mapOf(LogKeys.ERROR to e.message))
             if (BuildConfig.DEBUG) e.printStackTrace()
             return null
         }
@@ -262,7 +277,7 @@ class CoAPReceiver(
     @Synchronized
     private fun startTcpReceivingLoop() {
         if (tcpReceivingJob?.isCompleted != false) {
-            d("startTcpReceivingLoop, make new loop")
+            LogHelper.d("startTcpReceivingLoop, make new loop")
             isStarted = true
             tcpReceivingJob = scope.launch(workDispatcher) {
                 val self = coroutineContext.job
@@ -271,7 +286,7 @@ class CoAPReceiver(
                 } catch (cancellation: CancellationException) {
                     throw cancellation
                 } catch (e: LayersStack.InterruptedException) {
-                    d("TCP receiving loop interrupted: ${e.message}")
+                    LogHelper.d("TCP receiving loop interrupted", mapOf(LogKeys.ERROR to e.message))
                 } catch (e: Exception) {
                     // A read that fails after stop() cancelled us is how this loop is *supposed* to
                     // end: it is parked in a blocking read, and ConnectionProvider.close() shutting
@@ -289,15 +304,15 @@ class CoAPReceiver(
                         // the restarted loop is handed the same dead connection and dies again.
                         connectionProvider.invalidateTcpSocket()
                     } else {
-                        d("TCP receiving loop ended with the socket: ${e.message}")
+                        LogHelper.d("TCP receiving loop ended with the socket", mapOf(LogKeys.ERROR to e.message))
                     }
                 }
-                i("TCP receiving loop stopped")
+                LogHelper.i("TCP receiving loop stopped")
                 // The same self-healing the UDP loop and the sender have: the proxy dropping the
                 // connection must not leave a receiver that reports isStarted yet hears nothing -
                 // requests kept going out while every answer was lost until a transport bounce.
                 delay(RESTART_DELAY_MS)
-                d("Try to restart TCP receiving loop")
+                LogHelper.d("Try to restart TCP receiving loop")
                 restartTcpIfStillCurrent(self)
             }
         }
@@ -307,7 +322,7 @@ class CoAPReceiver(
     @Synchronized
     private fun restartTcpIfStillCurrent(job: Job) {
         if (!isStarted || tcpReceivingJob !== job) {
-            d("TCP receiving loop was retired while waiting to restart, leaving it alone")
+            LogHelper.d("TCP receiving loop was retired while waiting to restart, leaving it alone")
             return
         }
         tcpReceivingJob = null
@@ -328,10 +343,10 @@ class CoAPReceiver(
             val message = try {
                 fromBytes(frame.payload, frame.address)
             } catch (e: Exception) {
-                e("TCP frame parse error: ${e.message}")
+                LogHelper.e("TCP frame parse error", mapOf(LogKeys.ERROR to e.message))
                 null
             }
-            d("Received from tcp socket $message")
+            LogHelper.d("Received from tcp socket", mapOf("coap_message" to message.toString()))
             if (message != null) {
                 val senderAddressReference = Reference(frame.address)
                 message.address = senderAddressReference.get()

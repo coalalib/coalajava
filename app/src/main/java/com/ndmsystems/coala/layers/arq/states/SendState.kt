@@ -1,9 +1,8 @@
 package com.ndmsystems.coala.layers.arq.states
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.MessageDeliveryInfo
 import com.ndmsystems.coala.exceptions.BaseCoalaThrowable
-import com.ndmsystems.coala.helpers.logging.LogHelper.v
-import com.ndmsystems.coala.helpers.logging.LogHelper.w
 import com.ndmsystems.coala.layers.arq.Block
 import com.ndmsystems.coala.layers.arq.SlidingWindow
 import com.ndmsystems.coala.layers.arq.data.IData
@@ -41,18 +40,21 @@ class SendState(
 
     fun popBlock(): Block? {
         if (window.advance() == null) {
-            v("ARQ: popBlock() window.advance() == nil, no more blocks yet")
+            LogHelper.v("ARQ: popBlock() window.advance() == nil, no more blocks yet")
             return null
         }
         val blockNumber = window.tail()
         val rangeStart = blockNumber * blockSize
         val rangeEnd = Math.min(rangeStart + blockSize, data!!.size())
         if (rangeStart >= rangeEnd) {
-            v("ARQ: popBlock() rangeStart $rangeStart > rangeEnd $rangeEnd")
+            LogHelper.v(
+                "ARQ: popBlock() rangeStart is past rangeEnd",
+                mapOf("range_start" to rangeStart, "range_end" to rangeEnd)
+            )
             return null
         }
         if (blockNumber == -1) {
-            w("BlockNumber = -1 oO, ")
+            LogHelper.w("BlockNumber = -1 oO, ")
         }
         return Block(blockNumber, data[rangeStart, rangeEnd], rangeEnd != data.size())
     }

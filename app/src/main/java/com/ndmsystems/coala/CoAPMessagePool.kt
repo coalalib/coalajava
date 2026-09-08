@@ -125,7 +125,7 @@ class CoAPMessagePool(
             val next: QueueElement = try {
                 iterator.next()
             } catch (e: ConcurrentModificationException) {
-                LogHelper.e(e.message ?: "ConcurrentModificationException")
+                LogHelper.e("ConcurrentModificationException walking the pool", mapOf(LogKeys.ERROR to e.message))
                 continue
             }
             val now = clock.nowMillis()

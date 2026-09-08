@@ -1,6 +1,7 @@
 package com.ndmsystems.coala.layers.security
 
-import com.ndmsystems.coala.helpers.logging.LogHelper.e
+import com.ndmsystems.coala.helpers.logging.LogHelper
+
 
 enum class HandshakeType(private val value: Int) {
     ClientHello(1), PeerHello(2), ClientSignature(3), PeerSignature(4);
@@ -17,7 +18,7 @@ enum class HandshakeType(private val value: Int) {
                 3 -> ClientSignature
                 4 -> PeerSignature
                 else -> {
-                    e("Unknown HandshakeType")
+                    LogHelper.e("Unknown HandshakeType")
                     null
                 }
             }
