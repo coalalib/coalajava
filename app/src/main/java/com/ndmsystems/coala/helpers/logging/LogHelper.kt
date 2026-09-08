@@ -153,9 +153,21 @@ object LogHelper {
         }
 
     @JvmStatic
+    /**
+     * The top of [throwable]'s stack, one line, for a record that ships.
+     *
+     * Capped at [SHORT_STACK_FRAMES]: an Rx chain unwinds through a hundred frames of scheduler
+     * plumbing, and a field carrying all of them costs a large share of an upload batch to say what
+     * the first few frames already said. Whoever needs the whole thing has it in logcat.
+     */
     fun getShortStackTraceString(throwable: Throwable): String {
-        return throwable.stackTrace.joinToString { it.fileName + "." + it.methodName + ":" + it.lineNumber }
+        val frames = throwable.stackTrace
+        val shown = frames.take(SHORT_STACK_FRAMES)
+            .joinToString { it.fileName + "." + it.methodName + ":" + it.lineNumber }
+        return if (frames.size > SHORT_STACK_FRAMES) "$shown, +${frames.size - SHORT_STACK_FRAMES} more" else shown
     }
+
+    private const val SHORT_STACK_FRAMES = 10
 
     enum class LogLevel {
         VERBOSE, DEBUG, INFO, WARNING, ERROR

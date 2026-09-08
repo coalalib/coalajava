@@ -264,7 +264,6 @@ class CoAPReceiver(
             // TCP path below is a different matter, since that is an established connection to our
             // own server, and stays at error level.
             LogHelper.d("Deserialization error", mapOf(LogKeys.ERROR to e.message))
-            if (BuildConfig.DEBUG) e.printStackTrace()
             return null
         }
         return message

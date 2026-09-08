@@ -42,7 +42,6 @@ class Aead(peerKey: ByteArray, myKey: ByteArray, peerIV: ByteArray, myIV: ByteAr
         return try {
             decryptor.open(cipherText, makeNonce(peerIV, counter), associatedData)
         } catch (e: Exception) {
-            e.printStackTrace()
             LogHelper.e(
                 "Error then decrypt",
                 mapOf(
@@ -62,7 +61,6 @@ class Aead(peerKey: ByteArray, myKey: ByteArray, peerIV: ByteArray, myIV: ByteAr
         return try {
             encryptor.seal(plainText, makeNonce(myIV, counter), associatedData)
         } catch (e: Exception) {
-            e.printStackTrace()
             LogHelper.e(
                 "Error then encrypt",
                 mapOf(LogKeys.ERROR_TYPE to e.javaClass.name, LogKeys.ERROR to e.message)

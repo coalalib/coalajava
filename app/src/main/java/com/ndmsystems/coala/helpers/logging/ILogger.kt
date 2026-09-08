@@ -55,7 +55,7 @@ interface ILogger {
     fun log(level: LogHelper.LogLevel, message: String, fields: Map<String, Any?>) {
         // LOCAL_ONLY says where the record goes, not what happened, so it is not rendered - the
         // sinks that read this text are exactly the ones it is addressed to.
-        val rendered = fields.filterKeys { it != LogKeys.LOCAL_ONLY }
+        val rendered = LogRouting.strip(fields)
         val line = if (rendered.isEmpty()) message else {
             message + rendered.entries.joinToString(", ", prefix = " | ") { "${it.key}=${it.value}" }
         }

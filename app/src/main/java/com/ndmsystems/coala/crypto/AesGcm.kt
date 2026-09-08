@@ -2,6 +2,7 @@ package com.ndmsystems.coala.crypto
 
 import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import java.security.InvalidAlgorithmParameterException
 import java.security.InvalidKeyException
 import java.security.Key
@@ -24,8 +25,10 @@ class AesGcm(key: ByteArray) {
         try {
             cipher = Cipher.getInstance("AES/GCM/NoPadding")
         } catch (e: Exception) {
-            e.printStackTrace()
-            LogHelper.e("Fatal error, can't get cipher")
+            LogHelper.e(
+                "Fatal error, can't get cipher",
+                mapOf(LogKeys.ERROR_TYPE to e.javaClass.simpleName, LogKeys.ERROR to e.message)
+            )
         }
     }
 
