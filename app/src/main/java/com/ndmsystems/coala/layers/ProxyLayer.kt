@@ -26,9 +26,6 @@ class ProxyLayer(private val client: CoAPClient, private val messagePool: CoAPMe
         )
         if (sourceMessage?.proxy != null) {
             message.address = sourceMessage.address
-            if (message.address == null) {
-                LogHelper.e("Message address == null in ProxyLayer onReceive")
-            }
             sourceMessage.address.let { senderAddressReference.set(it) }
         } else {
             if (sourceMessage == null) {

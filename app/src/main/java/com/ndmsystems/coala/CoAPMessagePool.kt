@@ -281,22 +281,6 @@ class CoAPMessagePool(
         }
     }
 
-    fun print() {
-        LogHelper.w("Printing pool:")
-        for (id in pool.keys) {
-            val message = pool[id]!!.message
-            LogHelper.w(
-                "Pool entry",
-                mapOf(
-                    LogKeys.COAP_MESSAGE_ID to id,
-                    "coap_type" to message.type.name,
-                    "coap_code" to message.code.name,
-                    LogKeys.PATH to message.getURIPathString(),
-                    "scheme" to message.getURIScheme().toString()
-                )
-            )
-        }
-    }
 
     fun setNoNeededSending(message: CoAPMessage) {
         val token = message.hexToken

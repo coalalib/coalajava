@@ -199,9 +199,6 @@ class CoAPSender(
                 val destinationAddressReference = Reference(message.address)
                 // Hack to preserve original destination address before layers rewrite it
                 message.address = destinationAddressReference.get()
-                if (message.address == null) {
-                    LogHelper.e("Message address == null in sending loop")
-                }
                 // Run Layers Chain
                 val layerResult = try {
                     layersStack.onSend(message, destinationAddressReference)

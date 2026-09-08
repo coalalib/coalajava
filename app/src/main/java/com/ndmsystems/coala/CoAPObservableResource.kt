@@ -45,9 +45,6 @@ class CoAPObservableResource(
         if (senderAddress != null) {
             responseMessage.address = senderAddress
         }
-        if (responseMessage.address == null) {
-            LogHelper.e("Message address == null in addOptions")
-        }
         if (message.getOption(CoAPMessageOptionCode.OptionBlock1) != null) {
             responseMessage.addOption(
                 CoAPMessageOption(

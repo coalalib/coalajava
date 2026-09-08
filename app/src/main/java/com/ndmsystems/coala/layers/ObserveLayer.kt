@@ -159,9 +159,6 @@ class ObserveLayer(
         val responseMessage = CoAPMessage(CoAPMessageType.RST, CoAPMessageCode.CoapCodeEmpty, message.id)
         if (message.token != null) responseMessage.token = message.token
         responseMessage.address = senderAddress
-        if (responseMessage.address == null) {
-            LogHelper.e("Message address == null in ObserveLayer sendResetMessage")
-        }
         if (message.getOption(CoAPMessageOptionCode.OptionBlock1) != null) {
             responseMessage.addOption(
                 CoAPMessageOption(

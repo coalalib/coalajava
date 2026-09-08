@@ -238,9 +238,6 @@ class CoAPReceiver(
                 )
                 val senderAddressReference = Reference(socketAddress)
                 message.address = senderAddressReference.get()
-                if (message.address == null) {
-                    LogHelper.e("Message address == null in receiving loop")
-                }
                 receiveLayerStack.onReceive(message, senderAddressReference)
             } catch (e: LayersStack.InterruptedException) {
                 LogHelper.d("Receiving loop interrupted while running layers", mapOf(LogKeys.ERROR to e.message))

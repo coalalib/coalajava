@@ -74,9 +74,6 @@ class RequestLayer(private val resourceRegistry: ResourceRegistry, private val c
 
     private fun addOptions(responseMessage: CoAPMessage, message: CoAPMessage, senderAddress: InetSocketAddress) {
         responseMessage.address = senderAddress
-        if (responseMessage.address == null) {
-            LogHelper.e("Message address == null in RequestLayer addOptions")
-        }
         if (message.getOption(CoAPMessageOptionCode.OptionBlock1) != null) {
             responseMessage.addOption(
                 CoAPMessageOption(
