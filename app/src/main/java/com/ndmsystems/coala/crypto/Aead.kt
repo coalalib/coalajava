@@ -14,8 +14,9 @@ class Aead(peerKey: ByteArray, myKey: ByteArray, peerIV: ByteArray, myIV: ByteAr
     private val decryptor: AesGcm
 
     init {
-        // The names matter: LogSanitizer blanks these four by key before anything is uploaded,
-        // so the material stays in logcat for local debugging and never reaches the collector.
+        // The names matter: LogSanitizer blanks these four by key before anything is uploaded.
+        // Logcat still shows them - ILogger.log's default folds the fields back into the text -
+        // so local debugging keeps the material and the wire never sees it.
         LogHelper.v(
             "Aead keys",
             mapOf(

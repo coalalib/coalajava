@@ -1,12 +1,16 @@
 package com.ndmsystems.coala
 
+import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogKeys
-import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.layers.LogLayer.Companion.getStringToPrintSendingMessage
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.utils.Reference
+import java.io.IOException
+import java.net.DatagramPacket
+import java.net.InetSocketAddress
+import java.net.MulticastSocket
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -19,10 +23,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
-import java.io.IOException
-import java.net.DatagramPacket
-import java.net.InetSocketAddress
-import java.net.MulticastSocket
 
 class CoAPSender(
     private val connectionProvider: ConnectionProvider,

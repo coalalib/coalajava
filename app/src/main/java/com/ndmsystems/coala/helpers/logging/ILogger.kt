@@ -38,21 +38,30 @@ interface ILogger {
      * constant, so every occurrence groups together, and leaves the value addressable as a field
      * instead of something to grep the text for.
      *
-     * The default drops [fields] and routes to the level method, so a logger with nowhere to put
-     * structured context - a console writer, an in-memory ring buffer - needs no change and loses
-     * nothing: it still receives the message it would have received before. A logger that ships
-     * records somewhere queryable overrides this and keeps the pairs apart from the text.
+     * The default folds [fields] back into the text and routes to the level method, so a logger
+     * with nowhere to put structured context - logcat, a console writer, an in-memory ring buffer
+     * - needs no change and still shows every value. That matters more than it sounds: once a
+     * call site stops interpolating, the text alone is a constant sentence, and a default that
+     * merely dropped the pairs would have left logcat reading "Sending loop start" where it used
+     * to read the pool size. A logger that ships records somewhere queryable overrides this and
+     * keeps the pairs apart from the text.
+     *
+     * The rendering is deliberately not JSON: these sinks are read by a person, and `k=v, k=v`
+     * after a separator stays greppable for either half.
      *
      * @param fields context for this one record. Keys are the caller's to choose; a logger may
      * reject or rename one that collides with something it writes itself.
      */
     fun log(level: LogHelper.LogLevel, message: String, fields: Map<String, Any?>) {
+        val line = if (fields.isEmpty()) message else {
+            message + fields.entries.joinToString(", ", prefix = " | ") { "${it.key}=${it.value}" }
+        }
         when (level) {
-            LogHelper.LogLevel.VERBOSE -> v(message)
-            LogHelper.LogLevel.DEBUG -> d(message)
-            LogHelper.LogLevel.INFO -> i(message)
-            LogHelper.LogLevel.WARNING -> w(message)
-            LogHelper.LogLevel.ERROR -> e(message)
+            LogHelper.LogLevel.VERBOSE -> v(line)
+            LogHelper.LogLevel.DEBUG -> d(line)
+            LogHelper.LogLevel.INFO -> i(line)
+            LogHelper.LogLevel.WARNING -> w(line)
+            LogHelper.LogLevel.ERROR -> e(line)
         }
     }
 }

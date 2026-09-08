@@ -1,10 +1,10 @@
 package com.ndmsystems.coala.layers
 
-import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.AckHandlersPool
 import com.ndmsystems.coala.CoAPMessagePool
 import com.ndmsystems.coala.LayersStack.LayerResult
 import com.ndmsystems.coala.LocalPeerDiscoverer
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageType

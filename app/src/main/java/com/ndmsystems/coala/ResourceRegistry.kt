@@ -1,8 +1,8 @@
 package com.ndmsystems.coala
 
+import com.ndmsystems.coala.CoAPResource.CoAPResourceHandler
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogKeys
-import com.ndmsystems.coala.CoAPResource.CoAPResourceHandler
 import com.ndmsystems.coala.message.CoAPRequestMethod
 import java.util.Collections
 

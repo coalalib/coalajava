@@ -7,6 +7,8 @@ import com.ndmsystems.coala.helpers.MonotonicClock
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.message.CoAPMessage
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -14,8 +16,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import net.jodah.expiringmap.ExpirationPolicy
 import net.jodah.expiringmap.ExpiringMap
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
 
 class CoAPMessagePool(
     private val ackHandlersPool: AckHandlersPool,

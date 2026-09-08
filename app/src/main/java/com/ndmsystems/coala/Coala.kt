@@ -1,7 +1,5 @@
 package com.ndmsystems.coala
 
-import com.ndmsystems.coala.helpers.logging.LogHelper
-import com.ndmsystems.coala.helpers.logging.LogKeys
 import android.net.ConnectivityManager
 import com.ndmsystems.coala.CoAPHandler.AckError
 import com.ndmsystems.coala.CoAPResource.CoAPResourceHandler
@@ -12,6 +10,8 @@ import com.ndmsystems.coala.exceptions.BaseCoalaThrowable
 import com.ndmsystems.coala.exceptions.CoAPException
 import com.ndmsystems.coala.exceptions.CoalaStoppedException
 import com.ndmsystems.coala.helpers.RandomGenerator.getRandom
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.layers.arq.states.LoggableState
 import com.ndmsystems.coala.layers.response.ResponseData
 import com.ndmsystems.coala.layers.response.ResponseHandler
@@ -20,20 +20,20 @@ import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPRequestMethod
 import com.ndmsystems.coala.observer.RegistryOfObservingResources
 import com.ndmsystems.coala.resource_discovery.ResourceDiscoveryResult
+import java.net.InetSocketAddress
+import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
-import java.net.InetSocketAddress
-import javax.inject.Inject
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage, params: CoAPMessagePool.Companion.Params? = CoAPMessagePool.Companion.Params(), connectivityManager: ConnectivityManager? = null) :
     CoAPTransport() {

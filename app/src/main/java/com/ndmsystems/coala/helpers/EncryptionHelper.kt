@@ -1,8 +1,8 @@
 package com.ndmsystems.coala.helpers
 
+import com.ndmsystems.coala.crypto.Aead
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogKeys
-import com.ndmsystems.coala.crypto.Aead
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageOption
 import com.ndmsystems.coala.message.CoAPMessageOptionCode

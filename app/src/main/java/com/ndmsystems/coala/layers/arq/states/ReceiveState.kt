@@ -1,8 +1,8 @@
 package com.ndmsystems.coala.layers.arq.states
 
+import com.ndmsystems.coala.helpers.MonotonicClock
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.layers.arq.Block
-import com.ndmsystems.coala.helpers.MonotonicClock
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 

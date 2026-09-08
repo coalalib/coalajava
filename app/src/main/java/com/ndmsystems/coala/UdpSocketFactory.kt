@@ -1,9 +1,9 @@
 package com.ndmsystems.coala
 
-import com.ndmsystems.coala.helpers.logging.LogHelper
-import com.ndmsystems.coala.helpers.logging.LogKeys
 import android.net.ConnectivityManager
 import android.os.Build
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import java.io.IOException
 import java.net.DatagramSocket
 import java.net.InetSocketAddress

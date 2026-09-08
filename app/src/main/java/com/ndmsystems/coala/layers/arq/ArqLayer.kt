@@ -1,7 +1,5 @@
 package com.ndmsystems.coala.layers.arq
 
-import com.ndmsystems.coala.helpers.logging.LogHelper
-import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.BuildConfig
 import com.ndmsystems.coala.CoAPClient
 import com.ndmsystems.coala.CoAPHandler
@@ -10,6 +8,8 @@ import com.ndmsystems.coala.LayersStack
 import com.ndmsystems.coala.helpers.Hex.decodeHex
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
 import com.ndmsystems.coala.helpers.MessageHelper.getMessageOptionsString
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.layers.ReceiveLayer
 import com.ndmsystems.coala.layers.SendLayer
 import com.ndmsystems.coala.layers.arq.data.DataFactory
@@ -23,11 +23,11 @@ import com.ndmsystems.coala.message.CoAPMessageOptionCode
 import com.ndmsystems.coala.message.CoAPMessagePayload
 import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.utils.Reference
-import net.jodah.expiringmap.ExpirationPolicy
-import net.jodah.expiringmap.ExpiringMap
 import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import net.jodah.expiringmap.ExpirationPolicy
+import net.jodah.expiringmap.ExpiringMap
 
 class ArqLayer(
     private val client: CoAPClient,

@@ -3,6 +3,7 @@ package com.ndmsystems.coala
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.message.CoAPMessage
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -10,7 +11,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import net.jodah.expiringmap.ExpirationPolicy
 import net.jodah.expiringmap.ExpiringMap
-import java.util.concurrent.TimeUnit
 
 class AckHandlersPool(
     /** Seam for tests: lets a test flush the clear() callbacks instead of waiting for them. */

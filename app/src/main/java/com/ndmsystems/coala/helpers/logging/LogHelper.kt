@@ -8,6 +8,11 @@ object LogHelper {
     // ConcurrentModificationException there; writes are a handful per process lifetime,
     // so copy-on-write costs nothing and makes reads lock-free.
     private val loggers: MutableList<ILogger> = CopyOnWriteArrayList()
+    // Written once during app init - which may happen off the main thread - and read on every
+    // log call from every thread. Without the barrier a transport thread can keep its cached
+    // VERBOSE after the level was lowered, and go on dispatching per-packet records for the
+    // life of the process.
+    @Volatile
     private var logLevel = LogLevel.VERBOSE
     fun setLogLevel(level: LogLevel) {
         logLevel = level
@@ -108,13 +113,18 @@ object LogHelper {
 
     @JvmStatic
     fun getFirstOurAppEntryFromStacktrace(stackTrace: Array<StackTraceElement>, fileNameToExclude: String?): String {
+        // `com.ndmsystems.`, not `.knext.`: :api and coala frames are ours too, and matching the
+        // app package alone left every transport-level throwable resolving to "unknown".
+        // fileName is null on synthetic, native and lambda-generated frames, which used to throw
+        // out of the catch block this is called from.
         val stackTraceEntry =
             stackTrace.firstOrNull {
-                it.className.contains(".knext.")
-                        && (fileNameToExclude == null || !it.fileName.contains(fileNameToExclude))
+                it.className.startsWith("com.ndmsystems.")
+                        && (fileNameToExclude == null || it.fileName?.contains(fileNameToExclude) != true)
             } ?: return "unknown"
 
-        return stackTraceEntry.fileName + "." + stackTraceEntry.methodName + ":" + stackTraceEntry.lineNumber
+        val file = stackTraceEntry.fileName ?: stackTraceEntry.className.substringAfterLast('.')
+        return "$file.${stackTraceEntry.methodName}:${stackTraceEntry.lineNumber}"
     }
 
     @JvmStatic

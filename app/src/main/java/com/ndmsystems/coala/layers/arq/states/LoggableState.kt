@@ -1,7 +1,7 @@
 package com.ndmsystems.coala.layers.arq.states
 
-import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.MonotonicClock
+import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.message.CoAPMessage.ResendHandler
 
 abstract class LoggableState internal constructor(

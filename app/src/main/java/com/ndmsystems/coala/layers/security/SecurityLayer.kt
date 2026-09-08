@@ -25,14 +25,14 @@ import com.ndmsystems.coala.message.CoAPMessageOptionCode
 import com.ndmsystems.coala.message.CoAPMessagePayload
 import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.utils.Reference
+import java.net.InetSocketAddress
+import java.util.Arrays
+import java.util.Collections
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import java.net.InetSocketAddress
-import java.util.Arrays
-import java.util.Collections
 
 class SecurityLayer(private val messagePool: CoAPMessagePool,
                     private val ackHandlersPool: AckHandlersPool,

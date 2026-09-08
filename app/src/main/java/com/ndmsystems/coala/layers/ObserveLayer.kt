@@ -1,12 +1,12 @@
 package com.ndmsystems.coala.layers
 
-import com.ndmsystems.coala.helpers.logging.LogHelper
-import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.AckHandlersPool
 import com.ndmsystems.coala.CoAPClient
 import com.ndmsystems.coala.CoAPResourceInput
 import com.ndmsystems.coala.CoAPServer
 import com.ndmsystems.coala.LayersStack.LayerResult
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageOption

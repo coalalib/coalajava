@@ -1,21 +1,21 @@
 package com.ndmsystems.coala.layers.response
 
-import com.ndmsystems.coala.helpers.logging.LogHelper
-import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.CoAPClient
 import com.ndmsystems.coala.LayersStack.LayerResult
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.layers.ReceiveLayer
 import com.ndmsystems.coala.layers.SendLayer
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.utils.Reference
-import net.jodah.expiringmap.ExpirationPolicy
-import net.jodah.expiringmap.ExpiringMap
 import java.net.InetSocketAddress
 import java.util.Collections
 import java.util.concurrent.TimeUnit
+import net.jodah.expiringmap.ExpirationPolicy
+import net.jodah.expiringmap.ExpiringMap
 
 class ResponseLayer : ReceiveLayer, SendLayer {
     private val requests: MutableMap<String, CoAPMessage>

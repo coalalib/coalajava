@@ -1,9 +1,13 @@
 package com.ndmsystems.coala
 
-import com.ndmsystems.coala.helpers.logging.LogHelper
-import com.ndmsystems.coala.helpers.logging.LogKeys
 import android.net.ConnectivityManager
 import com.ndmsystems.coala.Coala.OnPortIsBusyHandler
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
+import java.io.IOException
+import java.net.InetSocketAddress
+import java.net.MulticastSocket
+import java.net.Socket
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -14,10 +18,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
-import java.io.IOException
-import java.net.InetSocketAddress
-import java.net.MulticastSocket
-import java.net.Socket
 
 /**
  * Owns the transport sockets and makes sure only one UDP connect runs at a time, however many

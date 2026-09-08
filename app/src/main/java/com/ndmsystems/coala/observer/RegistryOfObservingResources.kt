@@ -1,11 +1,11 @@
 package com.ndmsystems.coala.observer
 
-import com.ndmsystems.coala.helpers.logging.LogHelper
-import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.CoAPClient
 import com.ndmsystems.coala.CoAPHandler
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
 import com.ndmsystems.coala.helpers.RandomGenerator.getRandom
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageOption
@@ -145,9 +145,8 @@ class RegistryOfObservingResources(
 
     fun processNotification(message: CoAPMessage, maxAge: Int?, sequenceNumber: Int?) {
         val resource = getResource(message.token)
-        LogHelper.v("processNotification")
         LogHelper.v(
-            "processNotification sequence numbers",
+            "processNotification",
             mapOf(
                 "resource_sequence_number" to resource?.sequenceNumber,
                 "message_sequence_number" to sequenceNumber

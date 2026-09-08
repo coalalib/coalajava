@@ -1,11 +1,11 @@
 package com.ndmsystems.coala.message
 
-import com.ndmsystems.coala.helpers.logging.LogHelper
-import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.Coala
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
 import com.ndmsystems.coala.helpers.MessageHelper.generateId
 import com.ndmsystems.coala.helpers.StringHelper.join
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.layers.response.ResponseHandler
 import java.io.UnsupportedEncodingException
 import java.net.InetSocketAddress

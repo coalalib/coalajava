@@ -1,9 +1,9 @@
 package com.ndmsystems.coala.observer
 
-import com.ndmsystems.coala.helpers.logging.LogHelper
-import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.CoAPHandler
 import com.ndmsystems.coala.helpers.MonotonicClock
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.message.CoAPMessage
 
 /**

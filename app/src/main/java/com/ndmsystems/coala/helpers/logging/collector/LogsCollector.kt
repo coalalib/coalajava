@@ -1,9 +1,9 @@
 package com.ndmsystems.coala.helpers.logging.collector
 
 import com.ndmsystems.coala.helpers.logging.ILogger
-import org.apache.commons.collections4.queue.CircularFifoQueue
 import java.text.SimpleDateFormat
 import java.util.Date
+import org.apache.commons.collections4.queue.CircularFifoQueue
 
 class LogsCollector private constructor() : ILogger {
     private val queue = CircularFifoQueue<LogEntry>(300)
