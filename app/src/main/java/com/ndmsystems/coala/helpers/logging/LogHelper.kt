@@ -3,6 +3,11 @@ package com.ndmsystems.coala.helpers.logging
 import java.util.concurrent.CopyOnWriteArrayList
 
 object LogHelper {
+    /** What [firstOurAppEntry] reports when the stack holds no frame of ours. */
+    const val UNKNOWN_CALLER = "unknown"
+
+    private const val NDM_PACKAGE_PREFIX = "com.ndmsystems."
+
     // Loggers are registered during app init - which may happen off the main thread - while
     // every other thread iterates this list on each log call. A plain ArrayList throws
     // ConcurrentModificationException there; writes are a handful per process lifetime,
@@ -111,21 +116,41 @@ object LogHelper {
         for (logger in loggers) logger.log(level, message, fields)
     }
 
+    /**
+     * The first frame in [stackTrace] that is ours and that [isPlumbing] does not reject, rendered as
+     * `File.method:line`.
+     *
+     * Two callers want this and disagree only about what to skip: a throwable's own parser frame
+     * in one case, the logging classes every record passes through in the other. Everything else -
+     * which packages count as ours, how a frame with no source file is named, what "nothing found"
+     * looks like - should not differ, and one implementation is what stops it drifting.
+     *
+     * @param isPlumbing true for a frame that is ours but is never the answer.
+     * @return [UNKNOWN_CALLER] when no frame qualifies.
+     */
     @JvmStatic
-    fun getFirstOurAppEntryFromStacktrace(stackTrace: Array<StackTraceElement>, fileNameToExclude: String?): String {
+    fun firstOurAppEntry(stackTrace: Array<StackTraceElement>, isPlumbing: (StackTraceElement) -> Boolean): String {
         // `com.ndmsystems.`, not `.knext.`: :api and coala frames are ours too, and matching the
         // app package alone left every transport-level throwable resolving to "unknown".
+        val frame = stackTrace.firstOrNull {
+            it.className.startsWith(NDM_PACKAGE_PREFIX) && !isPlumbing(it)
+        } ?: return UNKNOWN_CALLER
+
         // fileName is null on synthetic, native and lambda-generated frames, which used to throw
         // out of the catch block this is called from.
-        val stackTraceEntry =
-            stackTrace.firstOrNull {
-                it.className.startsWith("com.ndmsystems.")
-                        && (fileNameToExclude == null || it.fileName?.contains(fileNameToExclude) != true)
-            } ?: return "unknown"
-
-        val file = stackTraceEntry.fileName ?: stackTraceEntry.className.substringAfterLast('.')
-        return "$file.${stackTraceEntry.methodName}:${stackTraceEntry.lineNumber}"
+        val file = frame.fileName ?: frame.className.substringAfterLast('.')
+        return "$file.${frame.methodName}:${frame.lineNumber}"
     }
+
+    /**
+     * [firstOurAppEntry] for a throwable's own stack, skipping the file that caught it - otherwise
+     * the frame reported is the handler rather than whatever called into it.
+     */
+    @JvmStatic
+    fun getFirstOurAppEntryFromStacktrace(stackTrace: Array<StackTraceElement>, fileNameToExclude: String?): String =
+        firstOurAppEntry(stackTrace) {
+            fileNameToExclude != null && it.fileName?.contains(fileNameToExclude) == true
+        }
 
     @JvmStatic
     fun getShortStackTraceString(throwable: Throwable): String {
