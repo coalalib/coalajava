@@ -22,6 +22,16 @@ object LogRouting {
     const val LOCAL_ONLY = "__local_only"
 
     /**
+     * Whether [fields] marks its record as belonging in logcat and nowhere else.
+     *
+     * Presence of the key, not its value. A sink that asked `fields[LOCAL_ONLY] == true` while
+     * [strip] removed the key on presence disagreed about `LOCAL_ONLY to "true"` or `to 1`: the
+     * record shipped, with the marker quietly removed on the way out. Whoever writes the marker
+     * meant the record to stay local whatever they typed for the value.
+     */
+    fun isLocalOnly(fields: Map<String, Any?>): Boolean = LOCAL_ONLY in fields
+
+    /**
      * [fields] without any routing key, ready to be rendered or shipped.
      *
      * Allocates only when there is something to remove, which is the overwhelmingly common case:
