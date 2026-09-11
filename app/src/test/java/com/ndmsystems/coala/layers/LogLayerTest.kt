@@ -1,12 +1,18 @@
 package com.ndmsystems.coala.layers
 
+import com.ndmsystems.coala.helpers.logging.LogHelper
+import com.ndmsystems.coala.helpers.logging.LogRouting
 import com.ndmsystems.coala.message.CoAPMessage
 import com.ndmsystems.coala.message.CoAPMessageCode
 import com.ndmsystems.coala.message.CoAPMessageType
 import com.ndmsystems.coala.utils.Reference
+import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.net.InetSocketAddress
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -101,7 +107,60 @@ object LogLayerTest : Spek({
             assertTrue(LogLayer.getStringToPrintReceivedMessage(message, addressRef()).contains("""{"status":"ok"}"""))
         }
     }
+
+    describe("where the dumps are allowed to go") {
+
+        // These two records are the whole CoAP exchange written out, and measured they were 61% of
+        // every byte the app's uploader shipped - enough to evict everything else from a queue
+        // capped in kilobytes. They stay at their level and stay local, which only works while the
+        // marker is on them. Nothing fails loudly if it is dropped: the uploader would simply
+        // start shipping them. Hence a test on the marker rather than on the dump.
+
+        it("marks an outgoing dump for logcat and nowhere else, and still carries the dump") {
+            val records = recordsOf { LogLayer().onSend(request(), addressRef()) }
+
+            val (message, fields) = records.single()
+            assertEquals("Send data to Peer", message)
+            assertTrue(LogRouting.isLocalOnly(fields), fields.toString())
+            assertTrue("${fields["coap_message"]}".contains("Send data to Peer"), fields.toString())
+        }
+
+        it("marks an incoming dump for logcat and nowhere else") {
+            val records = recordsOf { LogLayer().onReceive(answer(), addressRef()) }
+
+            val (message, fields) = records.single()
+            assertEquals("Received data from Peer", message)
+            assertTrue(LogRouting.isLocalOnly(fields), fields.toString())
+        }
+    }
 })
+
+/**
+ * The `(message, fields)` pairs [block] handed to [LogHelper], with the real sinks out of the way.
+ *
+ * Mocked rather than captured through a registered sink: a sink cannot be unregistered, and a
+ * mocked LogHelper never reaches the level gate, so nothing here depends on - or disturbs - the
+ * process-wide level that every other test in this JVM shares.
+ *
+ * The layer only writes at all in a debug build, so a case that found nothing would pass by
+ * saying nothing; every caller asserts on a record actually being there.
+ */
+private fun recordsOf(block: () -> Unit): List<Pair<String, Map<String, Any?>>> {
+    val records = mutableListOf<Pair<String, Map<String, Any?>>>()
+    mockkStatic(LogHelper::class)
+    try {
+        every { LogHelper.d(any<String>(), any<Map<String, Any?>>()) } answers {
+            records += firstArg<String>() to secondArg<Map<String, Any?>>()
+        }
+        every { LogHelper.v(any<String>(), any<Map<String, Any?>>()) } answers {
+            records += firstArg<String>() to secondArg<Map<String, Any?>>()
+        }
+        block()
+    } finally {
+        unmockkStatic(LogHelper::class)
+    }
+    return records
+}
 
 private val PEER = InetSocketAddress("192.168.1.1", 5683)
 
