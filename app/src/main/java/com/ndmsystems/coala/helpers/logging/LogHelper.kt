@@ -29,19 +29,6 @@ object LogHelper {
     }
 
     /**
-     * Unregisters a logger.
-     *
-     * Production registers its sinks once and never removes them; this exists because a test that
-     * wants to see what was logged has to be able to stop seeing it afterwards. Without it a
-     * capturing sink registered by one case stays on this object - it is a singleton - and keeps
-     * collecting for every case that runs after it in the same JVM.
-     */
-    @JvmStatic
-    fun removeLogger(logger: ILogger) {
-        loggers.remove(logger)
-    }
-
-    /**
      * Send a VERBOSE log message.
      *
      * @param message The message you would like logged.

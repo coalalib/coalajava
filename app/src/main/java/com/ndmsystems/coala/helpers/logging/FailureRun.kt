@@ -33,14 +33,15 @@ class FailureRun {
      * recently used goes instead, so a new kind always gets a slot and always reports at once, and
      * the kind it displaces is by construction the one that has been quiet longest.
      */
-    private val attemptsByKey = object : LinkedHashMap<String, Int>(MAX_TRACKED_KEYS, LOAD_FACTOR, true) {
+    private val attemptsByKey = object : LinkedHashMap<String, Int>(MAX_TRACKED_KEYS, 0.75f, true) {
         override fun removeEldestEntry(eldest: Map.Entry<String, Int>) = size > MAX_TRACKED_KEYS
     }
 
     /** Attempts across every kind, which is what the run cost the reader. */
     private var totalAttempts = 0
 
-    /** Kinds seen since the run began, including ones the map has since evicted. */
+    /** First occurrences reported so far in this run - not distinct kinds: an evicted kind that
+     * comes back counts again. */
     private var distinctKinds = 0
 
     /**
@@ -97,6 +98,5 @@ class FailureRun {
         const val PERIODIC = 60
         const val MAX_TRACKED_KEYS = 8
         const val MAX_REPORTED_KINDS = 16
-        const val LOAD_FACTOR = 0.75f
     }
 }
