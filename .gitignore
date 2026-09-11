@@ -17,6 +17,9 @@ out/
 .gradle/
 build/
 
+# Kotlin compiler session directory, written at the root and beside each module
+.kotlin/
+
 # Local configuration file (sdk path, etc)
 local.properties
 
