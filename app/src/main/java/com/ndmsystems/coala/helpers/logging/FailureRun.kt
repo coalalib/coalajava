@@ -25,11 +25,23 @@ class FailureRun {
      * back - and a single "did the kind change" test reported every one of those, which is the
      * whole thing this class exists to stop. Each kind now escalates on its own schedule, so a
      * kind that is new is still reported at once and a kind that is not stays quiet.
+     *
+     * Bounded by eviction rather than by a shared overflow bucket. The bucket looked cheaper and
+     * was wrong in the one case that matters: once the cap was reached, a genuinely new kind
+     * joined whatever count the bucket had already reached, so its first-ever occurrence returned
+     * null and was dropped outright - the exact opposite of what the class promises above. Least
+     * recently used goes instead, so a new kind always gets a slot and always reports at once, and
+     * the kind it displaces is by construction the one that has been quiet longest.
      */
-    private val attemptsByKey = LinkedHashMap<String, Int>()
+    private val attemptsByKey = object : LinkedHashMap<String, Int>(MAX_TRACKED_KEYS, LOAD_FACTOR, true) {
+        override fun removeEldestEntry(eldest: Map.Entry<String, Int>) = size > MAX_TRACKED_KEYS
+    }
 
     /** Attempts across every kind, which is what the run cost the reader. */
     private var totalAttempts = 0
+
+    /** Kinds seen since the run began, including ones the map has since evicted. */
+    private var distinctKinds = 0
 
     /**
      * The attempt number if this occurrence deserves a record, or null if it is a repeat to drop.
@@ -40,13 +52,19 @@ class FailureRun {
     @Synchronized
     fun report(key: String): Int? {
         totalAttempts++
-        // Bounded so a caller keying on something unbounded - a message, an address - cannot grow
-        // this without limit. Past the cap the newcomers share a bucket: they still get reported,
-        // just on one shared schedule rather than one each.
-        val bucket = if (key in attemptsByKey || attemptsByKey.size < MAX_TRACKED_KEYS) key else OTHER_KEYS
-        val attempts = (attemptsByKey[bucket] ?: 0) + 1
-        attemptsByKey[bucket] = attempts
-        return if (attempts == 1 || attempts == ESCALATE_AT || attempts == ESCALATE_AGAIN_AT ||
+        val attempts = (attemptsByKey[key] ?: 0) + 1
+        attemptsByKey[key] = attempts
+        if (attempts == 1) {
+            distinctKinds++
+            // Every new kind is reported at once - that is the promise - but only so many of them.
+            // A caller keying on something unbounded, a message or an address, would otherwise get
+            // one record per distinct value, which is the flood this class exists to stop. The five
+            // callers today key on an exception type and never come near this; the cap is there so
+            // that a future one keying on something wider degrades into quiet rather than into a
+            // storm. Past it a newcomer still escalates on the ordinary schedule.
+            return if (distinctKinds <= MAX_REPORTED_KINDS) attempts else null
+        }
+        return if (attempts == ESCALATE_AT || attempts == ESCALATE_AGAIN_AT ||
             attempts % PERIODIC == 0
         ) {
             attempts
@@ -59,12 +77,17 @@ class FailureRun {
      * Ends the run. Returns how many attempts it took across every kind, so the caller can say it
      * recovered - or null when nothing was failing, which is the ordinary case and must not
      * produce a record.
+     *
+     * This is a different number from what [report] returns, and callers must not put the two in
+     * the same field: [report] says which attempt of one kind a record describes, this says what
+     * the whole run cost. `LogKeys.RUN_ATTEMPTS` is the field for it.
      */
     @Synchronized
     fun clear(): Int? {
         val ran = if (attemptsByKey.isEmpty()) null else totalAttempts
         attemptsByKey.clear()
         totalAttempts = 0
+        distinctKinds = 0
         return ran
     }
 
@@ -73,6 +96,7 @@ class FailureRun {
         const val ESCALATE_AGAIN_AT = 20
         const val PERIODIC = 60
         const val MAX_TRACKED_KEYS = 8
-        const val OTHER_KEYS = "__other"
+        const val MAX_REPORTED_KINDS = 16
+        const val LOAD_FACTOR = 0.75f
     }
 }

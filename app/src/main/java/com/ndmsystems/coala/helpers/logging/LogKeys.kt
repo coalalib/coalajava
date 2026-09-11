@@ -71,6 +71,16 @@ object LogKeys {
     /** Which try this was, 1-based. */
     const val ATTEMPT = "attempt"
 
+    /**
+     * How many attempts a whole run of failures took, for the record that says it recovered.
+     *
+     * Deliberately not [ATTEMPT]. That one says which attempt of one kind of failure a record
+     * describes; this says what the run cost across every kind, and `FailureRun.clear` returns a
+     * different number from `FailureRun.report` for exactly that reason. Sharing the field made a
+     * collector query that groups on it mix the two.
+     */
+    const val RUN_ATTEMPTS = "run_attempts"
+
     /** How many tries the caller will make in total. */
     const val MAX_ATTEMPTS = "max_attempts"
 
