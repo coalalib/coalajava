@@ -228,7 +228,13 @@ class CoAPReceiver(
 
             // Run Layers Chain
             try {
-                LogHelper.v(
+                // Debug rather than verbose: this is the only record on the receiving side that
+                // carries a token, and the token is what joins a response to the request that
+                // caused it. A capture of 119 sends held 13 distinct (req, command) pairs between
+                // them, one repeated 55 times, so without this the send-side token joins to
+                // nothing. Verbose is uploaded by no build, debug only by a debug build - so this
+                // costs a debug-build record per received message and nothing in release.
+                LogHelper.d(
                     "Message received, sending to layers",
                     mapOf(
                         LogKeys.COAP_MESSAGE_ID to message.id,

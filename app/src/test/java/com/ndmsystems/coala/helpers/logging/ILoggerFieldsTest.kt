@@ -77,6 +77,29 @@ class ILoggerFieldsTest : Spek({
 
             assertEquals(listOf("e" to "boom | error=null"), logger.calls)
         }
+
+        test("does not render the routing marker, which says nothing about what happened") {
+            // The sinks reading this text are exactly the ones the marked record is addressed to,
+            // so `__local_only=true` on the end of every wire dump would be noise in the one place
+            // the dump is meant to be read.
+            val logger = RecordingLogger()
+
+            logger.log(
+                LogHelper.LogLevel.DEBUG,
+                "Send data to Peer",
+                linkedMapOf("coap_message" to "id 42", LogRouting.LOCAL_ONLY to true)
+            )
+
+            assertEquals(listOf("d" to "Send data to Peer | coap_message=id 42"), logger.calls)
+        }
+
+        test("drops the separator when routing was the only field") {
+            val logger = RecordingLogger()
+
+            logger.log(LogHelper.LogLevel.DEBUG, "Send data to Peer", mapOf(LogRouting.LOCAL_ONLY to true))
+
+            assertEquals(listOf("d" to "Send data to Peer"), logger.calls)
+        }
     }
 
     group("a logger that does override log()") {

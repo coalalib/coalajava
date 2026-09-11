@@ -26,7 +26,12 @@ class Hkdf(sharedSecret: ByteArray, salt: ByteArray?, info: ByteArray?) {
 
     init {
         val okm = deriveSecrets(sharedSecret, salt, info)
-        LogHelper.v("OKM", mapOf("okm" to Hex.encodeHexString(okm)))
+        // The material itself is not logged. It is the whole output of the derivation, and the
+        // four fields below are carved straight out of it, so writing it out puts both session
+        // keys and both IVs of the channel in plain hex wherever this record ends up. That a
+        // derivation happened is the part worth having: it places the handshake in the timeline
+        // of a session that failed later.
+        LogHelper.v("Session keys derived")
         System.arraycopy(okm, 0, peerKey, 0, KEY_LEN)
         System.arraycopy(okm, KEY_LEN, myKey, 0, KEY_LEN)
         System.arraycopy(okm, 2 * KEY_LEN, peerIV, 0, 4)

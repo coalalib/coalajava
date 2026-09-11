@@ -3,15 +3,14 @@ package com.ndmsystems.coala.crypto
 import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
 import com.ndmsystems.coala.helpers.logging.LogHelper
+import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import org.junit.Assert
 import org.spekframework.spek2.Spek
 
 class HkdfTest: Spek({
     test("testCase1") {
-        LogHelper.setLogLevel(LogHelper.LogLevel.WARNING)
-        val IKM = "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"
-        val salt = "000102030405060708090a0b0c"
-        val info = "f0f1f2f3f4f5f6f7f8f9"
         val OKM = "3cb25f25faacd57a90434f64d0362f2a" +
                 "2d2d0a90cf1a5a4c5db02d56ecc4c5bf" +
                 "34007208d5b88718"
@@ -19,7 +18,7 @@ class HkdfTest: Spek({
         val myKey = "2d2d0a90cf1a5a4c5db02d56ecc4c5bf"
         val peerIV = "34007208"
         val myIV = "d5b88718"
-        val hkdf = Hkdf(Hex.decodeHex(IKM.toCharArray()), Hex.decodeHex(salt.toCharArray()), Hex.decodeHex(info.toCharArray()))
+        val hkdf = caseOneHkdf()
         Assert.assertEquals(hkdf.toString(), OKM)
         Assert.assertEquals(encodeHexString(hkdf.peerKey), peerKey)
         Assert.assertEquals(encodeHexString(hkdf.myKey), myKey)
@@ -28,7 +27,6 @@ class HkdfTest: Spek({
     }
 
     test("testCase2") {
-        LogHelper.setLogLevel(LogHelper.LogLevel.WARNING)
         val IKM = "000102030405060708090a0b0c0d0e0f" +
                 "101112131415161718191a1b1c1d1e1f" +
                 "202122232425262728292a2b2c2d2e2f" +
@@ -60,7 +58,6 @@ class HkdfTest: Spek({
     }
 
     test("testCase3") {
-        LogHelper.setLogLevel(LogHelper.LogLevel.WARNING)
         val IKM = "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"
         val salt = ""
         val info = ""
@@ -78,4 +75,69 @@ class HkdfTest: Spek({
         Assert.assertEquals(encodeHexString(hkdf.peerIV), peerIV)
         Assert.assertEquals(encodeHexString(hkdf.myIV), myIV)
     }
+
+    test("does not log the material it derived") {
+        // Its output is exactly what the two session keys and the two IVs are carved out of, so
+        // this record wrote the whole channel's key material into logcat under one unnamed key.
+        //
+        // Scoped to this class on purpose. Aead logs the same four values three calls later, by
+        // names LogSanitizer knows, and its comment says that is deliberate - local debugging
+        // keeps the material, the uploader never sees it. This copy was neither named nor
+        // intended, and it was the reason this class used to lower the process-wide log level.
+        lateinit var hkdf: Hkdf
+
+        val records = recordsOf { hkdf = caseOneHkdf() }
+
+        // Derived from the object rather than copied: the expected values already live in
+        // testCase1, and a second set of literals would be one more thing to keep in step.
+        val material = listOf(
+            hkdf.toString(),
+            encodeHexString(hkdf.peerKey),
+            encodeHexString(hkdf.myKey),
+            encodeHexString(hkdf.peerIV),
+            encodeHexString(hkdf.myIV)
+        )
+        val written = records.joinToString(" ") { (message, fields) -> "$message $fields" }
+        material.forEach { secret ->
+            Assert.assertFalse("key material reached a log: $written", written.contains(secret))
+        }
+
+        // Not by logging nothing at all: that a derivation happened places the handshake in the
+        // timeline of a session that failed later, and it is the reason to keep a record here.
+        Assert.assertTrue(written, records.isNotEmpty())
+    }
 })
+
+// RFC 5869 test case 1. Public vectors, so nothing secret is at risk in this file - what the
+// cases are about is the call site, not these values.
+private const val CASE_ONE_IKM = "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"
+private const val CASE_ONE_SALT = "000102030405060708090a0b0c"
+private const val CASE_ONE_INFO = "f0f1f2f3f4f5f6f7f8f9"
+
+private fun caseOneHkdf() = Hkdf(
+    Hex.decodeHex(CASE_ONE_IKM.toCharArray()),
+    Hex.decodeHex(CASE_ONE_SALT.toCharArray()),
+    Hex.decodeHex(CASE_ONE_INFO.toCharArray())
+)
+
+/**
+ * The `(message, fields)` pairs [block] handed to [LogHelper], with the real sinks out of the way.
+ *
+ * Mocked rather than captured through a registered sink: a sink cannot be unregistered, and a
+ * mocked LogHelper never reaches the level gate, so nothing here depends on - or disturbs - the
+ * process-wide level that every other test in this JVM shares.
+ */
+private fun recordsOf(block: () -> Unit): List<Pair<String, Map<String, Any?>>> {
+    val records = mutableListOf<Pair<String, Map<String, Any?>>>()
+    mockkStatic(LogHelper::class)
+    try {
+        every { LogHelper.v(any<String>()) } answers { records += firstArg<String>() to emptyMap() }
+        every { LogHelper.v(any<String>(), any<Map<String, Any?>>()) } answers {
+            records += firstArg<String>() to secondArg<Map<String, Any?>>()
+        }
+        block()
+    } finally {
+        unmockkStatic(LogHelper::class)
+    }
+    return records
+}
