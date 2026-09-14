@@ -260,7 +260,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
      * Stop coala, and clear all messages.
      */
     fun stop() {
-        LogHelper.i("Coala stop")
+        LogHelper.d("Coala stop")
         isTransportStopped = true
         val coalaStoppedException = CoalaStoppedException("Coala stopped")
         messagePool!!.clear(coalaStoppedException)
@@ -322,7 +322,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         .buffer(Channel.UNLIMITED)
 
     fun start() {
-        LogHelper.i("Coala start")
+        LogHelper.d("Coala start")
         receiver!!.start()
         sender!!.start()
         isTransportStopped = false

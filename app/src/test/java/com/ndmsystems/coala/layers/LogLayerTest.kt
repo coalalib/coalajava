@@ -1,5 +1,6 @@
 package com.ndmsystems.coala.layers
 
+import com.ndmsystems.coala.BuildConfig
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogRouting
 import com.ndmsystems.coala.message.CoAPMessage
@@ -119,6 +120,7 @@ object LogLayerTest : Spek({
         it("marks an outgoing dump for logcat and nowhere else, and still carries the dump") {
             val records = recordsOf { LogLayer().onSend(request(), addressRef()) }
 
+            if (skipBecauseReleaseWritesNoDump(records)) return@it
             val (message, fields) = records.single()
             assertEquals("Send data to Peer", message)
             assertTrue(LogRouting.isLocalOnly(fields), fields.toString())
@@ -128,6 +130,7 @@ object LogLayerTest : Spek({
         it("marks an incoming dump for logcat and nowhere else") {
             val records = recordsOf { LogLayer().onReceive(answer(), addressRef()) }
 
+            if (skipBecauseReleaseWritesNoDump(records)) return@it
             val (message, fields) = records.single()
             assertEquals("Received data from Peer", message)
             assertTrue(LogRouting.isLocalOnly(fields), fields.toString())
@@ -160,6 +163,16 @@ private fun recordsOf(block: () -> Unit): List<Pair<String, Map<String, Any?>>> 
         unmockkStatic(LogHelper::class)
     }
     return records
+}
+
+/**
+ * True when this is the release variant, where [LogLayer] writes no dump at all - the stronger
+ * guarantee, and the one asserted here. The marker cases below it only apply to a debug build.
+ */
+private fun skipBecauseReleaseWritesNoDump(records: List<Pair<String, Map<String, Any?>>>): Boolean {
+    if (BuildConfig.DEBUG) return false
+    assertTrue(records.isEmpty(), records.toString())
+    return true
 }
 
 private val PEER = InetSocketAddress("192.168.1.1", 5683)
