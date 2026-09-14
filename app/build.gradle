@@ -1,18 +1,20 @@
 buildscript {
     ext {
-        spek_version = '2.0.7'
-        mockk_version = '1.9.3'
-        kotlinVersion = '2.0.21'
-        daggerVersion = '2.51'
+        // Level with android.next's root build.gradle. These two builds share one Gradle
+        // invocation whenever the consuming app substitutes this clone through includeBuild, so a
+        // version declared here that disagrees with the one declared there wins or loses silently
+        // depending on which is higher. Dagger in particular must stay current: 2.51 predates KSP 2
+        // entirely, and the KSP below is 2.3.12.
+        spek_version = '2.0.19'
+        mockk_version = '1.14.11'
+        kotlinVersion = '2.4.10'
+        daggerVersion = '2.60.1'
         gsonVersion = '2.8.7'
-        // Matches what the app's dependency graph already resolves to, so the declared and the
-        // effective version stop drifting apart.
-        coroutinesVersion = '1.8.1'
+        coroutinesVersion = '1.11.0'
     }
 }
 plugins {
     id 'com.android.library'
-    id 'org.jetbrains.kotlin.android'
     id 'com.google.devtools.ksp'
     id 'de.mannodermaus.android-junit5'
     id 'jacoco'
@@ -38,7 +40,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
@@ -79,9 +81,6 @@ android {
         }
 
     }
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
-    }
     publishing {
         singleVariant("release") {
             withSourcesJar()
@@ -101,7 +100,7 @@ dependencies {
     implementation "com.google.dagger:dagger:$daggerVersion"
     ksp "com.google.dagger:dagger-compiler:$daggerVersion"
 
-    implementation 'com.squareup.okhttp3:okhttp:4.5.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation "com.google.code.gson:gson:$gsonVersion"
     implementation 'net.jodah:expiringmap:0.5.8'
 
@@ -112,10 +111,17 @@ dependencies {
 
     //unit tests
     testImplementation 'org.mockito:mockito-core:2.8.9'
-    testImplementation "org.junit.vintage:junit-vintage-engine:5.5.1"
+    // One BOM so the engines, the API and the launcher cannot drift apart; the launcher must be at
+    // least the platform version the engines pull in.
+    testImplementation platform('org.junit:junit-bom:6.1.3')
+    testRuntimeOnly platform('org.junit:junit-bom:6.1.3')
+    testImplementation "org.junit.vintage:junit-vintage-engine"
 
-    testImplementation "org.junit.jupiter:junit-jupiter-api:5.5.1"
-    testImplementation "org.junit.jupiter:junit-jupiter-engine:5.5.1"
+    testImplementation "org.junit.jupiter:junit-jupiter-api"
+    testImplementation "org.junit.jupiter:junit-jupiter-engine"
+    // Gradle 9 no longer puts the JUnit Platform launcher on the test runtime classpath itself.
+    // Without it the test JVM fails to start with "Failed to load JUnit Platform".
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 
     testImplementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
     testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
@@ -157,8 +163,13 @@ tasks.register('coverageReport', JacocoReport) {
             '**/R.class',
             '**/R$*.class',
     ]
+    // Taken from the compile task's own output rather than a hardcoded path: AGP 9's built-in
+    // Kotlin writes to build/intermediates/built_in_kotlinc/<variant>/compile<Variant>Kotlin/classes,
+    // and a fileTree over the old missing directory is empty, so the report would silently cover
+    // nothing while the task still succeeded.
     classDirectories.setFrom(
-            fileTree(dir: layout.buildDirectory.dir('tmp/kotlin-classes/debug').get().asFile, excludes: generated)
+            fileTree(dir: tasks.named('compileDebugKotlin').get().destinationDirectory.get().asFile,
+                     excludes: generated)
     )
     sourceDirectories.setFrom(files("$projectDir/src/main/java"))
     executionData.setFrom(fileTree(dir: layout.buildDirectory.get().asFile, includes: ['**/*.exec']))
@@ -182,5 +193,13 @@ afterEvaluate {
                 version = android.defaultConfig.versionName
             }
         }
+    }
+}
+
+// AGP 9 removed the android.kotlinOptions {} DSL. The Kotlin target is configured here instead,
+// and must stay level with compileOptions above - detekt parses against the same target.
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
     }
 }
