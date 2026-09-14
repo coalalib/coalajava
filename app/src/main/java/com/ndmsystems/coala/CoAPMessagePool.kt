@@ -291,13 +291,13 @@ class CoAPMessagePool(
                 element.isNeededSend = false
                 pool[id] = element
             } else {
-                LogHelper.i(
+                LogHelper.v(
                     "Try to setNoNeededSending, message not contains in pool",
                     mapOf(LogKeys.COAP_MESSAGE_ID to message.id)
                 )
             }
         } else {
-            LogHelper.i(
+            LogHelper.v(
                 "Try to setNoNeededSending, id not contains in pool",
                 mapOf(LogKeys.COAP_MESSAGE_ID to message.id)
             )
