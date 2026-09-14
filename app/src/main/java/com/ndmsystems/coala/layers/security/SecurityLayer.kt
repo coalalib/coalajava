@@ -233,7 +233,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                         ackHandlersPool.raiseAckError(message, errorText)
                         val responseHandler = message.responseHandler
                         if (responseHandler != null) {
-                            LogHelper.i(
+                            LogHelper.d(
                                 "Can't create session, failing the pending message",
                                 mapOf(LogKeys.ADDRESS to address.toString(), LogKeys.ERROR to error)
                             )

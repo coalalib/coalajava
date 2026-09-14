@@ -87,7 +87,7 @@ class CoAPSender(
                 startSendingLoop()
             }
         } else {
-            LogHelper.i("CoAPSender TCP mode try to start if needed")
+            LogHelper.d("CoAPSender TCP mode try to start if needed")
             startSendingLoop()
         }
     }

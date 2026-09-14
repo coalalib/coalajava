@@ -162,7 +162,7 @@ class Coala @JvmOverloads constructor(port: Int? = 0, val storage: ICoalaStorage
         // the pool and go out on the restarted sender.
         if (isTransportStopped) {
             val error = CoalaStoppedException("Coala is not started")
-            LogHelper.w("Message is not sent: coala is not started", mapOf(LogKeys.COAP_MESSAGE_ID to message.id))
+            LogHelper.d("Message is not sent: coala is not started", mapOf(LogKeys.COAP_MESSAGE_ID to message.id))
             message.responseHandler?.onError(error)
             handler?.onAckError(error.message ?: "Coala is not started")
             return

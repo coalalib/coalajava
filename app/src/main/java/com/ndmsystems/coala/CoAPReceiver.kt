@@ -154,7 +154,7 @@ class CoAPReceiver(
 
     @Synchronized
     fun stop() {
-        LogHelper.i("CoAPReceiver stop")
+        LogHelper.d("CoAPReceiver stop")
         isStarted = false
         // The waiter too - a connect resolving after stop() must not revive the receiver.
         connectWaiter?.cancel()
@@ -255,7 +255,7 @@ class CoAPReceiver(
                 continue
             }
         }
-        LogHelper.i("Receiving loop stopped")
+        LogHelper.d("Receiving loop stopped")
     }
 
     private fun getMessageFromPacket(udpPacket: DatagramPacket, addressFrom: InetSocketAddress? = null): CoAPMessage? {
