@@ -136,10 +136,31 @@ object LogHelper {
             it.className.startsWith(NDM_PACKAGE_PREFIX) && !isPlumbing(it)
         } ?: return UNKNOWN_CALLER
 
-        // fileName is null on synthetic, native and lambda-generated frames, which used to throw
-        // out of the catch block this is called from.
-        val file = frame.fileName ?: frame.className.substringAfterLast('.')
-        return "$file.${frame.methodName}:${frame.lineNumber}"
+        return "${sourceFileOf(frame)}.${frame.methodName}:${frame.lineNumber}"
+    }
+
+    /**
+     * The source file [frame] comes from, named the way a debug build's stack names it.
+     *
+     * The stack's own name is used when it is a real one. A release build has none: R8 replaces
+     * every SourceFile attribute with `r8-map-id-<hash>`, kept classes included, and that put the
+     * hash in the `caller` of every record that ships - the field the server derives `origin`
+     * from. Synthetic, native and lambda-generated frames carry no name at all, and reading it
+     * blindly used to throw out of the catch block [firstOurAppEntry] is called from.
+     *
+     * Then the name is rebuilt from the class, which R8 leaves alone in our packages: the outer
+     * class of a lambda or a nested class, and `FooKt`, where top-level functions live, back to
+     * `Foo.kt`. Every source of ours is Kotlin. A foreign class gets its bare name, since the
+     * language it was written in is unknown.
+     */
+    private fun sourceFileOf(frame: StackTraceElement): String {
+        frame.fileName?.takeIf { it.endsWith(".kt") || it.endsWith(".java") }?.let { return it }
+        val outerClass = frame.className.substringAfterLast('.').substringBefore('$')
+        return when {
+            !frame.className.startsWith(NDM_PACKAGE_PREFIX) -> outerClass
+            outerClass.endsWith(FILE_FACADE_SUFFIX) -> outerClass.removeSuffix(FILE_FACADE_SUFFIX) + ".kt"
+            else -> "$outerClass.kt"
+        }
     }
 
     /**
@@ -149,7 +170,7 @@ object LogHelper {
     @JvmStatic
     fun getFirstOurAppEntryFromStacktrace(stackTrace: Array<StackTraceElement>, fileNameToExclude: String?): String =
         firstOurAppEntry(stackTrace) {
-            fileNameToExclude != null && it.fileName?.contains(fileNameToExclude) == true
+            fileNameToExclude != null && sourceFileOf(it).contains(fileNameToExclude)
         }
 
     @JvmStatic
@@ -163,11 +184,14 @@ object LogHelper {
     fun getShortStackTraceString(throwable: Throwable): String {
         val frames = throwable.stackTrace
         val shown = frames.take(SHORT_STACK_FRAMES)
-            .joinToString { it.fileName + "." + it.methodName + ":" + it.lineNumber }
+            .joinToString { "${sourceFileOf(it)}.${it.methodName}:${it.lineNumber}" }
         return if (frames.size > SHORT_STACK_FRAMES) "$shown, +${frames.size - SHORT_STACK_FRAMES} more" else shown
     }
 
     private const val SHORT_STACK_FRAMES = 10
+
+    /** What Kotlin appends to a file's name for the class holding its top-level functions. */
+    private const val FILE_FACADE_SUFFIX = "Kt"
 
     enum class LogLevel {
         VERBOSE, DEBUG, INFO, WARNING, ERROR

@@ -97,7 +97,65 @@ class LogHelperTest {
 
         val result = LogHelper.firstOurAppEntry(stackTrace) { false }
 
-        assertEquals("DeviceControlManager\$\$Lambda\$17.run:-1", result)
+        assertEquals("DeviceControlManager.kt.run:-1", result)
+    }
+
+    @Test
+    fun firstOurAppEntry_namesTheFileAReleaseBuildRenamed() {
+        // R8 replaces every SourceFile attribute with its map id, kept classes included. The server
+        // derives `origin` from the caller, so a release record has to name the file a debug one does.
+        fun callerOf(className: String) = LogHelper.firstOurAppEntry(
+            arrayOf(StackTraceElement(className, "startInBackground\$lambda\$2", R8_SOURCE_FILE, 40))
+        ) { false }
+
+        assertEquals(
+            "AppInitializeManager.kt.startInBackground\$lambda\$2:40",
+            callerOf("com.ndmsystems.knext.managers.AppInitializeManager")
+        )
+        assertEquals(
+            "AppInitializeManager.kt.startInBackground\$lambda\$2:40",
+            callerOf("com.ndmsystems.knext.managers.AppInitializeManager\$startInBackground\$1")
+        )
+        assertEquals(
+            "AppInitializeManager.kt.startInBackground\$lambda\$2:40",
+            callerOf("com.ndmsystems.knext.managers.AppInitializeManager\$\$ExternalSyntheticLambda3")
+        )
+        assertEquals(
+            "RxExtensions.kt.startInBackground\$lambda\$2:40",
+            callerOf("com.ndmsystems.knext.helpers.ktExtensions.rx.RxExtensionsKt")
+        )
+    }
+
+    @Test
+    fun getFirstOurAppEntryFromStacktrace_skipsTheExcludedFileInAReleaseBuildToo() {
+        // The exclusion matched the stack's file name, which a release build no longer has - so the
+        // parser that caught the error was reported as the caller.
+        val stackTrace = arrayOf(
+            StackTraceElement("com.ndmsystems.knext.others.InvalidTypeParserFactory\$create\$1", "read", R8_SOURCE_FILE, 27),
+            StackTraceElement("com.ndmsystems.knext.managers.account.NetworksManager", "getNetworksList", R8_SOURCE_FILE, 88),
+        )
+
+        val result = LogHelper.getFirstOurAppEntryFromStacktrace(stackTrace, "InvalidTypeParserFactory")
+
+        assertEquals("NetworksManager.kt.getNetworksList:88", result)
+    }
+
+    @Test
+    fun getShortStackTraceString_namesReleaseFramesWithoutTheMapId() {
+        // Ours are rebuilt from the class, a renamed library class keeps its bare name - there is no
+        // telling what it was written in - and a platform frame R8 never touched keeps its own file.
+        val throwable = Throwable().apply {
+            stackTrace = arrayOf(
+                StackTraceElement("com.ndmsystems.coala.CoAPClient", "send", R8_SOURCE_FILE, 74),
+                StackTraceElement("a.b.c", "a", R8_SOURCE_FILE, 12),
+                StackTraceElement("java.lang.Thread", "run", "Thread.java", 1012),
+            )
+        }
+
+        assertEquals(
+            "CoAPClient.kt.send:74, c.a:12, Thread.java.run:1012",
+            LogHelper.getShortStackTraceString(throwable)
+        )
     }
 
     @Test
@@ -143,5 +201,10 @@ class LogHelperTest {
         val throwable = Throwable().apply { stackTrace = emptyArray() }
 
         assertEquals("", LogHelper.getShortStackTraceString(throwable))
+    }
+
+    private companion object {
+        /** What a release build's stack carries for every class R8 processed. */
+        const val R8_SOURCE_FILE = "r8-map-id-88304e73a1c95d2b4f6e0a7c3b18d9e5f2a6c4b07d1e3f5a9c8b2d4e6f0a1b3c5"
     }
 }
