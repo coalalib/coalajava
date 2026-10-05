@@ -1,0 +1,3 @@
+com.ndmsystems.knext.ui.widgets.IpResult	IpUiState.kt
+a line the build would never write
+com.ndmsystems.knext.others.InvalidTypeParser	InvalidTypeParserFactory.kt

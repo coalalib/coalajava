@@ -1,6 +1,9 @@
 package com.ndmsystems.coala.helpers.logging
 
+import android.os.Looper
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.FutureTask
+import java.util.concurrent.atomic.AtomicBoolean
 
 object LogHelper {
     /** What [firstOurAppEntry] reports when the stack holds no frame of ours. */
@@ -148,20 +151,69 @@ object LogHelper {
      * from. Synthetic, native and lambda-generated frames carry no name at all, and reading it
      * blindly used to throw out of the catch block [firstOurAppEntry] is called from.
      *
-     * Then the name is rebuilt from the class, which R8 leaves alone in our packages: the outer
-     * class of a lambda or a nested class, and `FooKt`, where top-level functions live, back to
-     * `Foo.kt`. Every source of ours is Kotlin. A foreign class gets its bare name, since the
-     * language it was written in is unknown.
+     * Then the name comes from the class, which R8 leaves alone in our packages - from its outer
+     * class, since a lambda or a nested class lives in the same file. A class declared in a file
+     * named after something else (`IpResult` in `IpUiState.kt`) is looked up in
+     * [SOURCE_FILE_INDEX] (see [indexedSourceFile]), which the app's build writes for its minified variants from the classes
+     * R8 starts with. Anything else is named after the class: `Foo.kt`, and `FooKt`, where top-level
+     * functions live, back to `Foo.kt`. Every source of ours is Kotlin. A foreign class gets its
+     * bare name, since the language it was written in is unknown.
      */
     private fun sourceFileOf(frame: StackTraceElement): String {
         frame.fileName?.takeIf { it.endsWith(".kt") || it.endsWith(".java") }?.let { return it }
-        val outerClass = frame.className.substringAfterLast('.').substringBefore('$')
+        val outerClassName = frame.className.substringBefore('$')
+        val outerClass = outerClassName.substringAfterLast('.')
         return when {
             !frame.className.startsWith(NDM_PACKAGE_PREFIX) -> outerClass
-            outerClass.endsWith(FILE_FACADE_SUFFIX) -> outerClass.removeSuffix(FILE_FACADE_SUFFIX) + ".kt"
-            else -> "$outerClass.kt"
+            else -> indexedSourceFile(outerClassName) ?: when {
+                outerClass.endsWith(FILE_FACADE_SUFFIX) -> outerClass.removeSuffix(FILE_FACADE_SUFFIX) + ".kt"
+                else -> "$outerClass.kt"
+            }
         }
     }
+
+    /**
+     * [className]'s file from [SOURCE_FILE_INDEX]; null when the index does not list it, the build
+     * wrote none - a debug build, whose stack names its files itself, or a unit test - or it is
+     * still loading and this is the main thread.
+     *
+     * The first read opens the APK as a zip, which is disk I/O on whatever thread logs first - in
+     * a release build that is the main thread, inside Application.onCreate. So the index loads on
+     * a thread of its own, which every other thread waits for: those are where the records that
+     * ship resolve their caller. The main thread does not wait, and until the load is done a class
+     * it logs from is named after itself; that reaches only a logcat tag. A broken index costs the
+     * names it would have supplied, never the record.
+     */
+    private fun indexedSourceFile(className: String): String? {
+        if (sourceFileIndexLoading.compareAndSet(false, true)) {
+            Thread(sourceFileIndex, "LogHelper-source-files").apply { isDaemon = true }.start()
+        }
+        if (!sourceFileIndex.isDone && isMainThread()) return null
+        return runCatching { sourceFileIndex.get()[className] }.getOrNull()
+    }
+
+    private val sourceFileIndexLoading = AtomicBoolean(false)
+
+    private val sourceFileIndex = FutureTask {
+        runCatching {
+            val index = LogHelper::class.java.classLoader?.getResourceAsStream(SOURCE_FILE_INDEX)
+            index?.bufferedReader()?.useLines { lines ->
+                lines.mapNotNull { line ->
+                    val parts = line.split('\t')
+                    if (parts.size == 2) parts[0] to parts[1] else null
+                }.toMap()
+            }
+        }.getOrNull().orEmpty()
+    }
+
+    // Off a device - a unit test - Looper is a stub that throws, and every thread may wait.
+    private fun isMainThread(): Boolean = runCatching { Looper.getMainLooper().isCurrentThread }.getOrDefault(false)
+
+    /**
+     * A Java resource of `<class name>\t<source file>` lines, one for every class of ours whose
+     * file is not named after it. The path is the contract with the app build that writes it.
+     */
+    const val SOURCE_FILE_INDEX = "com/ndmsystems/coala/helpers/logging/source-files.txt"
 
     /**
      * [firstOurAppEntry] for a throwable's own stack, skipping the file that caught it - otherwise

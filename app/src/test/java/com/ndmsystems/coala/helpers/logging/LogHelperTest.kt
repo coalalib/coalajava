@@ -127,6 +127,47 @@ class LogHelperTest {
     }
 
     @Test
+    fun firstOurAppEntry_looksUpAReleaseClassDeclaredInAFileNamedAfterSomethingElse() {
+        // `IpResult` lives in IpUiState.kt. Its name says nothing about that, so the app's build
+        // writes it into the index (src/test/resources here), and a nested class or a lambda of it
+        // resolves through its outer class.
+        fun callerOf(className: String) = LogHelper.firstOurAppEntry(
+            arrayOf(StackTraceElement(className, "toUi", R8_SOURCE_FILE, 21))
+        ) { false }
+
+        assertEquals("IpUiState.kt.toUi:21", callerOf("com.ndmsystems.knext.ui.widgets.IpResult"))
+        assertEquals("IpUiState.kt.toUi:21", callerOf("com.ndmsystems.knext.ui.widgets.IpResult\$Valid"))
+        assertEquals(
+            "IpUiState.kt.toUi:21",
+            callerOf("com.ndmsystems.knext.ui.widgets.IpResult\$\$ExternalSyntheticLambda0")
+        )
+    }
+
+    @Test
+    fun firstOurAppEntry_prefersTheStacksOwnFileNameOverTheIndex() {
+        // A debug build names its files itself; the index only fills in what R8 took away.
+        val stackTrace = arrayOf(
+            StackTraceElement("com.ndmsystems.knext.ui.widgets.IpResult", "toUi", "Elsewhere.kt", 21),
+        )
+
+        assertEquals("Elsewhere.kt.toUi:21", LogHelper.firstOurAppEntry(stackTrace) { false })
+    }
+
+    @Test
+    fun getFirstOurAppEntryFromStacktrace_skipsAnIndexedClassOfTheExcludedFile() {
+        // Excluding by file has to cover every class declared in that file, not only the one named
+        // after it.
+        val stackTrace = arrayOf(
+            StackTraceElement("com.ndmsystems.knext.others.InvalidTypeParser", "parse", R8_SOURCE_FILE, 51),
+            StackTraceElement("com.ndmsystems.knext.managers.account.NetworksManager", "getNetworksList", R8_SOURCE_FILE, 88),
+        )
+
+        val result = LogHelper.getFirstOurAppEntryFromStacktrace(stackTrace, "InvalidTypeParserFactory")
+
+        assertEquals("NetworksManager.kt.getNetworksList:88", result)
+    }
+
+    @Test
     fun getFirstOurAppEntryFromStacktrace_skipsTheExcludedFileInAReleaseBuildToo() {
         // The exclusion matched the stack's file name, which a release build no longer has - so the
         // parser that caught the error was reported as the caller.
