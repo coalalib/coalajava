@@ -7,6 +7,7 @@ import com.ndmsystems.coala.CoAPHandler.AckError
 import com.ndmsystems.coala.CoAPMessagePool
 import com.ndmsystems.coala.LayersStack
 import com.ndmsystems.coala.crypto.CurveRepository
+import com.ndmsystems.coala.exceptions.CoalaStoppedException
 import com.ndmsystems.coala.exceptions.PeerPublicKeyMismatchException
 import com.ndmsystems.coala.helpers.EncryptionHelper
 import com.ndmsystems.coala.helpers.Hex
@@ -388,8 +389,21 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
     override fun onStop() {
         LogHelper.d("SecurityLayer onStop")
         sessionPool.clear()
-        synchronized(pendingMessages) {
-            pendingMessages.clear()
+        // The handshakes these requests wait for die with the stop, and nothing else will answer
+        // them: they left the message pool when they were parked, so its clear() never sees them,
+        // and the client hello's own failure arrives asynchronously, usually after this set is
+        // already empty. Cleared without an answer, each one left its caller awaiting forever.
+        val parked = synchronized(pendingMessages) {
+            pendingMessages.toList().also { pendingMessages.clear() }
+        }
+        if (parked.isEmpty()) return
+        LogHelper.d("Failing the requests that waited for a handshake", mapOf(LogKeys.COUNT to parked.size))
+        val error = CoalaStoppedException("Coala stopped")
+        pendingErrorScope.launch {
+            for (message in parked) {
+                ackHandlersPool.raiseAckError(message, error.message ?: "Coala stopped")
+                message.responseHandler?.onError(error)
+            }
         }
     }
 }
