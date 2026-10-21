@@ -44,7 +44,7 @@ class ResponseErrorFactory {
             val payloadErrorCode = if (errorObject.has("code")) errorObject.getInt("code") else 0
             // Only the path: the additional info is logged and uploaded with the error, and the
             // request body is whatever the caller sent - passwords, keys, names included.
-            coAPException = CoAPException(errorMessage, message.code, payloadErrorCode, "req path: ${request?.getURIPathString()}")
+            coAPException = CoAPException(errorMessage, message.code, payloadErrorCode, request?.let { "req path: ${it.getURIPathString()}" })
         } catch (e: JSONException) {
             LogHelper.w(
                 "ResponseErrorFactory: can't parse error payload",

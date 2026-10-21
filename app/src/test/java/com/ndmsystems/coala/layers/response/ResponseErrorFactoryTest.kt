@@ -122,6 +122,14 @@ object ResponseErrorFactoryTest : Spek({
             assertTrue(info.contains("user/profile"), info)
         }
 
+        it("has no additional info when there is no request to name") {
+            val error = factory.proceed(
+                response(CoAPMessageCode.CoapCodeBadRequest, """{"message":"denied","code":7}""")
+            )
+
+            assertNull(error!!.additionalInfo)
+        }
+
         it("still reports a plain success as no error, whatever its payload says") {
             assertNull(factory.proceed(response(CoAPMessageCode.CoapCodeContent, """{"code":0}""")))
         }
