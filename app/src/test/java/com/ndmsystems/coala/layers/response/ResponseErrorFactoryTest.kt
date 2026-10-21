@@ -9,6 +9,7 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.net.InetSocketAddress
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -100,6 +101,25 @@ object ResponseErrorFactoryTest : Spek({
             assertNotNull(error)
             assertEquals(CoAPMessageCode.CoapCodeBadRequest, error.code)
             assertNull(error.payloadErrorCode, "there was no code to parse out")
+        }
+
+        it("names the request's path but not its body") {
+            // The additional info is logged with the error and uploaded. A request body is whatever
+            // the caller sent - a new password, a Wi-Fi key, a name - and the path alone already
+            // says which call failed.
+            val request = CoAPMessage(CoAPMessageType.CON, CoAPMessageCode.POST).apply {
+                setURI("coap://127.0.0.1:5683/user/profile")
+                setStringPayload("""{"new_password":"hunter2"}""")
+            }
+
+            val error = factory.proceed(
+                response(CoAPMessageCode.CoapCodeBadRequest, """{"message":"denied","code":7}"""),
+                request
+            )
+
+            val info = error!!.additionalInfo!!
+            assertFalse(info.contains("hunter2"), info)
+            assertTrue(info.contains("user/profile"), info)
         }
 
         it("still reports a plain success as no error, whatever its payload says") {
