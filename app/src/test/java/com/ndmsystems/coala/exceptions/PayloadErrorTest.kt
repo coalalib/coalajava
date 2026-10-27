@@ -21,6 +21,11 @@ object PayloadErrorTest : Spek({
             assertEquals(PayloadError.CODE_3001, PayloadError.getByCode(3001))
         }
 
+        it("finds the code the cloud refuses to add a router with too old a firmware with") {
+            // Without its own entry the app only ever sees UNKNOWN and cannot tell the user why.
+            assertEquals(2031, PayloadError.getByCode(2031).code)
+        }
+
         it("degrades to unknown for a code it has never heard of") {
             // New firmware ships new codes; an app that throws here would fail the whole response.
             assertEquals(PayloadError.UNKNOWN, PayloadError.getByCode(9999))

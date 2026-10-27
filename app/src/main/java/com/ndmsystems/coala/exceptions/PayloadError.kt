@@ -31,6 +31,8 @@ enum class PayloadError(val code: Int) {
     CODE_2028(code = 2028),
     CODE_2029(code = 2029),
     CODE_2030(code = 2030),
+    // the cloud refuses to add a router whose firmware is too old
+    CODE_2031(code = 2031),
     CODE_2032(code = 2032),
     CODE_3000(code = 3000),
     // weak password
