@@ -3,6 +3,7 @@ package com.ndmsystems.coala
 import com.ndmsystems.coala.CoAPSerializer.DeserializeException
 import com.ndmsystems.coala.CoAPSerializer.fromBytes
 import com.ndmsystems.coala.helpers.Hex
+import com.ndmsystems.coala.helpers.logging.FailureRun
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogKeys
 import com.ndmsystems.coala.layers.arq.states.LoggableState
@@ -49,6 +50,23 @@ class CoAPReceiver(
     private var connectWaiter: Job? = null
     private var tcpReceivingJob: Job? = null
     private var transportMode: Coala.TransportMode = Coala.TransportMode.UDP
+
+    /**
+     * Failed TCP loops since a dial last connected, which is what stretches the delay before the
+     * next dial.
+     *
+     * A phone with no route fails the dial at once, so the restart delay is the only pause between
+     * two dials: at a fixed [RESTART_DELAY_MS] that was two dials a second for as long as the phone
+     * stayed offline. A dial that connects starts the count over, however that connection ends: a
+     * proxy closing idle connections is not a failure in a row, and while the redial waits nothing
+     * reads the answers to what the sender goes on sending. Volatile: the loop writes it from the IO
+     * pool, [stop] from the caller's thread.
+     */
+    @Volatile
+    private var tcpFailuresInARow = 0
+
+    /** One record per run of failed TCP loops rather than one per loop; see [FailureRun]. */
+    private val tcpFailures = FailureRun()
 
     /** Unconfined for the same reason as [CoAPSender.scope]: keep the already-connected path inline. */
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
@@ -167,6 +185,10 @@ class CoAPReceiver(
         // only the socket closing ended it, and the Thread reference was never cleared.
         tcpReceivingJob?.cancel()
         tcpReceivingJob = null
+        // A deliberate stop ends the run without a recovery to report: the next start dials at once
+        // and owes nothing to the failures of the previous one.
+        tcpFailuresInARow = 0
+        tcpFailures.clear()
         connection = null
         // The receive stack's layers get the same shutdown signal the sender gives the send
         // stack - shared layers are cleared twice, which every onStop() tolerates.
@@ -294,13 +316,7 @@ class CoAPReceiver(
                     // the socket is the only thing that wakes it. That is a shutdown, not an error,
                     // and it happens every time the app goes to background.
                     if (isActive) {
-                        LogHelper.e(
-                            "TCP receiving loop error",
-                            mapOf(
-                                LogKeys.ERROR to e.message,
-                                LogKeys.STACK to LogHelper.getShortStackTraceString(e)
-                            )
-                        )
+                        onTcpLoopFailed(e)
                         // EOF from the proxy does not close our end of the socket, so without this
                         // the restarted loop is handed the same dead connection and dies again.
                         connectionProvider.invalidateTcpSocket()
@@ -311,9 +327,40 @@ class CoAPReceiver(
                 // The same self-healing the UDP loop and the sender have: the proxy dropping the
                 // connection must not leave a receiver that reports isStarted yet hears nothing -
                 // requests kept going out while every answer was lost until a transport bounce.
-                delay(RESTART_DELAY_MS)
+                delay(tcpRestartDelayMs(tcpFailuresInARow))
                 restartTcpIfStillCurrent(self)
             }
+        }
+    }
+
+    /**
+     * Records a TCP loop that died while it was still wanted.
+     *
+     * An [IOException] is the network - no route, a reset, a proxy that hung up - and is a warning;
+     * anything else is a defect and stays an error. Either way only the [tcpFailures] schedule is
+     * written, not every turn of a loop that fails each time it is restarted.
+     */
+    private fun onTcpLoopFailed(e: Exception) {
+        tcpFailuresInARow++
+        tcpFailures.report(e.javaClass.simpleName)?.let { attempt ->
+            val fields = mapOf(
+                LogKeys.ATTEMPT to attempt,
+                LogKeys.ERROR_TYPE to e.javaClass.simpleName,
+                LogKeys.ERROR to e.message,
+                LogKeys.STACK to LogHelper.getShortStackTraceString(e)
+            )
+            if (e is IOException) {
+                LogHelper.w("TCP receiving loop error", fields)
+            } else {
+                LogHelper.e("TCP receiving loop error", fields)
+            }
+        }
+    }
+
+    /** A frame arrived, so the connection works: whatever failed before it was one run, now over. */
+    private fun onTcpFrameReceived() {
+        tcpFailures.clear()?.let { attempts ->
+            LogHelper.i("TCP receiving loop recovered", mapOf(LogKeys.RUN_ATTEMPTS to attempts))
         }
     }
 
@@ -337,8 +384,10 @@ class CoAPReceiver(
      */
     private suspend fun runTcpReceivingLoop() {
         val input = connectionProvider.getOrCreateTcpSocket().getInputStream()
+        tcpFailuresInARow = 0
         while (currentCoroutineContext().isActive && isStarted) {
             val frame = TcpFraming.decode(input) ?: continue // not our frame
+            onTcpFrameReceived()
             val message = try {
                 fromBytes(frame.payload, frame.address)
             } catch (e: Exception) {
@@ -365,6 +414,20 @@ class CoAPReceiver(
 
         /** How long a dead receiving loop waits before trying to bring the receiver back up. */
         internal const val RESTART_DELAY_MS = 500L
+
+        /** The longest a failing TCP loop waits between dials: a phone offline for an hour dials 120 times, not 7200. */
+        internal const val MAX_TCP_RESTART_DELAY_MS = 30_000L
+
+        /**
+         * The wait before the next TCP dial after [failuresInARow] failed loops: [RESTART_DELAY_MS]
+         * after a loop that ended without failing, doubling with each failure in a row up to
+         * [MAX_TCP_RESTART_DELAY_MS].
+         */
+        internal fun tcpRestartDelayMs(failuresInARow: Int): Long =
+            (RESTART_DELAY_MS shl (failuresInARow - 1).coerceIn(0, MAX_DOUBLINGS)).coerceAtMost(MAX_TCP_RESTART_DELAY_MS)
+
+        /** Enough to pass [MAX_TCP_RESTART_DELAY_MS] from [RESTART_DELAY_MS]; keeps the shift far from overflow. */
+        private const val MAX_DOUBLINGS = 10
 
         /** Per-datagram read buffer - not SO_RCVBUF, which RealUdpSocketFactory sets to 1 MiB. */
         private const val MAX_DATAGRAM_SIZE = 4096
