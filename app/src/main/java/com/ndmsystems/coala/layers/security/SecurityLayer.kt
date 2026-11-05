@@ -136,7 +136,7 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                                     setSessionForAddress(securedSession, message)
                                     sendPendingMessage(message.address)
                                 } else {
-                                    LogHelper.i("Error then try to client hello, session removed, error is nul, securedSession is null")
+                                    LogHelper.i("Client hello failed without an error, and the session is gone")
                                     removeSessionForAddress(message)
                                     removePendingMessagesByAddress(receiverAddress, "client hello, session removed")
                                 }
@@ -153,16 +153,16 @@ class SecurityLayer(private val messagePool: CoAPMessagePool,
                                 removePendingMessagesByAddress(receiverAddress, "Client hello keys mismatch")
                             }
                         } else {
-                            LogHelper.i("Error then try to client hello", mapOf(LogKeys.ERROR to error))
+                            LogHelper.i("Client hello failed", mapOf(LogKeys.ERROR to error))
                             removeSessionForAddress(message)
-                            removePendingMessagesByAddress(receiverAddress, "Error then try to client hello: $error")
+                            removePendingMessagesByAddress(receiverAddress, "Client hello failed: $error")
                         }
                     }
 
                     override fun onAckError(error: String) {
-                        LogHelper.i("Error then try to client hello", mapOf(LogKeys.ERROR to error))
+                        LogHelper.i("Client hello failed", mapOf(LogKeys.ERROR to error))
                         removeSessionForAddress(message)
-                        removePendingMessagesByAddress(receiverAddress, "Error then try to client hello: $error")
+                        removePendingMessagesByAddress(receiverAddress, "Client hello failed: $error")
                     }
                 })
                 addMessageToPending(message)
