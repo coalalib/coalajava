@@ -11,6 +11,7 @@ import io.mockk.mockk
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.ByteArrayInputStream
+import java.io.InputStream
 import java.net.ConnectException
 import java.net.DatagramPacket
 import java.net.InetSocketAddress
@@ -18,6 +19,7 @@ import java.net.MulticastSocket
 import java.net.Socket
 import java.net.SocketTimeoutException
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -243,19 +245,48 @@ object CoAPReceiverTest : Spek({
             assertEquals(waits.sorted(), waits, "the wait shrank while the failures went on: $waits")
         }
 
-        it("redials after the base delay each time a connection that came up is dropped") {
-            // A proxy that closes idle connections ends each one before any frame. Those connections
-            // worked: counting their ends as failures in a row pushed the redial towards the cap,
-            // and while it waited nothing read the answers to what the sender went on sending.
+        it("still backs off from a proxy that takes the connection and closes it at once") {
+            // An overloaded or refusing proxy: the dial succeeds and the read hits EOF straight away.
+            // Starting the count over on every connect kept that at two dials a second.
             val receiver = newReceiver {
                 mockk<Socket>(relaxed = true).also { every { it.getInputStream() } returns ByteArrayInputStream(ByteArray(0)) }
             }
 
             receiver.start()
-            awaitCondition("four dials") { dials.size >= 4 }
+            awaitCondition("three dials") { dials.size >= 3 }
 
             val gaps = gapsBetweenDials()
-            assertTrue(gaps.all { it < 2 * CoAPReceiver.RESTART_DELAY_MS }, "a dropped connection stretched the redial: $gaps")
+            assertTrue(gaps[1] >= 3 * CoAPReceiver.RESTART_DELAY_MS / 2, "the wait did not grow: $gaps")
+        }
+
+        it("stops waiting once the sender has a connection up") {
+            // The sender dials on its own. Once it is connected, every answer to what it sends
+            // arrives on that connection, and a receiver still sitting out its backoff loses them.
+            val connectionProvider = mockk<ConnectionProvider>(relaxed = true)
+            val senderConnected = AtomicBoolean(false)
+            every { connectionProvider.hasOpenTcpSocket() } answers { senderConnected.get() }
+            every { connectionProvider.getOrCreateTcpSocket() } answers {
+                dials += System.nanoTime() / 1_000_000
+                if (dials.size < 3) throw ConnectException("connect failed: ENETUNREACH (Network is unreachable)")
+                if (dials.size == 3) {
+                    senderConnected.set(true)
+                    throw ConnectException("connect failed: ENETUNREACH (Network is unreachable)")
+                }
+                mockk<Socket>(relaxed = true).also { every { it.getInputStream() } returns SlowEofInputStream() }
+            }
+            val receiver = CoAPReceiver(connectionProvider, mockk(relaxed = true)).also {
+                it.setTransportMode(Coala.TransportMode.TCP)
+                receivers += it
+            }
+
+            receiver.start()
+            awaitCondition("the dial after the sender connected") { dials.size >= 4 }
+
+            val gaps = gapsBetweenDials()
+            assertTrue(
+                gaps[2] < CoAPReceiver.tcpRestartDelayMs(3) / 2,
+                "the receiver sat out its ${CoAPReceiver.tcpRestartDelayMs(3)} ms wait: $gaps"
+            )
         }
 
         it("dials again after the base delay once a frame got through") {
@@ -353,3 +384,13 @@ private class DriverSocket(private val driver: LoopDriver) : MulticastSocket(0) 
         throw SocketTimeoutException("no packet is ever delivered in this test")
     }
 }
+
+/** A connection that stays up a moment and then hangs up, so a test is not left with a read parked forever. */
+private class SlowEofInputStream : InputStream() {
+    override fun read(): Int {
+        Thread.sleep(SLOW_EOF_MS)
+        return -1
+    }
+}
+
+private const val SLOW_EOF_MS = 300L

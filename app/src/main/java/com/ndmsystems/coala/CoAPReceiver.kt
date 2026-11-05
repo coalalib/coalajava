@@ -52,15 +52,14 @@ class CoAPReceiver(
     private var transportMode: Coala.TransportMode = Coala.TransportMode.UDP
 
     /**
-     * Failed TCP loops since a dial last connected, which is what stretches the delay before the
-     * next dial.
+     * Failed TCP loops in a row, which is what stretches the delay before the next dial.
      *
      * A phone with no route fails the dial at once, so the restart delay is the only pause between
      * two dials: at a fixed [RESTART_DELAY_MS] that was two dials a second for as long as the phone
-     * stayed offline. A dial that connects starts the count over, however that connection ends: a
-     * proxy closing idle connections is not a failure in a row, and while the redial waits nothing
-     * reads the answers to what the sender goes on sending. Volatile: the loop writes it from the IO
-     * pool, [stop] from the caller's thread.
+     * stayed offline. A proxy that takes the connection and closes it at once is the same storm, so
+     * only a frame - a connection that worked - starts the count over. The sender getting a
+     * connection up ends the wait early instead; see [awaitTcpRestart]. Volatile: the loop writes it
+     * from the IO pool, [stop] from the caller's thread.
      */
     @Volatile
     private var tcpFailuresInARow = 0
@@ -327,7 +326,7 @@ class CoAPReceiver(
                 // The same self-healing the UDP loop and the sender have: the proxy dropping the
                 // connection must not leave a receiver that reports isStarted yet hears nothing -
                 // requests kept going out while every answer was lost until a transport bounce.
-                delay(tcpRestartDelayMs(tcpFailuresInARow))
+                awaitTcpRestart(tcpRestartDelayMs(tcpFailuresInARow))
                 restartTcpIfStillCurrent(self)
             }
         }
@@ -357,8 +356,24 @@ class CoAPReceiver(
         }
     }
 
+    /**
+     * Sits out [waitMs] before the next dial, unless the sender gets a connection up first: it dials
+     * on its own, every answer to what it sends comes back on that connection, and a receiver still
+     * waiting out its backoff would leave them unread.
+     */
+    private suspend fun awaitTcpRestart(waitMs: Long) {
+        var waited = 0L
+        while (waited < waitMs && !connectionProvider.hasOpenTcpSocket()) {
+            val step = minOf(TCP_RESTART_POLL_MS, waitMs - waited)
+            delay(step)
+            waited += step
+        }
+    }
+
     /** A frame arrived, so the connection works: whatever failed before it was one run, now over. */
     private fun onTcpFrameReceived() {
+        if (tcpFailuresInARow == 0) return
+        tcpFailuresInARow = 0
         tcpFailures.clear()?.let { attempts ->
             LogHelper.i("TCP receiving loop recovered", mapOf(LogKeys.RUN_ATTEMPTS to attempts))
         }
@@ -384,7 +399,6 @@ class CoAPReceiver(
      */
     private suspend fun runTcpReceivingLoop() {
         val input = connectionProvider.getOrCreateTcpSocket().getInputStream()
-        tcpFailuresInARow = 0
         while (currentCoroutineContext().isActive && isStarted) {
             val frame = TcpFraming.decode(input) ?: continue // not our frame
             onTcpFrameReceived()
@@ -425,6 +439,9 @@ class CoAPReceiver(
          */
         internal fun tcpRestartDelayMs(failuresInARow: Int): Long =
             (RESTART_DELAY_MS shl (failuresInARow - 1).coerceIn(0, MAX_DOUBLINGS)).coerceAtMost(MAX_TCP_RESTART_DELAY_MS)
+
+        /** How often a TCP backoff checks whether the sender has a connection up. */
+        private const val TCP_RESTART_POLL_MS = 250L
 
         /** Enough to pass [MAX_TCP_RESTART_DELAY_MS] from [RESTART_DELAY_MS]; keeps the shift far from overflow. */
         private const val MAX_DOUBLINGS = 10
