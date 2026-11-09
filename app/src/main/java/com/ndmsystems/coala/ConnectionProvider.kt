@@ -120,6 +120,10 @@ class ConnectionProvider internal constructor(
         return tcpSocket!!
     }
 
+    /** True while a TCP connection is up - dialled by the receiver or by the sender, whichever came first. */
+    @Synchronized
+    fun hasOpenTcpSocket(): Boolean = tcpSocket?.isClosed == false
+
     /**
      * Drops the TCP connection so the next [getOrCreateTcpSocket] dials a fresh one.
      *

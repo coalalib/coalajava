@@ -13,6 +13,7 @@ import org.spekframework.spek2.style.specification.describe
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.MulticastSocket
+import java.net.Socket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -239,6 +240,18 @@ object ConnectionProviderTest : Spek({
                 assertFailsWith<NotImplementedError> { runBlocking { provider.awaitConnection() } }
 
                 assertEquals(0, factory.attempts)
+            }
+
+            it("says whether a connection is up, and not after it was dropped") {
+                val socket = mockk<Socket>(relaxed = true)
+                val provider = ConnectionProvider(TestSocketFactory { newSocket() }, { _, _ -> socket })
+                provider.setTransportMode(Coala.TransportMode.TCP, InetSocketAddress("127.0.0.1", 1234))
+
+                assertFalse(provider.hasOpenTcpSocket())
+                provider.getOrCreateTcpSocket()
+                assertTrue(provider.hasOpenTcpSocket())
+                provider.invalidateTcpSocket()
+                assertFalse(provider.hasOpenTcpSocket())
             }
         }
     }
