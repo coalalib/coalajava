@@ -2,10 +2,6 @@ package com.ndmsystems.coala.crypto
 
 import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
-import com.ndmsystems.coala.helpers.logging.LogHelper
-import io.mockk.every
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
 import org.junit.Assert
 import org.spekframework.spek2.Spek
 
@@ -86,7 +82,7 @@ class HkdfTest: Spek({
         // intended, and it was the reason this class used to lower the process-wide log level.
         lateinit var hkdf: Hkdf
 
-        val records = recordsOf { hkdf = caseOneHkdf() }
+        val records = logRecordsOf { hkdf = caseOneHkdf() }
 
         // Derived from the object rather than copied: the expected values already live in
         // testCase1, and a second set of literals would be one more thing to keep in step.
@@ -119,25 +115,3 @@ private fun caseOneHkdf() = Hkdf(
     Hex.decodeHex(CASE_ONE_SALT.toCharArray()),
     Hex.decodeHex(CASE_ONE_INFO.toCharArray())
 )
-
-/**
- * The `(message, fields)` pairs [block] handed to [LogHelper], with the real sinks out of the way.
- *
- * Mocked rather than captured through a registered sink: a sink cannot be unregistered, and a
- * mocked LogHelper never reaches the level gate, so nothing here depends on - or disturbs - the
- * process-wide level that every other test in this JVM shares.
- */
-private fun recordsOf(block: () -> Unit): List<Pair<String, Map<String, Any?>>> {
-    val records = mutableListOf<Pair<String, Map<String, Any?>>>()
-    mockkStatic(LogHelper::class)
-    try {
-        every { LogHelper.v(any<String>()) } answers { records += firstArg<String>() to emptyMap() }
-        every { LogHelper.v(any<String>(), any<Map<String, Any?>>()) } answers {
-            records += firstArg<String>() to secondArg<Map<String, Any?>>()
-        }
-        block()
-    } finally {
-        unmockkStatic(LogHelper::class)
-    }
-    return records
-}

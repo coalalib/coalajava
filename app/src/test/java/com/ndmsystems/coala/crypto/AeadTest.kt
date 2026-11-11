@@ -1,10 +1,6 @@
 package com.ndmsystems.coala.crypto
 
 import com.ndmsystems.coala.helpers.Hex.encodeHexString
-import com.ndmsystems.coala.helpers.logging.LogHelper
-import io.mockk.every
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import kotlin.test.assertContentEquals
@@ -153,7 +149,7 @@ object AeadTest : Spek({
             // has no shape to match, so the value must not be written in the first place.
             val (_, server) = peerPair()
 
-            val records = errorsOf { server.decrypt("not ciphertext at all".toByteArray(), COUNTER, null) }
+            val records = logRecordsOf { server.decrypt("not ciphertext at all".toByteArray(), COUNTER, null) }
 
             val written = records.joinToString(" ") { (message, fields) -> "$message $fields" }
             listOf(clientKey(), serverKey()).map(::encodeHexString).forEach { key ->
@@ -161,6 +157,15 @@ object AeadTest : Spek({
             }
             // Not by logging nothing: a failed decrypt is what marks a session as gone stale.
             assertTrue(records.isNotEmpty())
+        }
+
+        it("does not print its keys when turned into a string") {
+            // A "$aead" in some future log line would carry them past LogSanitizer the same way.
+            val (_, server) = peerPair()
+
+            listOf(clientKey(), serverKey()).map(::encodeHexString).forEach { key ->
+                assertFalse("$server".contains(key), "a session key is in toString(): $server")
+            }
         }
     }
 })
@@ -190,23 +195,3 @@ private fun peerPair(seed: Int = 1): Pair<Aead, Aead> {
 private fun clientKey(seed: Int = 1) = ByteArray(16) { (it + seed).toByte() }
 
 private fun serverKey(seed: Int = 1) = ByteArray(16) { (it + seed + 100).toByte() }
-
-/**
- * The `(message, fields)` pairs [block] handed to [LogHelper.e], with the real sinks out of the way.
- *
- * Mocked rather than captured through a registered sink, for the reason HkdfTest gives: a sink
- * cannot be unregistered, and the level gate is process-wide.
- */
-private fun errorsOf(block: () -> Unit): List<Pair<String, Map<String, Any?>>> {
-    val records = mutableListOf<Pair<String, Map<String, Any?>>>()
-    mockkStatic(LogHelper::class)
-    try {
-        every { LogHelper.e(any<String>(), any<Map<String, Any?>>()) } answers {
-            records += firstArg<String>() to secondArg<Map<String, Any?>>()
-        }
-        block()
-    } finally {
-        unmockkStatic(LogHelper::class)
-    }
-    return records
-}
