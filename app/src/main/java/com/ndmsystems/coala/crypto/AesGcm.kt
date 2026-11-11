@@ -1,6 +1,5 @@
 package com.ndmsystems.coala.crypto
 
-import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.helpers.logging.LogHelper
 import com.ndmsystems.coala.helpers.logging.LogKeys
 import java.security.InvalidAlgorithmParameterException
@@ -59,10 +58,11 @@ class AesGcm(key: ByteArray) {
         val result = try {
             cipher!!.doFinal(input)
         } catch (e: java.lang.Exception) {
+            // No key in the text: Aead logs this message at ERROR, which release uploads.
             throw Exception(
-                "${e.javaClass}:Couldn't validate GCM authentication tag when decode, length of the data: " + cipherText.size + ", key: " + Hex.encodeHexString(
-                    key.encoded
-                ) + ", error: " + e.message, e
+                "${e.javaClass}:Couldn't validate GCM authentication tag when decode, length of the data: " + cipherText.size +
+                    ", error: " + e.message,
+                e
             )
         }
         return result
