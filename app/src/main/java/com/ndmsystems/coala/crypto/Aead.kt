@@ -53,10 +53,6 @@ class Aead(peerKey: ByteArray, myKey: ByteArray, peerIV: ByteArray, myIV: ByteAr
         }
     }
 
-    override fun toString(): String {
-        return Hex.encodeHexString(peerKey) + Hex.encodeHexString(myKey) + Hex.encodeHexString(peerIV) + Hex.encodeHexString(myIV)
-    }
-
     fun encrypt(plainText: ByteArray, counter: Int, associatedData: ByteArray?): ByteArray? {
         return try {
             encryptor.seal(plainText, makeNonce(myIV, counter), associatedData)

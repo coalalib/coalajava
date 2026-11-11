@@ -1,11 +1,13 @@
 package com.ndmsystems.coala.crypto
 
+import com.ndmsystems.coala.helpers.Hex.encodeHexString
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import kotlin.test.assertContentEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * The AES-GCM layer every secure message goes through.
@@ -140,6 +142,31 @@ object AeadTest : Spek({
 
             assertNotNull(server.decrypt(sealed!!, COUNTER, null))
         }
+
+        it("keeps the session keys out of the error it logs") {
+            // The failure is an ERROR, a level release uploads, and the cipher's message used to
+            // carry the key in hex. LogSanitizer cannot catch that: a bare hex run inside free text
+            // has no shape to match, so the value must not be written in the first place.
+            val (_, server) = peerPair()
+
+            val records = logRecordsOf { server.decrypt("not ciphertext at all".toByteArray(), COUNTER, null) }
+
+            val written = records.joinToString(" ") { (message, fields) -> "$message $fields" }
+            listOf(clientKey(), serverKey()).map(::encodeHexString).forEach { key ->
+                assertFalse(written.contains(key), "a session key reached the log: $written")
+            }
+            // Not by logging nothing: a failed decrypt is what marks a session as gone stale.
+            assertTrue(records.isNotEmpty())
+        }
+
+        it("does not print its keys when turned into a string") {
+            // A "$aead" in some future log line would carry them past LogSanitizer the same way.
+            val (_, server) = peerPair()
+
+            listOf(clientKey(), serverKey()).map(::encodeHexString).forEach { key ->
+                assertFalse("$server".contains(key), "a session key is in toString(): $server")
+            }
+        }
     }
 })
 
@@ -155,8 +182,8 @@ private const val COUNTER = 42
  * wire and would keep passing across a change that breaks the real one.
  */
 private fun peerPair(seed: Int = 1): Pair<Aead, Aead> {
-    val clientKey = ByteArray(16) { (it + seed).toByte() }
-    val serverKey = ByteArray(16) { (it + seed + 100).toByte() }
+    val clientKey = clientKey(seed)
+    val serverKey = serverKey(seed)
     val clientIv = ByteArray(4) { (it + seed).toByte() }
     val serverIv = ByteArray(4) { (it + seed + 50).toByte() }
 
@@ -164,3 +191,7 @@ private fun peerPair(seed: Int = 1): Pair<Aead, Aead> {
     val server = Aead(peerKey = clientKey, myKey = serverKey, peerIV = clientIv, myIV = serverIv)
     return client to server
 }
+
+private fun clientKey(seed: Int = 1) = ByteArray(16) { (it + seed).toByte() }
+
+private fun serverKey(seed: Int = 1) = ByteArray(16) { (it + seed + 100).toByte() }
