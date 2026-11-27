@@ -4,6 +4,7 @@ package com.ndmsystems.coala
 
 import com.ndmsystems.coala.helpers.Hex
 import com.ndmsystems.coala.CoAPMessagePool.Companion.LONG_ANSWER_MULTIPLIER
+import com.ndmsystems.coala.exceptions.CoalaStoppedException
 import com.ndmsystems.coala.helpers.MonotonicClock
 import com.ndmsystems.coala.layers.response.ResponseHandler
 import com.ndmsystems.coala.message.CoAPMessage
@@ -235,6 +236,65 @@ object CoAPMessagePoolTest : Spek({
                 advanceUntilIdle()
 
                 verify(inverse = true) { acks.raiseAckError(any(), any()) }
+            }
+        }
+    }
+
+    describe("clearing the pool, as a stop does") {
+
+        it("empties the pool at once and fails every message in it afterwards") {
+            withPool { pool, _, _ ->
+                val first = message()
+                val second = message()
+                val firstResponses = mockk<ResponseHandler>(relaxed = true)
+                val secondResponses = mockk<ResponseHandler>(relaxed = true)
+                first.responseHandler = firstResponses
+                second.responseHandler = secondResponses
+                pool.add(first)
+                pool.add(second)
+
+                val stopped = CoalaStoppedException("Coala stopped")
+                pool.clear(stopped)
+                assertEquals(0, pool.size(), "messages still pooled before the callbacks ran")
+
+                advanceUntilIdle()
+                verify { firstResponses.onError(stopped) }
+                verify { secondResponses.onError(stopped) }
+            }
+        }
+
+        it("keeps a message added right after it, before the failed ones were told") {
+            // A restart stops and starts coala at once: a request sent in between the clear and its
+            // callbacks used to be emptied with the pool, never sent and never answered.
+            withPool { pool, _, _ ->
+                pool.add(message())
+                pool.clear(CoalaStoppedException("Coala stopped"))
+
+                val sentAfter = message()
+                val responses = mockk<ResponseHandler>(relaxed = true)
+                sentAfter.responseHandler = responses
+                pool.add(sentAfter)
+                advanceUntilIdle()
+
+                assertNotNull(pool[sentAfter.id], "the message sent after the clear was dropped")
+                assertNotNull(pool.getSourceMessageByToken(sentAfter.hexToken))
+                assertEquals(sentAfter.id, pool.next()?.id)
+                verify(inverse = true) { responses.onError(any()) }
+            }
+        }
+
+        it("forgets the tokens of the messages it took out") {
+            // A token stays mapped to its first message; a stale mapping would hide the next one.
+            withPool { pool, _, _ ->
+                val first = message()
+                pool.add(first)
+                pool.clear(CoalaStoppedException("Coala stopped"))
+
+                val sameToken = message().apply { token = first.token }
+                pool.add(sameToken)
+                advanceUntilIdle()
+
+                assertEquals(sameToken.id, pool.getSourceMessageByToken(sameToken.hexToken)?.id)
             }
         }
     }

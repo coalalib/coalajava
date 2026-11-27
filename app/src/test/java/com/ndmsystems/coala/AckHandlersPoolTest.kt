@@ -100,6 +100,34 @@ object AckHandlersPoolTest : Spek({
                 }
             }
 
+            it("empties the pool at once, before the handlers are told") {
+                runTest {
+                    val pool = AckHandlersPool(StandardTestDispatcher(testScheduler))
+                    pool.add(MESSAGE_ID, mockk(relaxed = true))
+
+                    pool.clear(IllegalStateException("transport stopped"))
+
+                    assertNull(pool[MESSAGE_ID], "the handler is still pooled before the callbacks ran")
+                }
+            }
+
+            it("keeps a handler added right after it") {
+                // A restart stops and starts coala at once: the handler of a message sent in between
+                // used to be emptied with the pool, and its caller never heard back.
+                runTest {
+                    val pool = AckHandlersPool(StandardTestDispatcher(testScheduler))
+                    pool.add(MESSAGE_ID, mockk(relaxed = true))
+                    pool.clear(IllegalStateException("transport stopped"))
+
+                    val addedAfter = mockk<CoAPHandler>(relaxed = true)
+                    pool.add(MESSAGE_ID + 1, addedAfter)
+                    advanceUntilIdle()
+
+                    assertNotNull(pool[MESSAGE_ID + 1], "the handler added after the clear was dropped")
+                    verify(inverse = true) { addedAfter.onAckError(any()) }
+                }
+            }
+
             it("falls back to a placeholder when the reason has no message") {
                 runTest {
                     val pool = AckHandlersPool(StandardTestDispatcher(testScheduler))

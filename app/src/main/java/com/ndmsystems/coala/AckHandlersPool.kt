@@ -45,15 +45,32 @@ class AckHandlersPool(
         pool.remove(id)
     }
 
+    /**
+     * Takes every handler out of the pool and fails it with [exception]: what a stop does.
+     *
+     * The handlers leave the pool here, at once, and are called from [clearScope]. That job used to
+     * take its copy and empty the pool itself, so the handler of a message sent between a stop and
+     * the start right after it was emptied too, and its caller never heard back.
+     */
     fun clear(exception: Throwable) {
-        LogHelper.d("Clear handlers pool", mapOf("pool_size" to pool.size))
+        val cleared = pooledIds().mapNotNull { pool.remove(it) }
+        LogHelper.d("Clear handlers pool", mapOf("pool_size" to cleared.size))
         clearScope.launch {
-            val poolCopy: List<CoAPHandler?> = pool.values.toList()
-            pool.clear()
-            val iter = poolCopy.iterator()
-            while (iter.hasNext()) {
-                val handler = iter.next()
-                handler?.onAckError(exception.message ?: "Unknown")
+            cleared.forEach { it.onAckError(exception.message ?: "Unknown") }
+        }
+    }
+
+    /**
+     * The ids pooled now. ExpiringMap does not guard its key iterator against an add, a remove or an
+     * expiry on another thread, and a stop must not fail half-way on that: the pass is made again
+     * until one completes.
+     */
+    private fun pooledIds(): List<Int> {
+        while (true) {
+            try {
+                return pool.keys.toList()
+            } catch (changed: ConcurrentModificationException) {
+                // Changed under the pass; take it again.
             }
         }
     }

@@ -242,16 +242,22 @@ class CoAPMessagePool(
         }
     }
 
+    /**
+     * Takes every message out of the pool and fails it with [exception]: what a stop does.
+     *
+     * The messages leave the pool here, at once; only their handlers are called from [errorScope].
+     * That job used to empty the pool as well, after the handlers. A restart stops and starts coala
+     * back to back, so a request sent in between was emptied with the rest: never sent, never
+     * answered, and never expired either, since only a pooled message expires.
+     */
     fun clear(exception: BaseCoalaThrowable) {
+        val cleared = pool.keys.toList().mapNotNull { pool.remove(it) }
+        // Every token whose message is gone, as clearing the whole map did. A message added meanwhile
+        // is pooled before its token is mapped, so it keeps its mapping.
+        messageIdForToken.values.removeAll { !pool.containsKey(it) }
+        LogHelper.d("Clear message pool", mapOf("pool_size" to cleared.size))
         errorScope.launch {
-            LogHelper.d("Clear message pool", mapOf("pool_size" to pool.size))
-            for (queueElement in pool.values) {
-                if (queueElement.message.responseHandler != null) {
-                    queueElement.message.responseHandler?.onError(exception)
-                }
-            }
-            pool.clear()
-            messageIdForToken.clear()
+            cleared.forEach { it.message.responseHandler?.onError(exception) }
         }
     }
 
