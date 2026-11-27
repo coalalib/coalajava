@@ -53,10 +53,25 @@ class AckHandlersPool(
      * the start right after it was emptied too, and its caller never heard back.
      */
     fun clear(exception: Throwable) {
-        val cleared = pool.keys.toList().mapNotNull { pool.remove(it) }
+        val cleared = pooledIds().mapNotNull { pool.remove(it) }
         LogHelper.d("Clear handlers pool", mapOf("pool_size" to cleared.size))
         clearScope.launch {
             cleared.forEach { it.onAckError(exception.message ?: "Unknown") }
+        }
+    }
+
+    /**
+     * The ids pooled now. ExpiringMap does not guard its key iterator against an add, a remove or an
+     * expiry on another thread, and a stop must not fail half-way on that: the pass is made again
+     * until one completes.
+     */
+    private fun pooledIds(): List<Int> {
+        while (true) {
+            try {
+                return pool.keys.toList()
+            } catch (changed: ConcurrentModificationException) {
+                // Changed under the pass; take it again.
+            }
         }
     }
 

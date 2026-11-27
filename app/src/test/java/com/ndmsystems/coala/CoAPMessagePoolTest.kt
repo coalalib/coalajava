@@ -282,6 +282,21 @@ object CoAPMessagePoolTest : Spek({
                 verify(inverse = true) { responses.onError(any()) }
             }
         }
+
+        it("forgets the tokens of the messages it took out") {
+            // A token stays mapped to its first message; a stale mapping would hide the next one.
+            withPool { pool, _, _ ->
+                val first = message()
+                pool.add(first)
+                pool.clear(CoalaStoppedException("Coala stopped"))
+
+                val sameToken = message().apply { token = first.token }
+                pool.add(sameToken)
+                advanceUntilIdle()
+
+                assertEquals(sameToken.id, pool.getSourceMessageByToken(sameToken.hexToken)?.id)
+            }
+        }
     }
 
     describe("an ARQ original message, which is not sent itself") {

@@ -254,7 +254,7 @@ class CoAPMessagePool(
         val cleared = pool.keys.toList().mapNotNull { pool.remove(it) }
         // Every token whose message is gone, as clearing the whole map did. A message added meanwhile
         // is pooled before its token is mapped, so it keeps its mapping.
-        messageIdForToken.entries.removeIf { !pool.containsKey(it.value) }
+        messageIdForToken.values.removeAll { !pool.containsKey(it) }
         LogHelper.d("Clear message pool", mapOf("pool_size" to cleared.size))
         errorScope.launch {
             cleared.forEach { it.message.responseHandler?.onError(exception) }
