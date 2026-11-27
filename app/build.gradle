@@ -6,7 +6,7 @@ buildscript {
         // loses on whichever is higher.
         spek_version = '2.0.19'
         mockk_version = '1.14.11'
-        kotlinVersion = '2.4.10'
+        kotlinVersion = '2.4.21'
         daggerVersion = '2.60.1'
         gsonVersion = '2.8.7'
         coroutinesVersion = '1.11.0'

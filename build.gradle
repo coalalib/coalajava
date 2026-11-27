@@ -5,16 +5,16 @@ buildscript {
         // AGP 9 ships its own KGP (2.2.10) and would pin KSP to match. Both are declared here so
         // the versions this library builds against line up with the consuming app, which shares
         // one Gradle invocation with this build through its settings.gradle includeBuild.
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.10"
-        classpath "com.google.devtools.ksp:symbol-processing-gradle-plugin:2.3.12"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.21"
+        classpath "com.google.devtools.ksp:symbol-processing-gradle-plugin:2.3.14"
     }
 }
 
 plugins {
-    id 'com.android.library'    version '9.4.0' apply false
+    id 'com.android.library'    version '9.5.1' apply false
     // AGP 9 compiles Kotlin itself; org.jetbrains.kotlin.android is no longer applied.
-    id 'com.google.devtools.ksp'       version '2.3.12' apply false
-    id 'de.mannodermaus.android-junit5' version '2.0.1' apply false
+    id 'com.google.devtools.ksp'       version '2.3.14' apply false
+    id 'de.mannodermaus.android-junit5' version '2.0.2' apply false
 }
 
 // Gradle 9 removed Project.buildDir and the `task name(type:)` creation syntax.
